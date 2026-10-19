@@ -49,3 +49,17 @@ export function countByBrandType(rows) {
   }
   return counts;
 }
+
+/**
+ * 고른 필터 값이 더는 목록에 없을 때(그 국가의 마지막 기록을 지우거나 고쳤을 때, 미분류가 모두
+ * 분류됐을 때) 필터를 풀어 줘야 한다 — 안 그러면 목록이 빈 채로 "기록이 없다"고만 보인다.
+ * 풀 필요가 없으면 null.
+ */
+export function staleFilterResets({ region, country, usedCountries = [], regionCounts = {} }) {
+  const resets = {};
+  if (country && !usedCountries.some(item => item.country === country)) resets.country = '';
+  if (region === REGION_FILTER_NONE && (regionCounts[REGION_FILTER_NONE] || 0) === 0) {
+    resets.region = REGION_FILTER_ALL;
+  }
+  return Object.keys(resets).length ? resets : null;
+}

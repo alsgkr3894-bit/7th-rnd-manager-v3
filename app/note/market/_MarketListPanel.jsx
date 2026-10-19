@@ -39,7 +39,11 @@ export function MarketListPanel({
         <div className="market-list-stack">
           {loading && <div style={{ color: 'var(--text-3)', fontSize: 13 }}>불러오는 중</div>}
           {!loading && filtered.length === 0 && (
-            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>저장된 시장조사가 없습니다.</div>
+            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
+              {rows.length === 0
+                ? '저장된 시장조사가 없습니다.'
+                : '조건에 맞는 시장조사가 없습니다. 필터나 검색어를 바꿔 보세요.'}
+            </div>
           )}
           {groupedRows.map(group => (
             <div key={group.label} style={{ display: 'grid', gap: 8 }}>

@@ -50,6 +50,7 @@ export {
   matchesRegion,
   REGION_FILTER_ALL,
   REGION_FILTER_NONE,
+  staleFilterResets,
 } from './marketFilterUtils';
 
 export const EMPTY_FORM = {

@@ -255,3 +255,43 @@ describe('시장조사 브랜드 업종(피자·치킨)', () => {
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.brandType');
   });
 });
+
+// 2026-10-19 전체 검사: 고른 필터가 수정·삭제로 사라지면 빈 목록에 갇히던 문제
+describe('사라진 필터 풀기', () => {
+  test('고른 국가가 목록에서 없어지면 국가 필터를 푼다', async () => {
+    const { staleFilterResets } = await import('../../app/note/market/marketFilterUtils.js');
+    const used = [{ country: '미국', count: 1 }];
+    expect(
+      staleFilterResets({ region: 'all', country: '일본', usedCountries: used, regionCounts: {} })
+    ).toEqual({ country: '' });
+    expect(
+      staleFilterResets({ region: 'all', country: '미국', usedCountries: used, regionCounts: {} })
+    ).toBeNull();
+  });
+
+  test('미분류를 고른 채 미분류가 0건이 되면 전체로 돌린다', async () => {
+    const { staleFilterResets } = await import('../../app/note/market/marketFilterUtils.js');
+    expect(
+      staleFilterResets({
+        region: 'none',
+        country: '',
+        usedCountries: [],
+        regionCounts: { none: 0 },
+      })
+    ).toEqual({ region: 'all' });
+    expect(
+      staleFilterResets({
+        region: 'none',
+        country: '',
+        usedCountries: [],
+        regionCounts: { none: 2 },
+      })
+    ).toBeNull();
+  });
+
+  test('필터 때문에 비어 보일 땐 "조건에 맞는 시장조사가 없습니다"로 안내한다', () => {
+    expect(read('app/note/market/_MarketListPanel.jsx')).toContain(
+      '조건에 맞는 시장조사가 없습니다'
+    );
+  });
+});

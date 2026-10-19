@@ -12,6 +12,7 @@ import {
   matchesCountry,
   matchesRegion,
   REGION_FILTER_ALL,
+  staleFilterResets,
 } from './marketUtils';
 import { MARKET_COUNTRY_SUGGESTIONS } from '@/lib/note/market-research';
 import { competitorOptionsOf, countryOptionsOf, usedCountriesOf } from './marketPageUtils';
@@ -53,6 +54,14 @@ export function useMarketResearchList() {
     usedCountries,
   };
   const groupedRows = useMemo(() => groupByCompetitor(filtered), [filtered]);
+
+  // 고른 국가·미분류 필터가 수정·삭제로 사라졌으면 풀어 준다(빈 목록에 갇히지 않게)
+  useEffect(() => {
+    const resets = staleFilterResets({ region, country, usedCountries, regionCounts });
+    if (!resets) return;
+    if ('country' in resets) setCountry(resets.country);
+    if ('region' in resets) setRegion(resets.region);
+  }, [region, country, usedCountries, regionCounts]);
   const competitorOptions = useMemo(() => competitorOptionsOf(rows), [rows]);
 
   const load = useCallback(async () => {
