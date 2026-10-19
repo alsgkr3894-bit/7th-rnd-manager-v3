@@ -35,7 +35,7 @@ export function TypeRow({ form, update, canEdit }) {
   );
 }
 
-/** 브랜드 업종(피자·치킨·기타) 선택 — 이미 고른 버튼을 다시 누르면 선택이 풀린다. */
+/** 브랜드 업종(피자·치킨·햄버거·기타) 선택 — 이미 고른 버튼을 다시 누르면 선택이 풀린다. */
 export function BrandTypeField({ form, update, canEdit }) {
   return (
     <Field label="브랜드 업종">

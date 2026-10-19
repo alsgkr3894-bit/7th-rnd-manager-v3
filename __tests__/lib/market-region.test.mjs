@@ -202,9 +202,10 @@ describe('시장조사 브랜드 업종(피자·치킨)', () => {
   test('업종 값은 피자·치킨·기타만 받고, 그 밖의 값은 비운다', async () => {
     const { MARKET_BRAND_TYPES, normalizeBrandType } =
       await import('../../lib/note/market-research.js');
-    expect(MARKET_BRAND_TYPES).toEqual(['피자', '치킨', '기타']);
+    expect(MARKET_BRAND_TYPES).toEqual(['피자', '치킨', '햄버거', '기타']);
     expect(normalizeBrandType(' 치킨 ')).toBe('치킨');
-    expect(normalizeBrandType('햄버거')).toBe('');
+    expect(normalizeBrandType('햄버거')).toBe('햄버거');
+    expect(normalizeBrandType('커피')).toBe('');
     expect(read('lib/note/market-research.js')).toContain(
       'brandType: normalizeBrandType(data.brandType)'
     );
@@ -214,7 +215,7 @@ describe('시장조사 브랜드 업종(피자·치킨)', () => {
     const { matchesBrandType, countByBrandType } =
       await import('../../app/note/market/marketUtils.js');
     expect(EMPTY_FORM.brandType).toBe('');
-    expect(countByBrandType(rowsByType)).toEqual({ '': 4, 피자: 1, 치킨: 2, 기타: 0 });
+    expect(countByBrandType(rowsByType)).toEqual({ '': 4, 피자: 1, 치킨: 2, 햄버거: 0, 기타: 0 });
     expect(rowsByType.filter(r => matchesBrandType(r, '치킨')).map(r => r.id)).toEqual([2, 3]);
     expect(rowsByType.filter(r => matchesBrandType(r, '')).length).toBe(4);
     expect(includesQuery(rowsByType[1], '치킨')).toBe(true);
