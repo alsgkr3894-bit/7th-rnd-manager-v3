@@ -11,6 +11,7 @@ import { MarketPhotoLightbox } from './_MarketPhotoLightbox';
 import { MarketWriteModal } from './_MarketWriteModal';
 import { useMarketResearchList } from './useMarketResearchList';
 import { useMarketWriteForm } from './useMarketWriteForm';
+import { useMarketPrint } from './useMarketPrint';
 import { resolveEditReturn } from '@/lib/note/edit-return';
 
 export default function MarketResearchPage() {
@@ -49,6 +50,11 @@ function MarketResearchContent() {
     },
   });
   const { form, writing, startWrite, closeWrite } = write;
+  const print = useMarketPrint({
+    filtered: list.filtered,
+    filters: list.filters,
+    query: list.query,
+  });
 
   return (
     <main className="main market-page">
@@ -57,14 +63,25 @@ function MarketResearchContent() {
         title="시장조사"
         sub="경쟁사, 시장 흐름, 피해 트렌드, 타브랜드 참고 포인트를 기록합니다."
         actions={
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => startWrite()}
-            disabled={!canEdit}
-          >
-            <Icon.plus style={{ width: 14, height: 14 }} /> 작성하기
-          </button>
+          <>
+            <button
+              className="btn"
+              type="button"
+              onClick={print.printList}
+              disabled={!canEdit || list.filtered.length === 0}
+              title="지금 목록(필터·검색 결과)을 PDF로 출력합니다"
+            >
+              PDF 출력
+            </button>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => startWrite()}
+              disabled={!canEdit}
+            >
+              <Icon.plus style={{ width: 14, height: 14 }} /> 작성하기
+            </button>
+          </>
         }
       />
 
@@ -119,6 +136,7 @@ function MarketResearchContent() {
           row={detailRow}
           canEdit={canEdit}
           onClose={() => setDetailRow(null)}
+          onPdf={() => print.printOne(detailRow)}
           onEdit={() => {
             const row = detailRow;
             setDetailRow(null);

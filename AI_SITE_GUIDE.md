@@ -147,7 +147,7 @@ middleware.ts     로그인 쿠키 검사
 |---|---|
 | 홈 | `/` |
 | 개발 메모 › 메뉴개발노트 | 일정 달력 `/note/calendar` · 노트 목록 `/note` |
-| RND › RND 업무 | 연구일지 `/note/journal` · 시장조사 `/note/market` · 법인카드 내역서 `/rnd/corporate-card`* · 계정 로그인정보 `/rnd/login-info`* |
+| RND › RND 업무 | 연구일지 `/note/journal` · 시장조사 `/note/market` · 계정 로그인정보 `/rnd/login-info`* |
 | 보고서센터 | 보고서센터 `/report` · 판매량 `/report/sales` · 제때 가격 `/report/price` · 제때 출고량 `/report/shipment` · 원가 `/report/cost` |
 | 상품 관리 › 제때데이터 | 단가 `/jette/price-compare` · 출고량 `/jette/shipment` · 관리품목 `/jette/settings` |
 | 상품 관리 › 식자재 | 식자재 관리 `/ingredient/manage` · 제품별 사용 현황 `/ingredient/usage` |
@@ -261,7 +261,7 @@ middleware.ts     로그인 쿠키 검사
   - 샘플·시장조사 기록도 같은 날짜 기록으로 함께 보여준다(통합 기록, id 접두 `sample:`·`market:` — `lib/note/record-kind.js`).
 - **일정 달력** `/note/calendar`: 노트·샘플·일정(반복: 매일/매주/매월, `repeatUntil`)·자동 업무기록 점. **오늘 체크리스트**(localStorage)의 완료 항목은 그날 연구일지 본문에 `[체크리스트 완료 항목]` 블록으로 합쳐진다.
 - **샘플기록** `/note/sample`: 식자재 이슈·테스트/샘플(`sample_records`, 유형 샘플테스트/제품이슈), 비교 모드, 엑셀·PDF.
-- **시장조사** `/note/market`: 경쟁사·트렌드·참고 포인트·개발 아이디어(`market_research`).
+- **시장조사** `/note/market`: 경쟁사·트렌드·참고 포인트·개발 아이디어(`market_research`). 시장 구분(국내/해외)·국가(직접 입력)·브랜드 업종(피자·치킨·햄버거·기타)으로 분류·필터하고, 목록·한 건 PDF 출력(`lib/note/market-print.js`, 연구일지 PDF와 같은 보고서 카드)을 지원한다. 연구일지에도 같은 머리 줄로 나온다. (법인카드 내역서 `/rnd/corporate-card`는 2026-10-13부터 메뉴에서 숨겼고 주소로만 접근한다.)
 - **RND** `/rnd/corporate-card`(법인카드 내역 엑셀 업로드·출력), `/rnd/login-info`(외부 사이트 계정 메모 — **평문 비밀번호 저장, 서버 동기화 제외**).
 
 ### 7-9. 보고서센터 `/report/*`

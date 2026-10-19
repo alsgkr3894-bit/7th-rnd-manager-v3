@@ -50,6 +50,14 @@ export function countByBrandType(rows) {
   return counts;
 }
 
+/** PDF 머리에 적는 조회 조건 — 걸어 둔 필터·검색어를 한 줄로(아무것도 없으면 "전체"). */
+export function describeMarketFilters({ region, brandType, country, query } = {}) {
+  const regionText =
+    region === REGION_FILTER_NONE ? '미분류' : region && region !== REGION_FILTER_ALL ? region : '';
+  const parts = [regionText, brandType, country, String(query || '').trim()].filter(Boolean);
+  return parts.length ? parts.join(' · ') : '전체';
+}
+
 /**
  * 고른 필터 값이 더는 목록에 없을 때(그 국가의 마지막 기록을 지우거나 고쳤을 때, 미분류가 모두
  * 분류됐을 때) 필터를 풀어 줘야 한다 — 안 그러면 목록이 빈 채로 "기록이 없다"고만 보인다.

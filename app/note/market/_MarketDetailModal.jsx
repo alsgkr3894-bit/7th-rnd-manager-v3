@@ -3,7 +3,7 @@ import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { DetailField } from './_MarketFields';
 
-export function MarketDetailModal({ row, onClose, onEdit, canEdit, onPhotoClick }) {
+export function MarketDetailModal({ row, onClose, onEdit, onPdf, canEdit, onPhotoClick }) {
   const photos = Array.isArray(row.photos) ? row.photos.filter(photo => photo?.data) : [];
   return (
     <ModalFrame
@@ -74,6 +74,11 @@ export function MarketDetailModal({ row, onClose, onEdit, canEdit, onPhotoClick 
           <button type="button" className="btn" onClick={onClose}>
             닫기
           </button>
+          {onPdf && (
+            <button type="button" className="btn" onClick={onPdf}>
+              PDF 출력
+            </button>
+          )}
           {canEdit && (
             <button type="button" className="btn primary" onClick={onEdit}>
               수정

@@ -50,6 +50,7 @@ export {
   matchesRegion,
   REGION_FILTER_ALL,
   REGION_FILTER_NONE,
+  describeMarketFilters,
   staleFilterResets,
 } from './marketFilterUtils';
 
