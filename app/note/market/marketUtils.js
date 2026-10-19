@@ -51,7 +51,10 @@ export {
   REGION_FILTER_ALL,
   REGION_FILTER_NONE,
   describeMarketFilters,
+  matchesPeriod,
+  monthCountsOf,
   staleFilterResets,
+  yearOptionsOf,
 } from './marketFilterUtils';
 
 export const EMPTY_FORM = {

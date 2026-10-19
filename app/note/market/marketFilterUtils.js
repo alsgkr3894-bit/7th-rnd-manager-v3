@@ -50,11 +50,52 @@ export function countByBrandType(rows) {
   return counts;
 }
 
+/**
+ * 조사 날짜(YYYY-MM-DD)로 연·월 단위 조회. year가 비면 전체 기간, month는 year가 있을 때만 쓴다.
+ * 날짜가 없는 기록은 기간을 고르면 빠진다.
+ */
+export function matchesPeriod(row, year, month) {
+  if (!year) return true;
+  const date = String(row?.date || '').trim();
+  if (!/^\d{4}-\d{2}/.test(date)) return false;
+  if (date.slice(0, 4) !== String(year)) return false;
+  return !month || date.slice(5, 7) === String(month).padStart(2, '0');
+}
+
+/** 기록이 있는 연도 목록(최근 연도 먼저) + 건수 */
+export function yearOptionsOf(rows) {
+  const counts = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const year = String(row?.date || '')
+      .trim()
+      .slice(0, 4);
+    if (/^\d{4}$/.test(year)) counts.set(year, (counts.get(year) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([year, count]) => ({ year, count }));
+}
+
+/** 고른 연·월 안의 월별 건수 — { '01': n, ... } (달 선택에 건수를 보여 주는 데 쓴다) */
+export function monthCountsOf(rows, year) {
+  const counts = {};
+  if (!year) return counts;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!matchesPeriod(row, year, '')) continue;
+    const month = String(row.date).slice(5, 7);
+    counts[month] = (counts[month] || 0) + 1;
+  }
+  return counts;
+}
+
 /** PDF 머리에 적는 조회 조건 — 걸어 둔 필터·검색어를 한 줄로(아무것도 없으면 "전체"). */
-export function describeMarketFilters({ region, brandType, country, query } = {}) {
+export function describeMarketFilters({ year, month, region, brandType, country, query } = {}) {
   const regionText =
     region === REGION_FILTER_NONE ? '미분류' : region && region !== REGION_FILTER_ALL ? region : '';
-  const parts = [regionText, brandType, country, String(query || '').trim()].filter(Boolean);
+  const periodText = year ? `${year}년${month ? ` ${Number(month)}월` : ''}` : '';
+  const parts = [periodText, regionText, brandType, country, String(query || '').trim()].filter(
+    Boolean
+  );
   return parts.length ? parts.join(' · ') : '전체';
 }
 
@@ -63,8 +104,22 @@ export function describeMarketFilters({ region, brandType, country, query } = {}
  * 분류됐을 때) 필터를 풀어 줘야 한다 — 안 그러면 목록이 빈 채로 "기록이 없다"고만 보인다.
  * 풀 필요가 없으면 null.
  */
-export function staleFilterResets({ region, country, usedCountries = [], regionCounts = {} }) {
+export function staleFilterResets({
+  region,
+  country,
+  year = '',
+  month = '',
+  usedCountries = [],
+  regionCounts = {},
+  yearOptions = [],
+}) {
   const resets = {};
+  if (year && !yearOptions.some(item => item.year === year)) {
+    resets.year = '';
+    resets.month = '';
+  } else if (!year && month) {
+    resets.month = '';
+  }
   if (country && !usedCountries.some(item => item.country === country)) resets.country = '';
   if (region === REGION_FILTER_NONE && (regionCounts[REGION_FILTER_NONE] || 0) === 0) {
     resets.region = REGION_FILTER_ALL;

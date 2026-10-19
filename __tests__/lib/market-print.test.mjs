@@ -102,3 +102,76 @@ describe('화면 연결', () => {
     expect(hook).toContain('openPrintWindow');
   });
 });
+
+// 2026-10-19 주임님 요청: 시장조사를 연·월 단위로 조회하고, PDF 출력도 그 조건으로 낸다.
+describe('시장조사 연·월 조회', () => {
+  const dated = [
+    { id: 1, date: '2026-10-19', title: 'a' },
+    { id: 2, date: '2026-10-02', title: 'b' },
+    { id: 3, date: '2026-09-30', title: 'c' },
+    { id: 4, date: '2025-12-31', title: 'd' },
+    { id: 5, title: '날짜 없음' },
+  ];
+
+  test('연도만 고르면 그 해 전체, 월까지 고르면 그 달만, 안 고르면 전부', async () => {
+    const { matchesPeriod } = await import('../../app/note/market/marketFilterUtils.js');
+    const ids = (year, month) => dated.filter(r => matchesPeriod(r, year, month)).map(r => r.id);
+    expect(ids('', '')).toEqual([1, 2, 3, 4, 5]);
+    expect(ids('2026', '')).toEqual([1, 2, 3]);
+    expect(ids('2026', '10')).toEqual([1, 2]);
+    expect(ids('2026', '9')).toEqual([3]); // 한 자리 월도 받는다
+    expect(ids('2025', '12')).toEqual([4]);
+    expect(ids('2024', '')).toEqual([]);
+    // 기간을 고르면 날짜 없는 기록은 빠진다
+    expect(ids('2026', '')).not.toContain(5);
+  });
+
+  test('연도 목록은 최근 연도 먼저 건수와 함께, 월별 건수는 고른 해 안에서만', async () => {
+    const { yearOptionsOf, monthCountsOf } =
+      await import('../../app/note/market/marketFilterUtils.js');
+    expect(yearOptionsOf(dated)).toEqual([
+      { year: '2026', count: 3 },
+      { year: '2025', count: 1 },
+    ]);
+    expect(monthCountsOf(dated, '2026')).toEqual({ 10: 2, '09': 1 });
+    expect(monthCountsOf(dated, '')).toEqual({});
+  });
+
+  test('조회 조건 문구에 연·월이 맨 앞에 붙는다(PDF 머리에 그대로 적힘)', () => {
+    expect(describeMarketFilters({ year: '2026', month: '10' })).toBe('2026년 10월');
+    expect(describeMarketFilters({ year: '2026', month: '' })).toBe('2026년');
+    expect(
+      describeMarketFilters({ year: '2026', month: '09', region: '해외', brandType: '치킨' })
+    ).toBe('2026년 9월 · 해외 · 치킨');
+    expect(describeMarketFilters({ month: '10' })).toBe('전체'); // 연도 없이 월만 있으면 무시
+  });
+
+  test('고른 연도가 목록에서 사라지면 연·월 조회를 푼다', async () => {
+    const { staleFilterResets } = await import('../../app/note/market/marketFilterUtils.js');
+    const years = [{ year: '2026', count: 3 }];
+    expect(staleFilterResets({ year: '2025', month: '12', yearOptions: years })).toEqual({
+      year: '',
+      month: '',
+    });
+    expect(staleFilterResets({ year: '2026', month: '10', yearOptions: years })).toBeNull();
+    expect(staleFilterResets({ year: '', month: '10', yearOptions: years })).toEqual({ month: '' });
+  });
+
+  test('PDF가 고른 연·월 기록만 담고 머리에 조회 기간을 적는다', async () => {
+    const { matchesPeriod } = await import('../../app/note/market/marketFilterUtils.js');
+    const october = dated.filter(r => matchesPeriod(r, '2026', '10'));
+    const html = buildMarketPrintHtml(october, {
+      filterLabel: describeMarketFilters({ year: '2026', month: '10' }),
+    });
+    expect(html).toContain('<span class="summary-label">조회 조건</span>2026년 10월');
+    expect(html).toContain('<span class="summary-label">보고 건수</span>2건');
+    expect(html).toContain('시장조사 보고서 2026년 10월');
+  });
+
+  test('목록·PDF가 같은 연·월 조건을 쓴다', () => {
+    const list = read('app/note/market/useMarketResearchList.js');
+    expect(list).toContain('matchesPeriod(row, year, month)');
+    expect(read('app/note/market/useMarketPrint.js')).toContain('year: filters?.year');
+    expect(read('app/note/market/_MarketFilters.jsx')).toContain('aria-label="월별 보기"');
+  });
+});

@@ -34,6 +34,8 @@ export function useMarketPrint({ filtered, filters, query }) {
       open(
         filtered,
         describeMarketFilters({
+          year: filters?.year,
+          month: filters?.month,
           region: filters?.region,
           brandType: filters?.brandType,
           country: filters?.country,

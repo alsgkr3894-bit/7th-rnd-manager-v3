@@ -22,9 +22,17 @@ function ChipRow({ options, value, counts, onChange }) {
   );
 }
 
-/** 시장조사 목록 위 필터 — 국내/해외 칩, 피자·치킨 등 브랜드 업종 칩, 국가 선택. */
+const MONTHS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+
+/** 시장조사 목록 위 필터 — 연·월, 국내/해외 칩, 피자·치킨 등 브랜드 업종 칩, 국가 선택. */
 export function MarketFilters({ filters }) {
   const {
+    year = '',
+    setYear,
+    month = '',
+    setMonth,
+    yearOptions = [],
+    monthCounts = {},
     region = REGION_FILTER_ALL,
     setRegion,
     regionCounts = {},
@@ -43,6 +51,42 @@ export function MarketFilters({ filters }) {
   const brandTypeOptions = [['', '모든 업종'], ...MARKET_BRAND_TYPES.map(value => [value, value])];
   return (
     <>
+      {yearOptions.length > 0 && (
+        <div style={{ ...ROW_STYLE, alignItems: 'center' }}>
+          <select
+            className="form-input"
+            value={year}
+            onChange={event => {
+              setYear?.(event.target.value);
+              setMonth?.('');
+            }}
+            aria-label="연도별 보기"
+            style={{ width: 'auto' }}
+          >
+            <option value="">전체 기간</option>
+            {yearOptions.map(item => (
+              <option key={item.year} value={item.year}>
+                {item.year}년 ({item.count})
+              </option>
+            ))}
+          </select>
+          <select
+            className="form-input"
+            value={month}
+            onChange={event => setMonth?.(event.target.value)}
+            disabled={!year}
+            aria-label="월별 보기"
+            style={{ width: 'auto' }}
+          >
+            <option value="">전체 월</option>
+            {MONTHS.map(value => (
+              <option key={value} value={value}>
+                {Number(value)}월{monthCounts[value] ? ` (${monthCounts[value]})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <ChipRow options={regionOptions} value={region} counts={regionCounts} onChange={setRegion} />
       <ChipRow
         options={brandTypeOptions}
