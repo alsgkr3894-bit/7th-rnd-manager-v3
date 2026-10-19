@@ -95,6 +95,37 @@ describe('시장조사 국내/해외 구분', () => {
     expect(html).toContain('<b>시장 구분:</b> 국내');
   });
 
+  // 2026-10-19: 국가도 같은 머리 줄에 — 연구일지 웹 카드와 PDF가 같은 함수를 쓴다.
+  test('보고서 머리 줄과 연구일지 PDF HTML에 국가가 나온다(국가 없는 기록은 줄 없음)', () => {
+    const withCountry = marketResearchToUnifiedRecord({
+      id: 21,
+      title: '벌집 토핑',
+      date: '2026-10-19',
+      type: '시장분석',
+      brand: '도미노',
+      region: '해외',
+      country: '일본',
+    });
+    expect(noteMetaPairs(withCountry)).toEqual([
+      ['작성일', '2026-10-19'],
+      ['시장 구분', '해외'],
+      ['국가', '일본'],
+      ['유형', '시장분석'],
+      ['브랜드 / 출처', '도미노'],
+    ]);
+    const withoutCountry = marketResearchToUnifiedRecord({
+      id: 22,
+      title: '국가 미입력',
+      date: '2026-10-19',
+      type: '시장분석',
+      region: '국내',
+    });
+    expect(noteMetaPairs(withoutCountry).map(([label]) => label)).not.toContain('국가');
+    const html = buildJournalPrintHtml('2026-10-19', [withCountry, withoutCountry]);
+    expect(html).toContain('<b>국가:</b> 일본');
+    expect(html.split('<b>국가:</b>').length - 1).toBe(1);
+  });
+
   test('저장 정규화·작성 모달·목록·카드가 구분을 다룬다', () => {
     expect(read('lib/note/market-research.js')).toContain('region: normalizeRegion(data.region)');
     expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<RegionField');
