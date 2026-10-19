@@ -129,7 +129,7 @@ describe('시장조사 국내/해외 구분', () => {
   test('저장 정규화·작성 모달·목록·카드가 구분을 다룬다', () => {
     expect(read('lib/note/market-research.js')).toContain('region: normalizeRegion(data.region)');
     expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<RegionField');
-    expect(read('app/note/market/_MarketListPanel.jsx')).toContain('onRegionChange');
+    expect(read('app/note/market/_MarketFilters.jsx')).toContain('setRegion');
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.region');
   });
 });
@@ -185,7 +185,73 @@ describe('시장조사 국가 입력', () => {
   test('작성 모달·목록·카드가 국가를 다룬다', () => {
     expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<CountryField');
     expect(read('app/note/market/_MarketFields.jsx')).toContain('list="market-country-options"');
-    expect(read('app/note/market/_MarketListPanel.jsx')).toContain('모든 국가');
+    expect(read('app/note/market/_MarketFilters.jsx')).toContain('모든 국가');
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.country');
+  });
+});
+
+// 2026-10-19 주임님 요청: 조사한 브랜드가 피자인지 치킨인지(브랜드 업종)도 구분한다.
+describe('시장조사 브랜드 업종(피자·치킨)', () => {
+  const rowsByType = [
+    { id: 1, brandType: '피자', title: 'a' },
+    { id: 2, brandType: '치킨', title: 'b' },
+    { id: 3, brandType: '치킨', title: 'c' },
+    { id: 4, title: '이전 기록' },
+  ];
+
+  test('업종 값은 피자·치킨·기타만 받고, 그 밖의 값은 비운다', async () => {
+    const { MARKET_BRAND_TYPES, normalizeBrandType } =
+      await import('../../lib/note/market-research.js');
+    expect(MARKET_BRAND_TYPES).toEqual(['피자', '치킨', '기타']);
+    expect(normalizeBrandType(' 치킨 ')).toBe('치킨');
+    expect(normalizeBrandType('햄버거')).toBe('');
+    expect(read('lib/note/market-research.js')).toContain(
+      'brandType: normalizeBrandType(data.brandType)'
+    );
+  });
+
+  test('새 작성 폼의 업종은 비어 있고(직접 고름), 칩 건수·필터·검색이 맞다', async () => {
+    const { matchesBrandType, countByBrandType } =
+      await import('../../app/note/market/marketUtils.js');
+    expect(EMPTY_FORM.brandType).toBe('');
+    expect(countByBrandType(rowsByType)).toEqual({ '': 4, 피자: 1, 치킨: 2, 기타: 0 });
+    expect(rowsByType.filter(r => matchesBrandType(r, '치킨')).map(r => r.id)).toEqual([2, 3]);
+    expect(rowsByType.filter(r => matchesBrandType(r, '')).length).toBe(4);
+    expect(includesQuery(rowsByType[1], '치킨')).toBe(true);
+    expect(includesQuery(rowsByType[0], '치킨')).toBe(false);
+  });
+
+  test('연구일지 보고서 머리 줄·PDF HTML·본문 요약에 브랜드 업종이 나온다', () => {
+    const chicken = marketResearchToUnifiedRecord({
+      id: 31,
+      title: '치킨 신메뉴',
+      date: '2026-10-19',
+      type: '시장분석',
+      brand: 'BBQ',
+      region: '국내',
+      country: '한국',
+      brandType: '치킨',
+    });
+    expect(noteMetaPairs(chicken)).toEqual([
+      ['작성일', '2026-10-19'],
+      ['시장 구분', '국내'],
+      ['국가', '한국'],
+      ['브랜드 업종', '치킨'],
+      ['유형', '시장분석'],
+      ['브랜드 / 출처', 'BBQ'],
+    ]);
+    expect(chicken.testContent).toContain('시장조사 기록 작성 — 치킨 신메뉴 (국내·한국·치킨)');
+    const none = marketResearchToUnifiedRecord({ id: 32, title: '업종 미선택', type: '시장분석' });
+    expect(noteMetaPairs(none).map(([label]) => label)).not.toContain('브랜드 업종');
+    const html = buildJournalPrintHtml('2026-10-19', [chicken, none]);
+    expect(html).toContain('<b>브랜드 업종:</b> 치킨');
+    expect(html.split('<b>브랜드 업종:</b>').length - 1).toBe(1);
+  });
+
+  test('작성 모달·목록 필터·카드가 업종을 다룬다', () => {
+    expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<BrandTypeField');
+    expect(read('app/note/market/_MarketListPanel.jsx')).toContain('<MarketFilters');
+    expect(read('app/note/market/_MarketFilters.jsx')).toContain('모든 업종');
+    expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.brandType');
   });
 });

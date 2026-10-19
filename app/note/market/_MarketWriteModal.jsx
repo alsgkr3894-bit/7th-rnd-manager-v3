@@ -3,7 +3,7 @@
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
-import { CountryField, Field, RegionField, TypeRow } from './_MarketFields';
+import { BrandTypeField, CountryField, Field, RegionField, TypeRow } from './_MarketFields';
 
 /** 시장조사 작성/수정 모달 — 유형 선택, 기본/본문 필드, 사진, 저장 바. */
 export function MarketWriteModal({
@@ -27,6 +27,7 @@ export function MarketWriteModal({
         <section className="market-write-card">
           <TypeRow form={form} update={update} canEdit={canEdit} />
           <RegionField form={form} update={update} canEdit={canEdit} />
+          <BrandTypeField form={form} update={update} canEdit={canEdit} />
           <CountryField form={form} update={update} canEdit={canEdit} options={countryOptions} />
           <div className="market-form-row market-form-row-date-title">
             <Field label="조사 날짜">

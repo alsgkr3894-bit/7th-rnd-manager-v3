@@ -42,34 +42,15 @@ export function groupByCompetitor(rows) {
     });
 }
 
-/** 국내/해외 필터 값 — 'all'은 전체, 'none'은 아직 구분하지 않은 이전 기록 */
-export const REGION_FILTER_ALL = 'all';
-export const REGION_FILTER_NONE = 'none';
-
-export function matchesRegion(row, regionFilter) {
-  if (!regionFilter || regionFilter === REGION_FILTER_ALL) return true;
-  const region = String(row?.region || '').trim();
-  if (regionFilter === REGION_FILTER_NONE) return !MARKET_RESEARCH_REGIONS.includes(region);
-  return region === regionFilter;
-}
-
-/** 지역 필터 칩별 건수 — { all, 국내, 해외, none } */
-export function countByRegion(rows) {
-  const counts = { [REGION_FILTER_ALL]: 0, [REGION_FILTER_NONE]: 0 };
-  for (const region of MARKET_RESEARCH_REGIONS) counts[region] = 0;
-  for (const row of Array.isArray(rows) ? rows : []) {
-    counts[REGION_FILTER_ALL] += 1;
-    const region = String(row?.region || '').trim();
-    if (MARKET_RESEARCH_REGIONS.includes(region)) counts[region] += 1;
-    else counts[REGION_FILTER_NONE] += 1;
-  }
-  return counts;
-}
-
-export function matchesCountry(row, country) {
-  if (!country) return true;
-  return String(row?.country || '').trim() === country;
-}
+export {
+  countByBrandType,
+  countByRegion,
+  matchesBrandType,
+  matchesCountry,
+  matchesRegion,
+  REGION_FILTER_ALL,
+  REGION_FILTER_NONE,
+} from './marketFilterUtils';
 
 export const EMPTY_FORM = {
   id: null,
@@ -77,6 +58,7 @@ export const EMPTY_FORM = {
   // 새 기록의 기본은 국내 — 이전 기록(값 없음)은 수정할 때 그대로 비어 있다가 고르면 정해진다
   region: MARKET_RESEARCH_REGIONS[0],
   country: '',
+  brandType: '',
   date: '',
   brand: '',
   title: '',
@@ -107,6 +89,7 @@ export function includesQuery(row, query) {
     row.type,
     row.region,
     row.country,
+    row.brandType,
     row.date,
     row.brand,
     row.title,

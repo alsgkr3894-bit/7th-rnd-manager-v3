@@ -1,20 +1,14 @@
 'use client';
 
-import { MARKET_RESEARCH_REGIONS } from '@/lib/note/market-research';
+import { MarketFilters } from './_MarketFilters';
 import { MarketRecordCard } from './_MarketRecordCard';
-import { REGION_FILTER_ALL, REGION_FILTER_NONE } from './marketUtils';
 
 /** 시장조사 목록 카드 — 건수/검색 툴바와 경쟁사별로 묶인 기록 카드 스택. */
 export function MarketListPanel({
   rows,
   query,
   onQueryChange,
-  region = REGION_FILTER_ALL,
-  onRegionChange,
-  regionCounts = {},
-  country = '',
-  onCountryChange,
-  usedCountries = [],
+  filters,
   loading,
   filtered,
   groupedRows,
@@ -34,40 +28,7 @@ export function MarketListPanel({
             <div className="card-sub">총 {rows.length}건</div>
           </div>
         </div>
-        <div className="market-region-row" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          {[
-            [REGION_FILTER_ALL, '전체'],
-            ...MARKET_RESEARCH_REGIONS.map(value => [value, value]),
-            ...((regionCounts[REGION_FILTER_NONE] || 0) > 0
-              ? [[REGION_FILTER_NONE, '미분류']]
-              : []),
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={'chip' + (region === value ? ' active' : '')}
-              onClick={() => onRegionChange?.(value)}
-            >
-              {label} {regionCounts[value] ?? 0}
-            </button>
-          ))}
-        </div>
-        {usedCountries.length > 0 && (
-          <select
-            className="form-input"
-            value={country}
-            onChange={event => onCountryChange?.(event.target.value)}
-            aria-label="국가별 보기"
-            style={{ marginBottom: 10 }}
-          >
-            <option value="">모든 국가</option>
-            {usedCountries.map(item => (
-              <option key={item.country} value={item.country}>
-                {item.country} ({item.count})
-              </option>
-            ))}
-          </select>
-        )}
+        <MarketFilters filters={filters} />
         <input
           className="form-input"
           value={query}

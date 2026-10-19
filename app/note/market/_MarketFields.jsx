@@ -1,6 +1,10 @@
 'use client';
 
-import { MARKET_RESEARCH_REGIONS, MARKET_RESEARCH_TYPES } from '@/lib/note/market-research';
+import {
+  MARKET_BRAND_TYPES,
+  MARKET_RESEARCH_REGIONS,
+  MARKET_RESEARCH_TYPES,
+} from '@/lib/note/market-research';
 
 /** 시장조사 작성 폼·상세 모달이 함께 쓰는 라벨 필드 primitive. */
 export function Field({ label, children }) {
@@ -28,6 +32,27 @@ export function TypeRow({ form, update, canEdit }) {
         </button>
       ))}
     </div>
+  );
+}
+
+/** 브랜드 업종(피자·치킨·기타) 선택 — 이미 고른 버튼을 다시 누르면 선택이 풀린다. */
+export function BrandTypeField({ form, update, canEdit }) {
+  return (
+    <Field label="브랜드 업종">
+      <div className="market-region-row" style={{ display: 'flex', gap: 6 }}>
+        {MARKET_BRAND_TYPES.map(value => (
+          <button
+            key={value}
+            type="button"
+            className={'btn sm' + (form.brandType === value ? ' primary' : '')}
+            onClick={() => update('brandType', form.brandType === value ? '' : value)}
+            disabled={!canEdit}
+          >
+            {value}
+          </button>
+        ))}
+      </div>
+    </Field>
   );
 }
 
