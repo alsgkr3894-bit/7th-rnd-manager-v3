@@ -1,4 +1,5 @@
 import { withDownloadDateSuffix } from '@/lib/download';
+import { PRINT_NO_SPLIT_CSS } from '@/lib/print/no-split-css';
 import { pad } from '@/lib/format';
 import { isJournalNote, noteDisplayTitle } from '@/lib/note/display';
 import { journalReportText } from '@/lib/note/journal-report';
@@ -174,7 +175,7 @@ th,td{border:1px solid #ddd;padding:4px 6px;vertical-align:top;}
 th{background:#f5f5f5;font-weight:800;text-align:center;}
 .type{font-weight:700;text-align:center;white-space:nowrap;}
 .type.sched{color:#0369A1;}.type.note{color:#7C3AED;}.type.sample{color:#047857;}.type.log{color:#B45309;}
-</style></head><body><h1>${safeTitle}</h1>${body || '<p style="color:#999">이번 달 항목이 없습니다</p>'}${buildAutoPrintScript()}</body></html>`;
+${PRINT_NO_SPLIT_CSS}</style></head><body><h1>${safeTitle}</h1>${body || '<p style="color:#999">이번 달 항목이 없습니다</p>'}${buildAutoPrintScript()}</body></html>`;
 }
 
 export function printCalendarMonth(options) {

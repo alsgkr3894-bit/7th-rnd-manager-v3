@@ -134,7 +134,8 @@ describe('캘린더·PDF 파생 화면', () => {
     );
   });
 
-  test('긴 보고서 칸은 쪽 사이에서 나뉠 수 있다(앞 장 큰 빈칸 방지), 짧은 칸은 그대로', () => {
+  // 2026-10-19 주임님 지시로 바뀜: 항목이 쪽 사이에서 잘리지 않게 한다 — 긴 칸도 더는 일부러 나누지 않는다
+  test('보고서 카드와 본문 칸은 쪽 사이에서 자르지 않는다(긴 칸 표시 클래스는 유지)', () => {
     const long = buildJournalPrintHtml('2026-10-01', [
       { noteType: '연구일지', title: '일지', testContent: '가'.repeat(400) },
     ]);
@@ -143,7 +144,10 @@ describe('캘린더·PDF 파생 화면', () => {
       { noteType: '연구일지', title: '일지', testContent: '짧은 보고' },
     ]);
     expect(short).toContain('<section class="report-section">');
-    expect(short).toContain('.report-section.long { break-inside: auto;');
+    expect(short).not.toContain('.report-section.long { break-inside: auto;');
+    // 기록 카드 하나는 통째로 — 안 들어가면 다음 쪽으로
+    expect(short).toMatch(/.report-card {[^}]*break-inside: avoid;/);
+    expect(short).toMatch(/.report-section {[^}]*break-inside: avoid;/);
   });
 
   test('전체 기간 검색은 앞으로의 일정(오늘+1년)까지 찾는다', () => {

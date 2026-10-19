@@ -10,7 +10,9 @@ import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, expect, jest, test } from '@jest/globals';
 import XLSX from 'xlsx';
 
-const EXPECTED_HASH = '2e3cea465d57e923d2b3f1f05b99cd74e112092d269872339f2c102b65a038d7';
+// 2026-10-19: 인쇄 CSS에 공통 '항목 안 자르기' 규칙(lib/print/no-split-css.js)이 추가돼 해시를 새로 고정했다.
+// 이 변경 외에 엑셀 행·워크북·파일명 값은 그대로다.
+const EXPECTED_HASH = 'd6a66e1588ca8fb01853fa5d4290537cb925ffcdac640a38b6449eba022006d3';
 
 const writes = [];
 const xlsxMock = {
