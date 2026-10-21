@@ -18,6 +18,9 @@ import { useCalendarData } from './useCalendarData';
 import { useCalendarMonth } from './useCalendarMonth';
 import { useCalendarNavigation } from './useCalendarNavigation';
 import { useTodayChecklist } from './useTodayChecklist';
+import { getProfile } from '@/lib/profile';
+import { calculateLeaveBalance } from '@/lib/note/annual-leave';
+import { CalendarLeaveBalance } from './CalendarLeaveBalance';
 
 /* ── 메인 페이지 ─────────────────────────────────────────── */
 const INITIAL_TODAY_KEY = '2026-01-01';
@@ -45,10 +48,32 @@ export default function Page() {
   const [confirmDel, setConfirmDel] = useState(false);
 
   const [today, setToday] = useState(INITIAL_TODAY_KEY);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     setToday(todayKey());
+    setProfile(getProfile());
+    const refresh = () => {
+      setToday(todayKey());
+      setProfile(getProfile());
+    };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('storage', refresh);
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('storage', refresh);
+      window.clearInterval(timer);
+    };
   }, []);
+  const leaveBalance = profile
+    ? calculateLeaveBalance({
+        hireDate: profile.hireDate,
+        annualLeaveDays: profile.annualLeaveDays,
+        schedules,
+        today,
+      })
+    : null;
   const {
     todayChecklist,
     checkInput,
@@ -195,6 +220,8 @@ export default function Page() {
         onShiftMonth={shiftMonth}
         onResetToToday={resetToToday}
       />
+
+      <CalendarLeaveBalance balance={leaveBalance} />
 
       <TodayChecklist
         dateKey={today}

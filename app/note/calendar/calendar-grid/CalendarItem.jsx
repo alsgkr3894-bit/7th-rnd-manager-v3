@@ -24,6 +24,7 @@ export function CalendarItem({
 
 function ScheduleCalendarItem({ item, canEdit = false, onEditSchedule }) {
   const color = SCHEDULE_COLORS[item.type] || SCHEDULE_COLORS['기타'];
+  const range = item.endDate && item.endDate > item.date ? ` (${item.date} ~ ${item.endDate})` : '';
 
   return (
     <button
@@ -33,7 +34,7 @@ function ScheduleCalendarItem({ item, canEdit = false, onEditSchedule }) {
         if (!canEdit) return;
         onEditSchedule(item);
       }}
-      title={`[${item.type}] ${item.title}${item.time ? ' ' + item.time : ''}${item._isRecurring ? ' (반복)' : ''}`}
+      title={`[${item.type}] ${item.title}${range}${item.time ? ' ' + item.time : ''}${item._isRecurring ? ' (반복)' : ''}`}
       style={{
         fontSize: 10,
         fontWeight: 600,

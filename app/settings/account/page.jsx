@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { getProfile, setProfile } from '@/lib/profile';
+import { isValidDateKey } from '@/lib/note/annual-leave';
 import { PinSection } from '@/components/settings/PinSection';
 import { PasswordChangeCard } from '@/components/settings/PasswordChangeCard';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
@@ -27,7 +28,14 @@ import {
   AccountPermissionsMatrix,
 } from './_AccountSettingsUI';
 
-const PROFILE_FORM_DEFAULT = { name: '', email: '', team: '', role: '관리자' };
+const PROFILE_FORM_DEFAULT = {
+  name: '',
+  email: '',
+  team: '',
+  role: '관리자',
+  hireDate: '2024-06-10',
+  annualLeaveDays: 15,
+};
 
 export default function Page() {
   const [profile, setProfileState] = useState(null);
@@ -115,11 +123,27 @@ export default function Page() {
       showToast('이름은 비울 수 없습니다.', 'error');
       return;
     }
+    if (!isValidDateKey(form.hireDate)) {
+      showToast('올바른 입사일을 입력해주세요.', 'error');
+      return;
+    }
+    const annualLeaveDays = Number(form.annualLeaveDays);
+    if (
+      form.annualLeaveDays === '' ||
+      !Number.isFinite(annualLeaveDays) ||
+      annualLeaveDays < 0 ||
+      !Number.isInteger(annualLeaveDays * 2)
+    ) {
+      showToast('연간 지급 연차는 0 이상의 0.5일 단위로 입력해주세요.', 'error');
+      return;
+    }
     const next = setProfile({
       name: form.name.trim(),
       email: form.email?.trim() || '',
       team: form.team?.trim() || '',
       role: form.role || '관리자',
+      hireDate: form.hireDate,
+      annualLeaveDays,
     });
     setProfileState(next);
     setEditing(false);

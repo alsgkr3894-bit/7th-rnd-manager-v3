@@ -12,6 +12,18 @@ function sched(date, repeatType = 'none', repeatUntil = null) {
 
 // ── none ───────────────────────────────────────────────────────────────
 describe('none (단일 발생)', () => {
+  test('여러 날 일정은 시작일과 종료일을 포함해 월 경계에서도 표시한다', () => {
+    const schedule = { date: '2026-10-30', endDate: '2026-11-02', repeatType: 'none' };
+    expect(expandOccurrences(schedule, '2026-10-01', '2026-10-31')).toEqual([
+      '2026-10-30',
+      '2026-10-31',
+    ]);
+    expect(expandOccurrences(schedule, '2026-11-01', '2026-11-30')).toEqual([
+      '2026-11-01',
+      '2026-11-02',
+    ]);
+  });
+
   test('범위 내: 해당 날짜만 반환', () => {
     expect(expandOccurrences(sched('2026-06-15'), '2026-06-01', '2026-06-30')).toEqual([
       '2026-06-15',

@@ -2,7 +2,7 @@
  * _recurrence.js — 반복 일정 발생일 계산 (순수 함수)
  *
  * expandOccurrences(schedule, rangeStart, rangeEnd)
- *   schedule  : { date, repeatType, repeatUntil }
+ *   schedule  : { date, endDate, repeatType, repeatUntil }
  *   rangeStart: 'YYYY-MM-DD' — 검색 범위 시작 (포함)
  *   rangeEnd  : 'YYYY-MM-DD' — 검색 범위 끝 (포함)
  *   returns   : 'YYYY-MM-DD'[] — 발생 날짜 목록
@@ -32,7 +32,7 @@ function fmt(dt) {
  * @returns {string[]}
  */
 export function expandOccurrences(schedule, rangeStart, rangeEnd) {
-  const { date: baseStr, repeatType = 'none', repeatUntil = null } = schedule;
+  const { date: baseStr, endDate, repeatType = 'none', repeatUntil = null } = schedule;
   if (!baseStr) return [];
 
   // 유효 범위의 끝: rangeEnd vs repeatUntil 중 더 이른 날짜
@@ -41,9 +41,16 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
   const results = [];
 
   if (repeatType === 'none') {
-    // 단일 발생
-    if (baseStr >= rangeStart && baseStr <= effectiveEnd) {
-      results.push(baseStr);
+    // 하루 또는 연속 날짜 일정. 보이는 범위로 먼저 잘라 긴 일정도 빠르게 처리한다.
+    const lastDate = endDate && endDate >= baseStr ? endDate : baseStr;
+    const firstVisible = baseStr > rangeStart ? baseStr : rangeStart;
+    const lastVisible = lastDate < effectiveEnd ? lastDate : effectiveEnd;
+    if (firstVisible <= lastVisible) {
+      const cursor = new Date(`${firstVisible}T00:00:00Z`);
+      while (cursor.toISOString().slice(0, 10) <= lastVisible) {
+        results.push(cursor.toISOString().slice(0, 10));
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
     }
     return results;
   }

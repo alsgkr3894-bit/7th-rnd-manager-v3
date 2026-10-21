@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { SCHEDULE_TYPES, SCHEDULE_COLORS } from '@/lib/note/schedules';
+import { isLeaveType, isValidDateKey } from '@/lib/note/annual-leave';
 import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 
@@ -33,12 +34,19 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
 
   const [title, setTitle] = useState(asDisplayText(safeInitial.title));
   const [date, setDate] = useState(asDisplayText(safeInitial.date) || asDisplayText(defaultDate));
+  const [endDate, setEndDate] = useState(
+    asDisplayText(safeInitial.endDate) ||
+      asDisplayText(safeInitial.date) ||
+      asDisplayText(defaultDate)
+  );
   const [time, setTime] = useState(asDisplayText(safeInitial.time));
   const [type, setType] = useState(normalizeScheduleType(safeInitial.type));
   const [desc, setDesc] = useState(asDisplayText(safeInitial.description));
   const [repeatType, setRepeatType] = useState(normalizeRepeatType(safeInitial.repeatType));
   const [repeatUntil, setRepeatUntil] = useState(asDisplayText(safeInitial.repeatUntil));
   const [saving, setSaving] = useState(false);
+  const leaveType = isLeaveType(type);
+  const multiDay = endDate > date;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -46,8 +54,8 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
       showToast('제목을 입력해주세요', 'error');
       return;
     }
-    if (!date) {
-      showToast('날짜를 입력해주세요', 'error');
+    if (!isValidDateKey(date) || !isValidDateKey(endDate) || endDate < date) {
+      showToast('시작일과 종료일을 올바르게 입력해주세요', 'error');
       return;
     }
     if (!save) {
@@ -59,11 +67,13 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
       await save({
         title,
         date,
+        endDate,
         time,
         type,
         description: desc,
-        repeatType,
-        repeatUntil: repeatType !== 'none' && repeatUntil ? repeatUntil : null,
+        repeatType: leaveType || multiDay ? 'none' : repeatType,
+        repeatUntil:
+          !leaveType && !multiDay && repeatType !== 'none' && repeatUntil ? repeatUntil : null,
       });
     } finally {
       setSaving(false);
@@ -151,13 +161,17 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
                 marginBottom: 5,
               }}
             >
-              날짜 *
+              시작일 *
             </label>
             <input
               className="form-input"
               type="date"
               value={date}
-              onChange={e => setDate(e.target.value)}
+              onChange={e => {
+                const nextDate = e.target.value;
+                setDate(nextDate);
+                if (endDate < nextDate) setEndDate(nextDate);
+              }}
             />
           </div>
           <div>
@@ -170,15 +184,36 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
                 marginBottom: 5,
               }}
             >
-              시간 (선택)
+              종료일 *
             </label>
             <input
               className="form-input"
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
+              type="date"
+              value={endDate}
+              min={date || undefined}
+              onChange={e => setEndDate(e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <label
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--text-3)',
+              display: 'block',
+              marginBottom: 5,
+            }}
+          >
+            시간 (선택)
+          </label>
+          <input
+            className="form-input"
+            type="time"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+          />
         </div>
 
         <div>
@@ -203,42 +238,24 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
           />
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: repeatType !== 'none' ? '1fr 1fr' : '1fr',
-            gap: 10,
-          }}
-        >
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--text-3)',
-                display: 'block',
-                marginBottom: 5,
-              }}
-            >
-              반복
-            </label>
-            <select
-              className="form-input"
-              value={repeatType}
-              onChange={e => {
-                const nextRepeatType = normalizeRepeatType(e.target.value);
-                setRepeatType(nextRepeatType);
-                if (nextRepeatType === 'none') setRepeatUntil('');
-              }}
-            >
-              {REPEAT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+        {leaveType && (
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            연차·반차는 선택한 기간의 날짜별로 표시되며 반복할 수 없습니다.
           </div>
-          {repeatType !== 'none' && (
+        )}
+        {!leaveType && multiDay && (
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            여러 날 일정은 반복할 수 없습니다.
+          </div>
+        )}
+        {!leaveType && !multiDay && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: repeatType !== 'none' ? '1fr 1fr' : '1fr',
+              gap: 10,
+            }}
+          >
             <div>
               <label
                 style={{
@@ -249,19 +266,49 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
                   marginBottom: 5,
                 }}
               >
-                반복 종료 (선택)
+                반복
               </label>
-              <input
+              <select
                 className="form-input"
-                type="date"
-                value={repeatUntil}
-                onChange={e => setRepeatUntil(e.target.value)}
-                min={date || undefined}
-                placeholder="무기한"
-              />
+                value={repeatType}
+                onChange={e => {
+                  const nextRepeatType = normalizeRepeatType(e.target.value);
+                  setRepeatType(nextRepeatType);
+                  if (nextRepeatType === 'none') setRepeatUntil('');
+                }}
+              >
+                {REPEAT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
-        </div>
+            {repeatType !== 'none' && (
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--text-3)',
+                    display: 'block',
+                    marginBottom: 5,
+                  }}
+                >
+                  반복 종료 (선택)
+                </label>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={repeatUntil}
+                  onChange={e => setRepeatUntil(e.target.value)}
+                  min={date || undefined}
+                  placeholder="무기한"
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 4 }}>
           <div>

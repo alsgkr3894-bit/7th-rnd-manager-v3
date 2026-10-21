@@ -48,6 +48,16 @@ describe('profile storage guards', () => {
     expect(JSON.parse(store[KEYS.PROFILE])).toEqual(profile);
   });
 
+  test('입사일과 연간 지급 연차를 프로필 백업 값에서 다시 읽는다', () => {
+    const store = installStorage();
+    setProfile({ hireDate: '2025-03-01', annualLeaveDays: 20.5 });
+
+    expect(getProfile()).toMatchObject({ hireDate: '2025-03-01', annualLeaveDays: 20.5 });
+    const restored = installStorage({ [KEYS.PROFILE]: store[KEYS.PROFILE] });
+    expect(getProfile()).toMatchObject({ hireDate: '2025-03-01', annualLeaveDays: 20.5 });
+    expect(restored[KEYS.PROFILE]).toBe(store[KEYS.PROFILE]);
+  });
+
   test('getInitial은 공백 이름을 ?로 표시한다', () => {
     expect(getInitial('  ')).toBe('?');
     expect(getInitial(' 테스터 ')).toBe('테');

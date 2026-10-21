@@ -69,6 +69,9 @@ export function AccountProfileCard({
                 프로필 수정
               </button>
             </div>
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-2)' }}>
+              입사일 {profile.hireDate} · 매년 지급 연차 {profile.annualLeaveDays}일
+            </div>
           </>
         ) : (
           <div
@@ -116,6 +119,24 @@ export function AccountProfileCard({
                   </option>
                 ))}
               </select>
+            </FormField>
+            <FormField label="입사일" required>
+              <input
+                className="input"
+                type="date"
+                value={form.hireDate || ''}
+                onChange={e => onFormChange('hireDate', e.target.value)}
+              />
+            </FormField>
+            <FormField label="매년 지급 연차 (일)" required>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="0.5"
+                value={form.annualLeaveDays ?? ''}
+                onChange={e => onFormChange('annualLeaveDays', e.target.value)}
+              />
             </FormField>
             <div
               style={{

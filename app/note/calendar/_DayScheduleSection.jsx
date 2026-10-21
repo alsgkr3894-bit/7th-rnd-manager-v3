@@ -69,6 +69,10 @@ function ScheduleItem({ schedule, canEdit = false, onEdit }) {
   const time = asDisplayText(schedule.time);
   const title = asDisplayText(schedule.title, '(제목 없음)');
   const description = asDisplayText(schedule.description);
+  const range =
+    schedule.endDate && schedule.endDate > schedule.date
+      ? `${schedule.date} ~ ${schedule.endDate}`
+      : '';
   const c = SCHEDULE_COLORS[type] || SCHEDULE_COLORS['기타'];
 
   return (
@@ -109,6 +113,7 @@ function ScheduleItem({ schedule, canEdit = false, onEdit }) {
           )}
         </div>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{title}</div>
+        {range && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3 }}>{range}</div>}
         {description && (
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.4 }}>
             {description}
