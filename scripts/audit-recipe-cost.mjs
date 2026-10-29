@@ -44,7 +44,10 @@ const { buildMenuRecipeSummaryMap } = await imp('lib/menu-master/recipe-summary.
 const { mergeCanonicalRecipeMaps } = await imp('lib/menu-recipes/legacy.js');
 const { dedupePriceRowsByProductCode } = await imp('lib/price/duplicates.js');
 const { buildDetailRows } = await imp('lib/cost/margin/build-rows.js');
-const { buildRecipePrintRows } = await imp('lib/report/recipe-print-rows.js');
+const { buildRecipePrintRows, buildRecipePrintMenus } = await imp(
+  'lib/report/recipe-print-rows.js'
+);
+const { buildCostReportData } = await imp('lib/report/build-cost-report.js');
 
 const STORES = [
   'menu_master',
@@ -54,6 +57,7 @@ const STORES = [
   'cost_edge_dough',
   'price_files',
   'price_rows',
+  'cost_selling_prices',
 ];
 const KIND_TO_MARGIN_MAP = {
   pizza: 'pizzaMap',
@@ -157,6 +161,134 @@ try {
     }
   }
 
+  // ── 원가계산 보고서 출력(웹·PDF·엑셀) 점검 ──────────────────────────────
+  // 보고서 화면(app/report/cost/page.jsx)과 같은 입력으로 같은 빌더를 돌려, 엑셀 3개 시트와
+  // PDF 레시피 출력이 쓰는 값이 메뉴마스터·서로 간에 맞는지 비교한다.
+  const CAT_KEYS = ['피자', '1인피자', '세트박스', '사이드', '엣지', '추가토핑'];
+  const CAT_META = {
+    피자: { id: 'pizza', color: '#3182F6', label: '피자' },
+    '1인피자': { id: 'personal', color: '#10B981', label: '1인피자' },
+    세트박스: { id: 'set', color: '#EC4899', label: '세트박스' },
+    사이드: { id: 'side', color: '#F59E0B', label: '사이드' },
+    엣지: { id: 'edge', color: '#8B5CF6', label: '엣지 & 도우' },
+    추가토핑: { id: 'topping', color: '#14B8A6', label: '추가토핑' },
+  };
+  const discontinuedCodes = new Set(
+    data.menu_master.filter(m => m.status === 'discontinued').map(m => m.menuCode)
+  );
+  const reportCtx = {
+    detailMaps: recipeMaps,
+    edges: data.cost_edge_dough,
+    recipeGroups: data.cost_recipe_groups,
+    upm: unitPriceMap,
+    discontinuedCodes,
+  };
+  const reportPrices = data.cost_selling_prices;
+  const costData = buildCostReportData(reportPrices, reportCtx, CAT_KEYS, CAT_META);
+  const recipeRows = buildRecipePrintRows({
+    detailMaps: recipeMaps,
+    unitPriceMap,
+    recipeGroups: data.cost_recipe_groups,
+    excludeMenuCodes: discontinuedCodes,
+  });
+
+  // 줄마다 반올림해 보여 주는 소계의 합은 총액과 1~2원 어긋날 수 있다(표시 반올림). 그 이상만 불일치로 본다.
+  const ROUNDING_TOLERANCE = 2;
+
+  // (1) 엑셀 '메뉴 상세'·웹·PDF 원가표의 원가 = 메뉴마스터 원가
+  const tableVsMaster = [];
+  let tableChecked = 0;
+  for (const cat of Object.values(costData)) {
+    if (!Array.isArray(cat?.menus)) continue;
+    for (const m of cat.menus) {
+      const summary = summaries.get(m.code);
+      if (!summary || discontinuedCodes.has(m.code) || m.halfHalf) continue;
+      if (!summary.hasRecipe && summary.status !== 'edge') continue;
+      tableChecked++;
+      if (m.cost !== summary.totalCost) {
+        tableVsMaster.push({
+          code: m.code,
+          name: m.name,
+          원가표: m.cost,
+          메뉴마스터: summary.totalCost,
+        });
+      }
+    }
+  }
+
+  // (2) 엑셀 '레시피 출력' 시트: 레시피합계(첫 줄) vs 줄 소계 합 — 화면에 보이는 숫자끼리 맞는가
+  const sheet3SumDiff = [];
+  for (const row of recipeRows) {
+    const lineSum = row.components.reduce((sum, c) => sum + (c.subtotal ?? 0), 0);
+    if (Math.abs(lineSum - row.totalCost) > ROUNDING_TOLERANCE) {
+      sheet3SumDiff.push({
+        code: row.menuCode,
+        name: row.menuName,
+        합계: row.totalCost,
+        줄소계합: lineSum,
+      });
+    }
+  }
+
+  // (3) 엑셀 레시피합계 = 원가표 원가 (같은 메뉴코드)
+  const rowCostByCode = new Map(recipeRows.map(r => [r.menuCode, r.totalCost]));
+  const sheet3VsTable = [];
+  for (const cat of Object.values(costData)) {
+    if (!Array.isArray(cat?.menus)) continue;
+    for (const m of cat.menus) {
+      if (!rowCostByCode.has(m.code) || m.halfHalf) continue;
+      if (rowCostByCode.get(m.code) !== m.cost) {
+        sheet3VsTable.push({
+          code: m.code,
+          name: m.name,
+          원가표: m.cost,
+          레시피시트: rowCostByCode.get(m.code),
+        });
+      }
+    }
+  }
+
+  // (4) PDF 레시피 출력(메뉴 카드): 규격별 줄 소계 합 vs 원가표 원가
+  const pdfVsTable = [];
+  const costByCode = new Map();
+  for (const cat of Object.values(costData)) {
+    if (Array.isArray(cat?.menus)) for (const m of cat.menus) costByCode.set(m.code, m.cost);
+  }
+  for (const menu of buildRecipePrintMenus(recipeRows)) {
+    // 하프앤하프는 레시피 없이 오리지널 피자 평균으로 계산되는 메뉴라 비교 대상이 아니다
+    if (!menu.components.length) continue;
+    for (const size of menu.sizes) {
+      const code = recipeRows.find(
+        r =>
+          r.menuName === menu.menuName && r.categoryLabel === menu.categoryLabel && r.size === size
+      )?.menuCode;
+      const sum = menu.components.reduce((s, c) => s + (c.sizeSubtotals[size] || 0), 0);
+      if (
+        code != null &&
+        costByCode.has(code) &&
+        Math.abs(Math.round(sum) - costByCode.get(code)) > ROUNDING_TOLERANCE
+      ) {
+        pdfVsTable.push({
+          menu: menu.menuName,
+          size,
+          PDF줄합: Math.round(sum),
+          원가표: costByCode.get(code),
+        });
+      }
+    }
+  }
+
+  // (5) 연결된 구성품의 단가 = 식자재 현재 단가 (엑셀 '단가' 열)
+  const stalePrice = [];
+  for (const row of recipeRows) {
+    for (const c of row.components) {
+      const info = c.productCode ? unitPriceMap.get(c.productCode) : null;
+      if (info && info.unitPrice != null && Math.abs((c.unitPrice ?? 0) - info.unitPrice) > 1e-9) {
+        stalePrice.push(`${row.menuCode} ${c.ingredientName}`);
+      }
+    }
+  }
+
   // 데이터 점검
   const ingredientKeys = new Set(unitPriceMap.keys());
   const orphanCodes = [];
@@ -198,12 +330,22 @@ try {
         판매중메뉴의단종식자재: discontinuedUsed,
         코드없는구성품: codeless.length,
         판매가없는데레시피있는메뉴: menusWithoutPrice,
+        보고서출력: {
+          원가표_메뉴마스터_비교건수: tableChecked,
+          원가표_vs_메뉴마스터_불일치: tableVsMaster,
+          레시피시트_합계_vs_줄소계합_불일치: sheet3SumDiff,
+          레시피시트_vs_원가표_불일치: sheet3VsTable,
+          PDF레시피_vs_원가표_불일치: pdfVsTable,
+          단가가_식자재와_다른_줄: stalePrice,
+          원가표_미연결: costData._diagnostics,
+        },
       },
       null,
       2
     )
   );
-  process.exitCode = mismatches.length ? 1 : 0;
+  process.exitCode =
+    mismatches.length || tableVsMaster.length || sheet3VsTable.length || pdfVsTable.length ? 1 : 0;
 } finally {
   await disconnectPrismaClient();
 }
