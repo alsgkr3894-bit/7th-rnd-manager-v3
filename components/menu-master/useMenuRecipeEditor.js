@@ -6,6 +6,12 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { eligibleRecipeGroupsForMenu } from '@/lib/cost/recipe-groups/effective';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
+import {
+  linkLegacyRecipeComponent,
+  uniqueIngredientPriceKeysByName,
+} from '@/lib/cost/shared/ingredient-price-key';
+import { onPriceChange } from '@/lib/price/price-events';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
 import { getAllMenuMaster } from '@/lib/menu-master/store';
 import {
@@ -90,9 +96,15 @@ export function useMenuRecipeEditor({
         getAllMenuMaster(),
       ]);
       if (seq !== loadSeqRef.current) return;
+      const ingredientKeysByName = uniqueIngredientPriceKeysByName(ingredients);
       setComponents(
         existing?.components?.length
-          ? existing.components.map(c => hydrateRecipeComponent(c, latestUnitPriceMap))
+          ? existing.components.map(c =>
+              hydrateRecipeComponent(
+                linkLegacyRecipeComponent(c, ingredientKeysByName),
+                latestUnitPriceMap
+              )
+            )
           : []
       );
       setSelectedRecipeGroupIds(normalizeSelectedRecipeGroupIds(existing?.selectedRecipeGroupIds));
@@ -105,6 +117,24 @@ export function useMenuRecipeEditor({
     // api functions are stable module-level imports, loadMenuCode/category cover the relevant deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadMenuCode, category]);
+
+  const refreshPrices = useCallback(async () => {
+    if (!loaded) return;
+    const [ingredients, latestUnitPriceMap] = await Promise.all([
+      getAllIngredients(),
+      loadLatestUnitPriceMap(),
+    ]);
+    setAllIngredients(ingredients);
+    setUnitPriceMap(latestUnitPriceMap);
+  }, [loaded]);
+
+  useEffect(() => {
+    if (!loaded) return undefined;
+    return onPriceChange(() => {
+      refreshPrices().catch(error => console.warn('[useMenuRecipeEditor] 단가 갱신 실패', error));
+    });
+  }, [loaded, refreshPrices]);
+  useVisibilityRefresh(refreshPrices);
 
   const updateRow = useCallback((idx, field, val) => {
     setComponents(prev => prev.map((c, i) => (i === idx ? { ...c, [field]: val } : c)));
@@ -151,19 +181,25 @@ export function useMenuRecipeEditor({
     [eligibleRecipeGroupIds, selectedRecipeGroupIds]
   );
 
+  const ingredientKeysByName = useMemo(
+    () => uniqueIngredientPriceKeysByName(allIngredients),
+    [allIngredients]
+  );
+
   const recipeSummary = useMemo(
     () =>
       summarizeMenuRecipe(
         { menuCode, category, size, price: sellingPrice },
         { components, selectedRecipeGroupIds: savableRecipeGroupIds },
         unitPriceMap,
-        { recipeGroups }
+        { recipeGroups, ingredientKeysByName }
       ),
     [
       category,
       components,
       menuCode,
       recipeGroups,
+      ingredientKeysByName,
       savableRecipeGroupIds,
       sellingPrice,
       size,

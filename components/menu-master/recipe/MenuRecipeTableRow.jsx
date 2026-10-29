@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons';
 import { formatUnitPrice } from '@/lib/format';
+import { componentEffectiveUnitPrice } from '@/lib/cost/shared/effective-cost';
 import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import {
   hasRecipeComponentIdentity,
@@ -38,9 +39,10 @@ export function MenuRecipeTableRow({
   // 필터 등으로 화면 순서가 원본과 달라졌을 때) — MenuRecipeComponentsTable 참고.
   dragHandleId = null,
 }) {
+  const currentUnitPrice = componentEffectiveUnitPrice(component, unitPriceMap);
   const subtotal =
-    component.unitPrice != null && Number(component.quantity) > 0
-      ? Math.round(component.unitPrice * Number(component.quantity))
+    currentUnitPrice != null && Number(component.quantity) > 0
+      ? Math.round(currentUnitPrice * Number(component.quantity))
       : null;
   // 식자재 관리에서 단종·제외 처리된 식자재가 이 줄에 들어 있으면 표시한다
   const flaggedCode = String(component.productCode ?? '')
@@ -192,9 +194,9 @@ export function MenuRecipeTableRow({
         </select>
       </td>
       <td style={{ padding: '7px 6px', textAlign: 'right', fontSize: 12 }}>
-        {component.unitPrice != null ? (
+        {currentUnitPrice != null ? (
           <span style={{ color: 'var(--text-2)' }}>
-            {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit))}
+            {formatUnitPrice(currentUnitPrice, normalizeCostBaseUnit(component.unit))}
           </span>
         ) : (
           <UnitPriceCell

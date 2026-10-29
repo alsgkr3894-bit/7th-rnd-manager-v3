@@ -23,6 +23,57 @@ describe('effective cost helpers', () => {
     expect(effectiveComponentsCost([{ quantity: 2.5, unitPrice: 10.2 }], new Map())).toBe(26);
   });
 
+  describe('코드 없는 옛 구성품 — 이름으로 최신 단가 연결 (해남고구마무스 사례)', () => {
+    const entry = (name, unitPrice, extra = {}) => ({ ingredientName: name, unitPrice, ...extra });
+    const legacy = { ingredientName: '해남 고구마무스', quantity: 100, unitPrice: 8.69 };
+
+    test('사용 중인 식자재 이름이 하나뿐이면 최신 단가를 따른다(공백·대소문자 무시)', () => {
+      const unitPriceMap = new Map([['152', entry('해남고구마무스', 10)]]);
+      expect(componentEffectiveUnitPrice(legacy, unitPriceMap)).toBe(10);
+      expect(effectiveComponentsCost([legacy], unitPriceMap)).toBe(1000);
+    });
+
+    test('단가 맵이 바뀌면(크기 변화) 색인도 새로 만든다', () => {
+      const unitPriceMap = new Map([['152', entry('해남고구마무스', 10)]]);
+      expect(componentEffectiveUnitPrice(legacy, unitPriceMap)).toBe(10);
+      unitPriceMap.set('999', entry('해남고구마무스', 20));
+      expect(componentEffectiveUnitPrice(legacy, unitPriceMap)).toBe(8.69);
+    });
+
+    test('같은 이름이 둘이면 연결하지 않고 저장 단가를 쓴다', () => {
+      const unitPriceMap = new Map([
+        ['152', entry('해남고구마무스', 10)],
+        ['153', entry('해남고구마무스', 20)],
+      ]);
+      expect(componentEffectiveUnitPrice(legacy, unitPriceMap)).toBe(8.69);
+    });
+
+    test('단종·제외 식자재와는 연결하지 않는다', () => {
+      expect(
+        componentEffectiveUnitPrice(
+          legacy,
+          new Map([['152', entry('해남고구마무스', 10, { discontinued: true })]])
+        )
+      ).toBe(8.69);
+      expect(
+        componentEffectiveUnitPrice(
+          legacy,
+          new Map([['152', entry('해남고구마무스', 10, { excluded: true })]])
+        )
+      ).toBe(8.69);
+    });
+
+    test('이름이 일치하는 식자재가 없거나 이미 코드가 있으면 기존 규칙 그대로', () => {
+      const unitPriceMap = new Map([['152', entry('해남고구마무스', 10)]]);
+      expect(
+        componentEffectiveUnitPrice({ ingredientName: '없는 재료', unitPrice: 3 }, unitPriceMap)
+      ).toBe(3);
+      expect(componentEffectiveUnitPrice({ ...legacy, productCode: 'MISSING' }, unitPriceMap)).toBe(
+        8.69
+      );
+    });
+  });
+
   test('negative quantity subtracts from effective component cost', () => {
     expect(effectiveComponentSubtotal({ quantity: -3, unitPrice: 7 }, new Map())).toBe(-21);
     expect(

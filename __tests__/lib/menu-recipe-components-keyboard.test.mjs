@@ -301,7 +301,7 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
       )
     ).toEqual({
       ingredientName: '수동재료',
-      productCode: '',
+      productCode: '7',
       unit: '개',
       unitPrice: 300,
     });

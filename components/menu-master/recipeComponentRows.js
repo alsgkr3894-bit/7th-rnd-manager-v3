@@ -2,6 +2,7 @@ import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { asDisplayText, asFiniteNumber } from '@/lib/ui/prop-guards';
 import { findIngredientByUniqueName } from '@/lib/cost/shared/ingredient-price-key';
+import { ingredientPriceKey } from '@/lib/cost/shared/ingredient-price-key';
 
 let rowKey = 0;
 
@@ -49,7 +50,9 @@ export function hasRecipeComponentIdentity(component) {
 export function isRecipeComponentMissingUnitPrice(component, unitPriceMap = new Map()) {
   if (!hasRecipeComponentIdentity(component)) return false;
   const info = unitPriceInfoForComponent(component, unitPriceMap);
-  const unitPrice = asFiniteNumber(info?.unitPrice, asFiniteNumber(component?.unitPrice, null));
+  const unitPrice = info
+    ? asFiniteNumber(info.unitPrice, null)
+    : asFiniteNumber(component?.unitPrice, null);
   return unitPrice == null;
 }
 
@@ -90,7 +93,7 @@ export function hydrateRecipeComponent(component, unitPriceMap) {
     ...component,
     _key: ++rowKey,
     unit: normalizeCostBaseUnit(info?.baseUnitType || component?.unit),
-    unitPrice: info?.unitPrice ?? component?.unitPrice ?? null,
+    unitPrice: info ? (info.unitPrice ?? null) : (component?.unitPrice ?? null),
   };
 }
 
@@ -104,7 +107,7 @@ export function buildRecipeComponentForSave(component, unitPriceMap) {
     productCode: productCode || null,
     quantity,
     unit: normalizeCostBaseUnit(info?.baseUnitType || component.unit),
-    unitPrice: latestUnitPrice ?? optionalNonNegativeNumber(component.unitPrice),
+    unitPrice: info ? latestUnitPrice : optionalNonNegativeNumber(component.unitPrice),
   };
 }
 
@@ -122,7 +125,7 @@ function withoutTypedFlag(component) {
 }
 
 export function unitPriceKeyForIngredient(ingredient) {
-  return ingredient?.productCode || (ingredient?.id != null ? String(ingredient.id) : null);
+  return ingredientPriceKey(ingredient);
 }
 
 export function applyIngredientSuggestionToComponent(component, ingredient, unitPriceMap) {
@@ -132,7 +135,7 @@ export function applyIngredientSuggestionToComponent(component, ingredient, unit
   return {
     ...rest,
     ingredientName: ingredient?.ingredientName || '',
-    productCode: ingredient?.productCode || '',
+    productCode: upmKey || '',
     unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || ingredient?.baseUnitType),
     unitPrice: priceInfo?.unitPrice ?? null,
   };

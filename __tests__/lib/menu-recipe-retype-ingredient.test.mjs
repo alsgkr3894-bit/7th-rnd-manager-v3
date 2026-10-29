@@ -65,7 +65,7 @@ describe('기존 구성품의 식자재명을 고쳐 쓸 때', () => {
     const typed = applyTypedIngredientName(linkedRow, '양파', ingredients);
     expect(linkTypedIngredientByName(typed, ingredients, priceMap)).toMatchObject({
       ingredientName: '양파',
-      productCode: '',
+      productCode: '101',
       unitPrice: 1,
     });
   });

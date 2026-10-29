@@ -46,6 +46,41 @@ describe('menu master recipe summary', () => {
     expect(summary.costRate).toBe(12.3);
   });
 
+  test('코드 없는 기존 구성품도 이름이 유일하면 최신 식자재 단가를 따른다', () => {
+    const menu = { menuCode: 'P-OR-001-L', category: '피자', price: 10000 };
+    const recipe = {
+      components: [{ ingredientName: '양파', productCode: '', quantity: 100, unitPrice: 1 }],
+    };
+    const ingredients = [{ id: 7, ingredientName: '양파', productCode: '' }];
+    const recipeMaps = { pizza: new Map([[menu.menuCode, recipe]]) };
+    const options = { ingredients };
+
+    const before = buildMenuRecipeSummaryMap(
+      [menu],
+      recipeMaps,
+      new Map([['7', { unitPrice: 4 }]]),
+      options
+    );
+    const after = buildMenuRecipeSummaryMap(
+      [menu],
+      recipeMaps,
+      new Map([['7', { unitPrice: 5 }]]),
+      options
+    );
+    expect(before.get(menu.menuCode).totalCost).toBe(400);
+    expect(after.get(menu.menuCode).totalCost).toBe(500);
+    expect(after.get(menu.menuCode).missingPriceCount).toBe(0);
+  });
+
+  test('연결된 식자재의 현재 단가가 없으면 예전 저장 단가를 사용하지 않는다', () => {
+    expect(
+      componentEffectiveUnitPrice(
+        { productCode: 'ING-1', unitPrice: 7 },
+        new Map([['ING-1', { unitPrice: null }]])
+      )
+    ).toBeNull();
+  });
+
   test('메뉴에서 체크한 공통묶음만 메뉴마스터 요약에 포함한다', () => {
     const unitPriceMap = new Map([
       ['CHZ', { unitPrice: 5, baseUnitType: 'g' }],

@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { onPriceChange } from '@/lib/price/price-events';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
@@ -130,6 +131,7 @@ export default function Page() {
   const nutritionLinkedCodes = data?.nutritionLinkedCodes ?? EMPTY_NUTRITION_LINKED_CODES;
   const menuAllergenMap = data?.menuAllergenMap ?? EMPTY_MENU_ALLERGEN_MAP;
   useVisibilityRefresh(reload);
+  useEffect(() => onPriceChange(reload), [reload]);
 
   const {
     catFilter,
