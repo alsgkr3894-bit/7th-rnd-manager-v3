@@ -15,28 +15,28 @@ function src(path) {
 // ── HTML 인쇄 빌더 escaping ───────────────────────────────────────────────────
 
 describe('인쇄 HTML 빌더 — esc() 적용 여부', () => {
-  test('원가 사용량 인쇄 빌더가 escaping 함수를 로컬에 정의한다', () => {
+  test('원가 사용량 인쇄 빌더가 escaping 함수를 공통 escapeHtml로 정의한다', () => {
     const s = src('lib/cost/usage-print.js');
-    expect(s).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
-    expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    expect(s).toContain("from '@/lib/print/escape-html'");
+    expect(s).toContain('= escapeHtml');
   });
 
-  test('원산지 인쇄 빌더가 escaping 함수를 로컬에 정의한다', () => {
+  test('원산지 인쇄 빌더가 escaping 함수를 공통 escapeHtml로 정의한다', () => {
     const s = src('lib/nutrition/origin/print.js');
-    expect(s).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
-    expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    expect(s).toContain("from '@/lib/print/escape-html'");
+    expect(s).toContain('= escapeHtml');
   });
 
-  test('영양성분표 인쇄 빌더가 escaping 함수를 로컬에 정의한다', () => {
+  test('영양성분표 인쇄 빌더가 escaping 함수를 공통 escapeHtml로 정의한다', () => {
     const s = src('lib/nutrition/label/print.js');
-    expect(s).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
-    expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    expect(s).toContain("from '@/lib/print/escape-html'");
+    expect(s).toContain('= escapeHtml');
   });
 
   test('원가마진표 PDF 빌더가 escaping 함수를 쓴다 (export-format.js에 정의, export-print.js가 import)', () => {
     const formatSrc = src('lib/cost/margin/export-format.js');
-    expect(formatSrc).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
-    expect(formatSrc).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    expect(formatSrc).toContain("from '@/lib/print/escape-html'");
+    expect(formatSrc).toContain('esc = escapeHtml');
     const printSrc = src('lib/cost/margin/export-print.js');
     expect(printSrc).toContain("from './export-format'");
     expect(printSrc).toMatch(/esc\(/);
