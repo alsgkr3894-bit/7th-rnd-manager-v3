@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getActiveBrandId } from '@/lib/active-brand';
-import { evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
+import { ensureSyncGuardEvaluated, getSyncGuardState } from '@/lib/db/sync-guard';
 import { isAuthoritativeClient, isSyncModeForcedReadonly } from '@/lib/db/sync-mode';
 import { formatNumber } from '@/lib/format';
 
@@ -21,7 +21,7 @@ export default function SyncGuardNotice() {
     // 아무것도 안 미니 가드가 무의미하다.
     if (isSyncModeForcedReadonly() || !isAuthoritativeClient()) return undefined;
 
-    evaluateSyncGuard(getActiveBrandId()).then(setState);
+    ensureSyncGuardEvaluated(getActiveBrandId()).then(setState);
     function onGuardEvent(event) {
       setState(event?.detail || getSyncGuardState());
     }

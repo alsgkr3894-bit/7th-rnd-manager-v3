@@ -11,6 +11,12 @@ const fetchAppJson = jest.fn();
 jest.unstable_mockModule('@/lib/session', () => ({ fetchAppJson }));
 jest.unstable_mockModule('@/lib/active-brand', () => ({ getActiveBrandId: () => 'main' }));
 jest.unstable_mockModule('@/lib/db/sync-mode', () => ({ isAuthoritativeClient: () => true }));
+jest.unstable_mockModule('../../lib/db/sync-guard.js', () => ({
+  isSyncGuardBlocked: () => false,
+  isSyncGuardPending: () => false,
+  ensureSyncGuardEvaluated: async () => ({ blocked: false }),
+  noteSyncGuardHeld: () => {},
+}));
 
 function httpError(status, message = `HTTP ${status}`) {
   const error = new Error(message);
