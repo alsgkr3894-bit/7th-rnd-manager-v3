@@ -3,15 +3,28 @@
  * (그룹핑·검색·폼 기본값은 marketUtils.js, 여기는 page/컴포넌트가 쓰는 작은 파생 계산만)
  */
 
-/** 저장된 기록의 경쟁사 이름을 중복 없이 한국어 정렬한 datalist 후보. */
-export function competitorOptionsOf(rows) {
+import { marketBrandLabel } from '@/lib/note/market-research';
+
+export function toggleExpandedBrand(expandedBrands, label) {
+  const next = new Set(expandedBrands);
+  if (next.has(label)) next.delete(label);
+  else next.add(label);
+  return next;
+}
+
+export function allBrandsExpanded(groups, expandedBrands) {
+  return groups.length > 0 && groups.every(group => expandedBrands.has(group.label));
+}
+
+/** 저장된 기록의 브랜드 이름을 중복 없이 한국어 정렬한 datalist 후보. */
+export function brandOptionsOf(rows) {
   const values = new Set(
-    (Array.isArray(rows) ? rows : [])
-      .map(row => String(row?.competitor || '').trim())
-      .filter(Boolean)
+    (Array.isArray(rows) ? rows : []).map(row => marketBrandLabel(row)).filter(Boolean)
   );
   return [...values].sort((a, b) => a.localeCompare(b, 'ko'));
 }
+
+export const competitorOptionsOf = brandOptionsOf;
 
 /** 저장된 기록에 쓴 나라 이름(자주 쓴 순). 필터 목록과 입력 추천에 쓴다. */
 export function usedCountriesOf(rows) {

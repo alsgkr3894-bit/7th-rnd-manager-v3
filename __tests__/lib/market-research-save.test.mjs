@@ -53,4 +53,11 @@ describe('saveMarketResearch', () => {
     const [, record] = sharedPutMock.mock.calls[0];
     expect(record.id).toBe(7);
   });
+
+  test('출시 날짜를 비우면 조사 날짜로 저장하고 별도로 입력하면 그 날짜를 유지한다', async () => {
+    await saveMarketResearch({ date: '2026-10-21', releaseDate: '', brand: '도미노' });
+    await saveMarketResearch({ date: '2026-10-21', releaseDate: '2026-11-01' });
+    expect(sharedPutMock.mock.calls[0][1].releaseDate).toBe('2026-10-21');
+    expect(sharedPutMock.mock.calls[1][1].releaseDate).toBe('2026-11-01');
+  });
 });

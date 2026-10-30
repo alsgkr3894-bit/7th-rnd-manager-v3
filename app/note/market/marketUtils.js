@@ -1,11 +1,16 @@
 /**
  * app/note/market/marketUtils.js — 시장조사 목록 그룹핑·검색·폼 기본값 (순수)
  */
-import { MARKET_RESEARCH_REGIONS, MARKET_RESEARCH_TYPES } from '@/lib/note/market-research';
+import {
+  LEGACY_MARKET_RESEARCH_TYPE,
+  MARKET_RESEARCH_REGIONS,
+  MARKET_RESEARCH_TYPES,
+  marketBrandLabel,
+} from '@/lib/note/market-research';
 import { todayLocalDate } from '@/lib/date/local-date';
 
 export const COMPETITOR_ID = '미지정';
-// 경쟁사 이름을 안정적으로 색으로 매핑 — 매번 다른 순서로 렌더링돼도 같은 경쟁사는 같은 색.
+// 브랜드 이름을 안정적으로 색으로 매핑 — 매번 다른 순서로 렌더링돼도 같은 브랜드는 같은 색.
 const COMPETITOR_COLORS = [
   '#E1101F',
   '#2563EB',
@@ -24,11 +29,11 @@ export function colorForCompetitor(label) {
   return COMPETITOR_COLORS[hash % COMPETITOR_COLORS.length];
 }
 
-/** 경쟁사별로 묶어 카테고리처럼 보여준다. 미지정(빈 값)은 항상 맨 뒤. */
+/** 브랜드별로 묶어 카테고리처럼 보여준다. 미지정(빈 값)은 항상 맨 뒤. */
 export function groupByCompetitor(rows) {
   const groups = new Map();
   for (const row of rows) {
-    const label = String(row.competitor || '').trim() || COMPETITOR_ID;
+    const label = String(row.competitor || row.brand || '').trim() || COMPETITOR_ID;
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label).push(row);
   }
@@ -65,6 +70,7 @@ export const EMPTY_FORM = {
   country: '',
   brandType: '',
   date: '',
+  releaseDate: '',
   brand: '',
   title: '',
   competitor: '',
@@ -77,10 +83,17 @@ export const EMPTY_FORM = {
 };
 
 export function withToday(value = {}) {
+  // 저장된 기록을 고칠 때(id 있음) 유형이 비어 있던 이전 기록은 새 기록 기본값('시장조사')이 아니라
+  // 이전 기본값을 유지한다 — 안 그러면 고치기만 해도 유형이 바뀐다.
+  const editing = value.id != null;
   return {
     ...EMPTY_FORM,
     ...value,
+    type: value.type || (editing ? LEGACY_MARKET_RESEARCH_TYPE : EMPTY_FORM.type),
     date: value.date || todayLocalDate(),
+    releaseDate: value.releaseDate || '',
+    brand: marketBrandLabel(value),
+    competitor: '',
     photos: Array.isArray(value.photos) ? value.photos : [],
   };
 }
@@ -96,6 +109,7 @@ export function includesQuery(row, query) {
     row.country,
     row.brandType,
     row.date,
+    row.releaseDate,
     row.brand,
     row.title,
     row.competitor,
@@ -114,6 +128,7 @@ export function includesQuery(row, query) {
 export function hasFormContent(form) {
   return Boolean(
     form.title.trim() ||
+    form.brand.trim() ||
     form.marketTrend.trim() ||
     form.referencePoint.trim() ||
     form.developmentDirection.trim() ||

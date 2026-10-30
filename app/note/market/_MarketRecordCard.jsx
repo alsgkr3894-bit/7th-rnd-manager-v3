@@ -1,8 +1,9 @@
 'use client';
 
 import { photosOf, previewTextOf } from './marketPageUtils';
+import { marketBrandLabel } from '@/lib/note/market-research';
 
-/** 시장조사 목록의 기록 한 건 카드 — 제목/유형/경쟁사 chip, 미리보기, 사진 썸네일, 액션. */
+/** 시장조사 목록의 기록 한 건 카드 — 제목/유형/브랜드 chip, 미리보기, 사진 썸네일, 액션. */
 export function MarketRecordCard({
   row,
   color,
@@ -12,11 +13,13 @@ export function MarketRecordCard({
   onEdit,
   onDelete,
   onPhotoClick,
+  viewMode = 'grid',
 }) {
   const photos = photosOf(row);
+  const brand = marketBrandLabel(row);
   return (
     <article
-      className="market-record-card"
+      className={`market-record-card${viewMode === 'list' ? ' is-list' : ''}`}
       style={{
         border: '1px solid var(--border)',
         borderRadius: 8,
@@ -30,9 +33,8 @@ export function MarketRecordCard({
         {row.region && <span className="chip">{row.region}</span>}
         {row.country && <span className="chip">{row.country}</span>}
         {row.brandType && <span className="chip">{row.brandType}</span>}
-        <span className="chip">{row.type}</span>
       </div>
-      {row.competitor && (
+      {brand && (
         <div style={{ marginTop: 6 }}>
           <span
             className="chip"
@@ -43,14 +45,15 @@ export function MarketRecordCard({
               fontWeight: 800,
             }}
           >
-            {row.competitor}
+            {brand}
           </span>
         </div>
       )}
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 5 }}>
-        {row.date || '날짜 없음'} {row.brand ? `· ${row.brand}` : ''}
+        조사 {row.date || '날짜 없음'} · 출시 {row.releaseDate || row.date || '날짜 없음'}
       </div>
       <p
+        className="market-record-preview"
         style={{
           margin: '8px 0 0',
           fontSize: 12,
@@ -66,6 +69,7 @@ export function MarketRecordCard({
       </p>
       {photos.length > 0 && (
         <div
+          className="market-record-photos"
           style={{ display: 'flex', gap: 6, overflowX: 'auto', marginTop: 10, paddingBottom: 2 }}
         >
           {photos.slice(0, 4).map((photo, index) => (
@@ -93,7 +97,7 @@ export function MarketRecordCard({
           ))}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+      <div className="market-record-actions" style={{ display: 'flex', gap: 6, marginTop: 10 }}>
         <button type="button" className="btn sm" onClick={() => onDetail(row)}>
           자세히
         </button>

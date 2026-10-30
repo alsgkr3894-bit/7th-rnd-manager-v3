@@ -65,13 +65,31 @@ describe('시장조사 국내/해외 구분', () => {
       region: '해외',
     });
     expect(noteMetaPairs(overseas)).toEqual([
-      ['작성일', '2026-10-13'],
+      ['조사 날짜', '2026-10-13'],
       ['시장 구분', '해외'],
       ['유형', '시장분석'],
-      ['브랜드 / 출처', '도미노'],
+      ['출시 날짜', '2026-10-13'],
+      ['브랜드', '도미노'],
     ]);
     const legacy = marketResearchToUnifiedRecord({ id: 12, title: '구기록', type: '시장분석' });
     expect(noteMetaPairs(legacy).map(([label]) => label)).not.toContain('시장 구분');
+  });
+
+  test('조사 날짜와 별도의 출시 날짜가 보고서에 표시된다', () => {
+    const record = marketResearchToUnifiedRecord({
+      id: 40,
+      date: '2026-10-21',
+      releaseDate: '2026-11-05',
+      brand: '도미노',
+      competitor: '피자헛',
+    });
+    expect(noteMetaPairs(record)).toEqual(
+      expect.arrayContaining([
+        ['조사 날짜', '2026-10-21'],
+        ['출시 날짜', '2026-11-05'],
+        ['브랜드', '도미노 · 피자헛'],
+      ])
+    );
   });
 
   test('연구일지 PDF HTML에 시장 구분이 실제로 렌더된다', () => {
@@ -107,11 +125,12 @@ describe('시장조사 국내/해외 구분', () => {
       country: '일본',
     });
     expect(noteMetaPairs(withCountry)).toEqual([
-      ['작성일', '2026-10-19'],
+      ['조사 날짜', '2026-10-19'],
       ['시장 구분', '해외'],
       ['국가', '일본'],
       ['유형', '시장분석'],
-      ['브랜드 / 출처', '도미노'],
+      ['출시 날짜', '2026-10-19'],
+      ['브랜드', '도미노'],
     ]);
     const withoutCountry = marketResearchToUnifiedRecord({
       id: 22,
@@ -128,7 +147,7 @@ describe('시장조사 국내/해외 구분', () => {
 
   test('저장 정규화·작성 모달·목록·카드가 구분을 다룬다', () => {
     expect(read('lib/note/market-research.js')).toContain('region: normalizeRegion(data.region)');
-    expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<RegionField');
+    expect(read('app/note/market/_MarketBasics.jsx')).toContain('<RegionField');
     expect(read('app/note/market/_MarketFilters.jsx')).toContain('setRegion');
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.region');
   });
@@ -183,7 +202,7 @@ describe('시장조사 국가 입력', () => {
   });
 
   test('작성 모달·목록·카드가 국가를 다룬다', () => {
-    expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<CountryField');
+    expect(read('app/note/market/_MarketBasics.jsx')).toContain('<CountryField');
     expect(read('app/note/market/_MarketFields.jsx')).toContain('list="market-country-options"');
     expect(read('app/note/market/_MarketFilters.jsx')).toContain('모든 국가');
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.country');
@@ -234,12 +253,13 @@ describe('시장조사 브랜드 업종(피자·치킨)', () => {
       brandType: '치킨',
     });
     expect(noteMetaPairs(chicken)).toEqual([
-      ['작성일', '2026-10-19'],
+      ['조사 날짜', '2026-10-19'],
       ['시장 구분', '국내'],
       ['국가', '한국'],
       ['브랜드 업종', '치킨'],
       ['유형', '시장분석'],
-      ['브랜드 / 출처', 'BBQ'],
+      ['출시 날짜', '2026-10-19'],
+      ['브랜드', 'BBQ'],
     ]);
     expect(chicken.testContent).toContain('시장조사 기록 작성 — 치킨 신메뉴 (국내·한국·치킨)');
     const none = marketResearchToUnifiedRecord({ id: 32, title: '업종 미선택', type: '시장분석' });
@@ -250,7 +270,7 @@ describe('시장조사 브랜드 업종(피자·치킨)', () => {
   });
 
   test('작성 모달·목록 필터·카드가 업종을 다룬다', () => {
-    expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<BrandTypeField');
+    expect(read('app/note/market/_MarketBasics.jsx')).toContain('<BrandTypeField');
     expect(read('app/note/market/_MarketListPanel.jsx')).toContain('<MarketFilters');
     expect(read('app/note/market/_MarketFilters.jsx')).toContain('모든 업종');
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.brandType');

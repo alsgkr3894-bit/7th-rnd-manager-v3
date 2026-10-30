@@ -2,19 +2,20 @@
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { DetailField } from './_MarketFields';
+import { marketBrandLabel } from '@/lib/note/market-research';
 
 export function MarketDetailModal({ row, onClose, onEdit, onPdf, canEdit, onPhotoClick }) {
   const photos = Array.isArray(row.photos) ? row.photos.filter(photo => photo?.data) : [];
   return (
     <ModalFrame
       title={row.title || row.type}
-      subtitle={`${row.date || '날짜 없음'}${row.brand ? ` · ${row.brand}` : ''}${row.region ? ` · ${row.region}` : ''}${row.country ? ` · ${row.country}` : ''}${row.brandType ? ` · ${row.brandType}` : ''} · ${row.type}`}
+      subtitle={`조사 ${row.date || '날짜 없음'} · 출시 ${row.releaseDate || row.date || '날짜 없음'}${row.region ? ` · ${row.region}` : ''}${row.country ? ` · ${row.country}` : ''}${row.brandType ? ` · ${row.brandType}` : ''}${row.type && row.type !== '시장조사' ? ` · ${row.type}` : ''}`}
       onClose={onClose}
       width="min(640px, 96vw)"
       zIndex={300}
     >
       <div style={{ display: 'grid', gap: 16 }}>
-        <DetailField label="경쟁사 / 시장 키워드" value={row.competitor} />
+        <DetailField label="브랜드" value={marketBrandLabel(row)} />
         <DetailField label="시장분석 / 피해 트렌드 방향" value={row.marketTrend} />
         <DetailField label="타브랜드 참고 포인트" value={row.referencePoint} />
         <DetailField label="개발 방향 / 적용 아이디어" value={row.developmentDirection} />

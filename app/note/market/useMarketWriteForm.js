@@ -57,7 +57,7 @@ export function useMarketWriteForm({
       return;
     }
     if (!hasFormContent(form)) {
-      showToast('제목, 시장 흐름, 참고 포인트 또는 사진 중 하나를 입력해주세요', 'warn');
+      showToast('제목, 브랜드, 시장 흐름, 참고 포인트 또는 사진 중 하나를 입력해주세요', 'warn');
       return;
     }
     setSaving(true);

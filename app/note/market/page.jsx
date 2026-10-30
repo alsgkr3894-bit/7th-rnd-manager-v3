@@ -61,7 +61,7 @@ function MarketResearchContent() {
       <PageHeader
         breadcrumb={['RND', '시장조사']}
         title="시장조사"
-        sub="경쟁사, 시장 흐름, 피해 트렌드, 타브랜드 참고 포인트를 기록합니다."
+        sub="브랜드별 신제품과 시장 흐름을 모아 보고, 적용 아이디어를 기록합니다."
         actions={
           <>
             <button
@@ -123,7 +123,7 @@ function MarketResearchContent() {
           form={form}
           canEdit={canEdit}
           saving={write.saving}
-          competitorOptions={list.competitorOptions}
+          brandOptions={list.brandOptions}
           countryOptions={list.countryOptions}
           onUpdate={write.update}
           onClose={closeWrite}

@@ -3,14 +3,15 @@
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
-import { BrandTypeField, CountryField, Field, RegionField, TypeRow } from './_MarketFields';
+import { Field } from './_MarketFields';
+import { MarketBasics } from './_MarketBasics';
 
 /** 시장조사 작성/수정 모달 — 유형 선택, 기본/본문 필드, 사진, 저장 바. */
 export function MarketWriteModal({
   form,
   canEdit,
   saving,
-  competitorOptions,
+  brandOptions,
   countryOptions,
   onUpdate: update,
   onClose,
@@ -20,61 +21,19 @@ export function MarketWriteModal({
     <ModalFrame
       title={form.id ? '시장조사 수정' : '시장조사 작성'}
       onClose={onClose}
-      width="min(720px, 96vw)"
+      width="min(760px, 96vw)"
       zIndex={300}
     >
       <div className="market-write-panel">
         <section className="market-write-card">
-          <TypeRow form={form} update={update} canEdit={canEdit} />
-          <RegionField form={form} update={update} canEdit={canEdit} />
-          <BrandTypeField form={form} update={update} canEdit={canEdit} />
-          <CountryField form={form} update={update} canEdit={canEdit} options={countryOptions} />
-          <div className="market-form-row market-form-row-date-title">
-            <Field label="조사 날짜">
-              <input
-                className="form-input"
-                type="date"
-                value={form.date}
-                onChange={event => update('date', event.target.value)}
-                disabled={!canEdit}
-              />
-            </Field>
-            <Field label="제목">
-              <input
-                className="form-input"
-                value={form.title}
-                onChange={event => update('title', event.target.value)}
-                placeholder="예: 냉동 벌집 토핑 경쟁사 적용 여부"
-                disabled={!canEdit}
-              />
-            </Field>
-          </div>
-          <div className="market-form-row market-form-row-two">
-            <Field label="브랜드 / 출처">
-              <input
-                className="form-input"
-                value={form.brand}
-                onChange={event => update('brand', event.target.value)}
-                placeholder="경쟁사명, 기사, 리포트"
-                disabled={!canEdit}
-              />
-            </Field>
-            <Field label="경쟁사 / 시장 키워드">
-              <input
-                className="form-input"
-                list="market-competitor-options"
-                value={form.competitor}
-                onChange={event => update('competitor', event.target.value)}
-                placeholder="예: 피자, 냉동 토핑, 가성비"
-                disabled={!canEdit}
-              />
-              <datalist id="market-competitor-options">
-                {competitorOptions.map(option => (
-                  <option key={option} value={option} />
-                ))}
-              </datalist>
-            </Field>
-          </div>
+          <MarketBasics
+            form={form}
+            update={update}
+            canEdit={canEdit}
+            brandOptions={brandOptions}
+            countryOptions={countryOptions}
+          />
+          <h3 className="market-form-section-title">조사 내용</h3>
           <Field label="시장분석 / 피해 트렌드 방향">
             <textarea
               className="form-input"
@@ -105,8 +64,8 @@ export function MarketWriteModal({
               disabled={!canEdit}
             />
           </Field>
-          <Field label="다음 액션 / 태그">
-            <div className="market-form-row market-form-row-action-tags">
+          <div className="market-form-row market-form-row-action-tags">
+            <Field label="다음 액션">
               <input
                 className="form-input"
                 value={form.actionIdea}
@@ -114,6 +73,8 @@ export function MarketWriteModal({
                 placeholder="예: 원물 비교 테스트 진행"
                 disabled={!canEdit}
               />
+            </Field>
+            <Field label="태그">
               <input
                 className="form-input"
                 value={form.tags}
@@ -121,8 +82,8 @@ export function MarketWriteModal({
                 placeholder="냉동,벌집,트렌드"
                 disabled={!canEdit}
               />
-            </div>
-          </Field>
+            </Field>
+          </div>
         </section>
         <NotePhotoSection photos={form.photos || []} onChange={value => update('photos', value)} />
 

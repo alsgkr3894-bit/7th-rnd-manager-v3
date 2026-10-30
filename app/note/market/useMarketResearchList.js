@@ -18,9 +18,9 @@ import {
   staleFilterResets,
 } from './marketUtils';
 import { MARKET_COUNTRY_SUGGESTIONS } from '@/lib/note/market-research';
-import { competitorOptionsOf, countryOptionsOf, usedCountriesOf } from './marketPageUtils';
+import { brandOptionsOf, countryOptionsOf, usedCountriesOf } from './marketPageUtils';
 
-/** 시장조사 목록 로드 + 키워드 검색/경쟁사 그룹핑 파생 상태. */
+/** 시장조사 목록 로드 + 키워드 검색/브랜드 그룹핑 파생 상태. */
 export function useMarketResearchList() {
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState('');
@@ -87,7 +87,7 @@ export function useMarketResearchList() {
     if ('year' in resets) setYear(resets.year);
     if ('month' in resets) setMonth(resets.month);
   }, [region, country, year, month, usedCountries, regionCounts, yearOptions]);
-  const competitorOptions = useMemo(() => competitorOptionsOf(rows), [rows]);
+  const brandOptions = useMemo(() => brandOptionsOf(rows), [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,7 +114,7 @@ export function useMarketResearchList() {
     loading,
     filtered,
     groupedRows,
-    competitorOptions,
+    brandOptions,
     load,
   };
 }
