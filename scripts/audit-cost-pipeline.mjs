@@ -362,6 +362,30 @@ try {
     }
   }
 
+  // 판매가 이원화: 메뉴마스터 price와 원가 쪽 판매가(cost_selling_prices)가 같은가
+  const sellingByCode = new Map(data.cost_selling_prices.map(p => [p.menuCode, p]));
+  const priceMismatch = [];
+  for (const menu of data.menu_master) {
+    if (menu.status === 'discontinued') continue;
+    const mp = Number(menu.price) > 0 ? Number(menu.price) : null;
+    const sp = sellingByCode.get(menu.menuCode);
+    const spPrice = sp && Number(sp.price) > 0 ? Number(sp.price) : null;
+    if (mp !== spPrice) {
+      priceMismatch.push({
+        code: menu.menuCode,
+        name: menu.menuName,
+        메뉴마스터: mp,
+        원가쪽판매가: spPrice,
+        원가쪽행없음: !sp,
+      });
+    }
+  }
+  const orphanSelling = data.cost_selling_prices
+    .filter(
+      p => !menuByCode.has(p.menuCode) || menuByCode.get(p.menuCode).status === 'discontinued'
+    )
+    .map(p => `${p.menuCode} ${p.menuName}`);
+
   const report = {
     기준: {
       최신단가파일: `${file.updateDate} (${latestRows.length}행 / 원본 ${fileRowsRaw.length}행)`,
@@ -370,6 +394,8 @@ try {
     },
     '7곳_원가_불일치': { 건수: compare.length, 목록: compare },
     단가_건강검진: health,
+    판매가_불일치: priceMismatch,
+    원가쪽에만_남은_판매가_행: orphanSelling,
     조용한_0원_줄_메뉴: silentZero,
     단가반올림오차: {
       반올림이_원가를_반원이상_바꾼_메뉴수: rounding.length,
