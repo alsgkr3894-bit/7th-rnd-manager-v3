@@ -169,3 +169,23 @@ describe('체크리스트 연속 체크 · 체인 순환 · 날짜 · 칸반', (
     expect(src).toContain('for (const id of groupIds) await updateNoteChainStatus(id, newStatus)');
   });
 });
+
+// 2026-10-30: 일정 삭제 확인창에서 '삭제'를 누르면 "Cannot read properties of null (reading 'schedule')"로
+// 실패하던 문제 — 확인 시점에 modal이 이미 null이어도 삭제 대상이 남도록 대상을 따로 든다.
+describe('일정 삭제 확인은 modal과 무관하게 대상을 기억한다', () => {
+  const page = read('app/note/calendar/page.jsx');
+  const dialogs = read('app/note/calendar/CalendarPageDialogs.jsx');
+  const confirmFn = page.slice(page.indexOf('async function confirmDeleteSchedule'));
+
+  test('확인 처리 함수가 modal.schedule을 직접 읽지 않는다', () => {
+    const body = confirmFn.slice(0, confirmFn.indexOf('\n  }\n'));
+    expect(body).not.toMatch(/modal\.schedule/);
+    expect(body).toContain('deleteSchedule(target.id)');
+  });
+
+  test('확인창이 대상 일정(제목 포함)을 따로 받는다', () => {
+    expect(page).toContain('setConfirmDel(modal.schedule)');
+    expect(dialogs).toContain('confirmDeleteTarget?.title');
+    expect(dialogs).not.toContain('modal?.schedule?.title');
+  });
+});

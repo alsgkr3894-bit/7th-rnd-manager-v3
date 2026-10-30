@@ -3,7 +3,7 @@ import { ScheduleModal } from './_ScheduleModal';
 
 export function CalendarPageDialogs({
   modal,
-  confirmDeleteOpen,
+  confirmDeleteTarget,
   onSaveSchedule,
   onCloseSchedule,
   onRequestDeleteSchedule,
@@ -23,9 +23,9 @@ export function CalendarPageDialogs({
       )}
 
       <ConfirmDialog
-        open={confirmDeleteOpen}
+        open={Boolean(confirmDeleteTarget)}
         title="일정 삭제"
-        message={`"${modal?.schedule?.title}" 일정을 삭제할까요?`}
+        message={`"${confirmDeleteTarget?.title}" 일정을 삭제할까요?`}
         confirmLabel="삭제"
         danger
         onConfirm={onConfirmDeleteSchedule}

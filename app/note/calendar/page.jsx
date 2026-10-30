@@ -45,7 +45,8 @@ export default function Page() {
   } = useCalendarNavigation();
   const [viewMode, setViewMode] = useState('all'); // 'all' | 'notes' | 'schedules'
   const [modal, setModal] = useState(null); // null | { mode: 'add'|'edit', schedule?, date? }
-  const [confirmDel, setConfirmDel] = useState(false);
+  // 삭제 확인창이 열린 일정(없으면 null) — 확인창이 떠 있는 동안 modal이 먼저 닫혀도 대상이 사라지지 않게 따로 든다
+  const [confirmDel, setConfirmDel] = useState(null);
 
   const [today, setToday] = useState(INITIAL_TODAY_KEY);
   const [profile, setProfile] = useState(null);
@@ -144,17 +145,18 @@ export default function Page() {
 
   function handleDeleteSchedule() {
     if (!canEdit || !modal?.schedule?.id) return;
-    setConfirmDel(true);
+    setConfirmDel(modal.schedule);
   }
 
   async function confirmDeleteSchedule() {
-    setConfirmDel(false);
-    if (!canEdit) {
+    const target = confirmDel;
+    setConfirmDel(null);
+    if (!canEdit || !target?.id) {
       setModal(null);
       return;
     }
     try {
-      await deleteSchedule(modal.schedule.id);
+      await deleteSchedule(target.id);
       showToast('삭제됐습니다', 'ok');
       await load();
     } catch (e) {
@@ -268,12 +270,12 @@ export default function Page() {
 
       <CalendarPageDialogs
         modal={modal}
-        confirmDeleteOpen={confirmDel}
+        confirmDeleteTarget={confirmDel}
         onSaveSchedule={handleSaveSchedule}
         onCloseSchedule={() => setModal(null)}
         onRequestDeleteSchedule={handleDeleteSchedule}
         onConfirmDeleteSchedule={confirmDeleteSchedule}
-        onCancelDeleteSchedule={() => setConfirmDel(false)}
+        onCancelDeleteSchedule={() => setConfirmDel(null)}
       />
     </main>
   );
