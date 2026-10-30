@@ -3,6 +3,8 @@
  *
  *   npm run audit:recipe-cost            # 현재 데이터 기준
  *   npm run audit:recipe-cost -- 1.2     # 제품코드 없는 수동 식자재 단가를 20% 올렸다고 가정(메모리 안에서만)
+ *   npm run audit:recipe-cost -- --jette 1.1   # 제때 연동(제품코드) 식자재 단가를 10% 올렸다고 가정
+ *   (두 가정은 함께 쓸 수 있다: -- 1.2 --jette 1.1)
  *
  * 메뉴마스터 요약 / 원가마진표 / 레시피 출력이 같은 메뉴에 같은 원가를 내는지 비교하고,
  * 끊어진 연결·단종 식자재 사용·판매가 없는 메뉴 등을 함께 보고한다. DATABASE_URL(.env)이 필요하다.
@@ -35,7 +37,13 @@ export async function resolve(specifier, context, next) {
 register('data:text/javascript,' + encodeURIComponent(hook), pathToFileURL(root + path.sep));
 process.chdir(root);
 
-const factor = Number(process.argv[2]) || 1;
+const argv = process.argv.slice(2);
+const jetteIndex = argv.indexOf('--jette');
+const jetteFactor = jetteIndex >= 0 ? Number(argv[jetteIndex + 1]) || 1 : 1;
+const positional = argv.filter(
+  (_, i) => jetteIndex < 0 || (i !== jetteIndex && i !== jetteIndex + 1)
+);
+const factor = Number(positional[0]) || 1;
 const imp = rel => import(pathToFileURL(path.join(root, rel)).href);
 
 const { getPrismaClient, disconnectPrismaClient } = await imp('lib/server/prisma.js');
@@ -98,9 +106,11 @@ try {
   const manualKeys = new Set(
     data.cost_ingredients.filter(i => !String(i.productCode ?? '').trim()).map(i => String(i.id))
   );
-  if (factor !== 1) {
+  if (factor !== 1 || jetteFactor !== 1) {
     for (const [key, info] of unitPriceMap) {
-      if (manualKeys.has(key) && info?.unitPrice != null) info.unitPrice = info.unitPrice * factor;
+      if (info?.unitPrice == null) continue;
+      if (manualKeys.has(key)) info.unitPrice = info.unitPrice * factor;
+      else info.unitPrice = info.unitPrice * jetteFactor;
     }
   }
 
@@ -321,7 +331,10 @@ try {
   console.log(
     JSON.stringify(
       {
-        가정: factor === 1 ? '현재 데이터' : `수동 식자재 단가 x${factor}`,
+        가정:
+          factor === 1 && jetteFactor === 1
+            ? '현재 데이터'
+            : `수동 식자재 단가 x${factor}, 제때 연동 단가 x${jetteFactor}`,
         최신단가파일: `${file.updateDate} (${latestRows.length}행)`,
         메뉴수: data.menu_master.length,
         화면간원가불일치: mismatches.length,

@@ -17,6 +17,7 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { buildDiscontinuedMenuCodeSet } from '@/lib/report/recipe-print-rows';
 import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
+import { onPriceChange } from '@/lib/price/price-events';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import {
@@ -191,6 +192,9 @@ function CostReportBuilderContent({ onReportModeChange }) {
       },
     }
   );
+
+  // 식자재 단가·상태가 바뀌면(다른 탭 포함) 보고서 값을 바로 다시 계산한다
+  useEffect(() => onPriceChange(reload), [reload]);
 
   const recipeRows = useMemo(() => data?.recipeRows ?? [], [data?.recipeRows]);
 

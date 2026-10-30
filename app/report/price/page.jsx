@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { PriceReportOptions } from '@/components/report/price/PriceReportOptions';
 import { PriceReportPreview } from '@/components/report/price/PriceReportPreview';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
+import { onPriceChange } from '@/lib/price/price-events';
 import { buildPriceReportData } from '@/lib/report/build-price-report';
 import { pickPriceReportFiles } from '@/lib/report/price-period';
 import { buildPriceCostImpact } from '@/lib/report/price-cost-impact';
@@ -94,6 +95,9 @@ export default function Page() {
       mapErrorMessage: err => err.message,
     }
   );
+
+  // 가격 파일·식자재 단가가 바뀌면(다른 탭 포함) 변동 목록과 원가 영향을 다시 계산한다
+  useEffect(() => onPriceChange(reload), [reload]);
 
   const changes = data?.changes ?? [];
   const catSummary = data?.catSummary ?? [];
