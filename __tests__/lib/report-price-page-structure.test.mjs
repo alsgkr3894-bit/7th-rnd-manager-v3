@@ -28,7 +28,7 @@ describe('price report page structure', () => {
     expect(optionsSource).toContain('<OptGroup');
     expect(optionsSource).toContain('<Seg');
     expect(optionsSource).toContain('<Check');
-    expect(optionsSource).toContain('원가 영향 메뉴 수');
+    expect(optionsSource).toContain('원가 영향 메뉴');
     expect(optionsSource).toContain('Excel (.xlsx)');
     expect(optionsSource).toContain("onFormatChange('excel', value)");
 

@@ -7,6 +7,14 @@ import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { buildPriceReportData } from '@/lib/report/build-price-report';
+import { pickPriceReportFiles } from '@/lib/report/price-period';
+import { buildPriceCostImpact } from '@/lib/report/price-cost-impact';
+import { getAllIngredients } from '@/lib/ingredient';
+import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
+import { getAllEdges } from '@/lib/cost/edge-dough';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { getAllMenuMaster } from '@/lib/menu-master';
+import { buildDiscontinuedMenuCodeSet } from '@/lib/report/recipe-print-rows';
 import { exportPriceReportXlsx } from '@/lib/report/price-export';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
@@ -21,7 +29,7 @@ function safeDateInput(value, fallback) {
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('week');
-  // 2026-10-13: 기본은 "전체 식자재 변동 요약"만 체크 — 원가 영향 메뉴 수는 직접 켠다
+  // 2026-10-13: 기본은 "전체 식자재 변동 요약"만 체크 — 원가 영향 메뉴는 직접 켠다
   const [opts, setOpts] = useState({
     catSummary: true,
     costImpact: false,
@@ -50,27 +58,11 @@ export default function Page() {
   } = useDBLoad(
     async () => {
       const files = asObjectArray(await getPriceFiles());
-      if (files.length < 2) {
-        throw new Error('비교할 가격 파일이 부족해요. 제때 가격 파일을 2개 이상 업로드해 주세요.');
-      }
-      const sorted = [...files].sort((a, b) =>
-        asDisplayText(a.updateDate) > asDisplayText(b.updateDate) ? -1 : 1
-      );
-
-      let base, latest;
-      if (periodMode === 'custom') {
-        const safeCustomTo = safeDateInput(customTo, todayStr);
-        const safeCustomFrom = safeDateInput(customFrom, weekAgoStr);
-        const toFiles = sorted.filter(f => asDisplayText(f.updateDate) <= safeCustomTo);
-        const fromFiles = sorted.filter(f => asDisplayText(f.updateDate) <= safeCustomFrom);
-        latest = toFiles[0];
-        base = fromFiles.find(f => f.id !== latest?.id) || sorted[1];
-        if (!latest || !base || latest.id === base.id) {
-          throw new Error('선택한 기간에 비교할 가격 파일이 없어요. 기간을 조정해 주세요.');
-        }
-      } else {
-        [latest, base] = sorted;
-      }
+      const { latest, base } = pickPriceReportFiles(files, {
+        mode: periodMode,
+        from: safeDateInput(customFrom, weekAgoStr),
+        to: safeDateInput(customTo, todayStr),
+      });
 
       const dateRange = `${asDisplayText(base.updateDate, '—')} ~ ${asDisplayText(latest.updateDate, '—')}`;
       const [latestRows, baseRows] = await Promise.all([
@@ -78,7 +70,23 @@ export default function Page() {
         getPriceRowsByFileId(base.id),
       ]);
       const { changes, catSummary } = buildPriceReportData(baseRows, latestRows, 0);
-      return { changes, catSummary, dateRange };
+      const [ingredients, detailMaps, edges, recipeGroups, masters] = await Promise.all([
+        getAllIngredients(),
+        loadMenuRecipeMaps(),
+        getAllEdges(),
+        getAllRecipeGroups(),
+        getAllMenuMaster(),
+      ]);
+      const costImpact = buildPriceCostImpact({
+        baseRows,
+        latestRows,
+        ingredients,
+        detailMaps,
+        recipeGroups,
+        edges,
+        excludeMenuCodes: buildDiscontinuedMenuCodeSet(masters),
+      });
+      return { changes, catSummary, dateRange, costImpact };
     },
     {
       deps: [periodMode, customFrom, customTo, todayStr, weekAgoStr],
@@ -90,6 +98,7 @@ export default function Page() {
   const changes = data?.changes ?? [];
   const catSummary = data?.catSummary ?? [];
   const dateRange = data?.dateRange ?? '—';
+  const costImpact = data?.costImpact ?? { menus: [], up: 0, down: 0 };
 
   const reportMeta = {
     kind: 'price',
@@ -102,6 +111,7 @@ export default function Page() {
       dateRange,
       changes,
       catSummary,
+      costImpact,
       opts,
     });
 
@@ -138,6 +148,7 @@ export default function Page() {
           dateRange={dateRange}
           changes={changes}
           catSummary={catSummary}
+          costImpact={costImpact}
           opts={opts}
         />
       }

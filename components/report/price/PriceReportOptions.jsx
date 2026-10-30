@@ -59,7 +59,7 @@ export function PriceReportOptions({
           onChange={value => onOptionChange('catSummary', value)}
         />
         <Check
-          label="원가 영향 메뉴 수"
+          label="원가 영향 메뉴"
           value={opts.costImpact}
           onChange={value => onOptionChange('costImpact', value)}
         />

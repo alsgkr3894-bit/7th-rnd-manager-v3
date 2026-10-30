@@ -25,9 +25,16 @@ function safeCategory(value) {
   return asDisplayText(value, '기타') || '기타';
 }
 
-export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
+/** 0.05%처럼 한 자리로 반올림하면 0.0%가 되는 작은 변동은 '<0.1%'로 보여 준다. */
+function formatImpactRate(value) {
+  const pct = Math.abs(asFiniteNumber(value, 0) ?? 0);
+  return pct > 0 && pct < 0.1 ? '<0.1%' : `${pct.toFixed(1)}%`;
+}
+
+export function PriceReportPreview({ dateRange, changes, catSummary, costImpact, opts }) {
   const safeChanges = asObjectArray(changes);
   const safeCatSummary = asObjectArray(catSummary);
+  const impactMenus = asObjectArray(costImpact?.menus);
   const rising = safeChanges.filter(change => change.changeStatus === '인상').length;
   const falling = safeChanges.filter(change => change.changeStatus === '인하').length;
   const newItem = safeChanges.filter(change => change.changeStatus === '신규').length;
@@ -140,22 +147,72 @@ export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
       )}
 
       {opts.costImpact && safeChanges.length > 0 && (
-        <div className="paper-section">
-          <div className="paper-section-title">원가 영향 식자재</div>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
-            <span>
-              인상 <b style={{ color: 'var(--negative)' }}>{rising}건</b>
-            </span>
-            <span>
-              인하 <b style={{ color: 'var(--positive)' }}>{falling}건</b>
-            </span>
-            <span>
-              신규 <b style={{ color: 'var(--accent)' }}>{newItem}건</b>
-            </span>
-            <span>
-              삭제 <b style={{ color: 'var(--text-3)' }}>{delItem}건</b>
-            </span>
-          </div>
+        <div className="paper-section print-keep-together">
+          <div className="paper-section-title">원가 영향 메뉴</div>
+          {impactMenus.length === 0 ? (
+            <div className="muted" style={{ fontSize: 13 }}>
+              이번 단가 변동으로 원가가 달라진 메뉴가 없어요
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
+                <span>
+                  영향 메뉴 <b>{impactMenus.length}개</b>
+                </span>
+                <span>
+                  원가 상승 <b style={{ color: 'var(--negative)' }}>{costImpact.up}개</b>
+                </span>
+                <span>
+                  원가 하락 <b style={{ color: 'var(--positive)' }}>{costImpact.down}개</b>
+                </span>
+              </div>
+              <table className="paper-table" style={{ marginTop: 8 }}>
+                <thead>
+                  <tr>
+                    <th>메뉴</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>이전 원가</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>현재 원가</th>
+                    <th style={{ width: 80, textAlign: 'right' }}>변동</th>
+                    <th style={{ width: 70, textAlign: 'right' }}>변동률</th>
+                    <th>원인 식자재</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {impactMenus.map((menu, index) => {
+                    const diff = asFiniteNumber(menu.diff, 0) ?? 0;
+                    const color = diff > 0 ? 'var(--negative)' : 'var(--positive)';
+                    return (
+                      <tr key={`impact-${menu.code || menu.name}-${menu.size}-${index}`}>
+                        <td style={{ fontWeight: 600 }}>
+                          {asDisplayText(menu.name, '—')}
+                          {menu.size && !asDisplayText(menu.name).endsWith(menu.size)
+                            ? ` ${menu.size}`
+                            : ''}
+                          <span className="muted" style={{ fontSize: 11, marginLeft: 6 }}>
+                            {asDisplayText(menu.category)}
+                          </span>
+                        </td>
+                        <td className="num right muted">{formatNumber(menu.before)}</td>
+                        <td className="num right" style={{ fontWeight: 700 }}>
+                          {formatNumber(menu.after)}
+                        </td>
+                        <td className="num right" style={{ color }}>
+                          {diff > 0 ? '+' : ''}
+                          {formatNumber(diff)}
+                        </td>
+                        <td className="num right" style={{ color, fontWeight: 700 }}>
+                          {diff > 0 ? '▲' : '▼'} {formatImpactRate(menu.rate)}
+                        </td>
+                        <td className="muted" style={{ fontSize: 12 }}>
+                          {(Array.isArray(menu.causes) ? menu.causes.join(', ') : '') || '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
       )}
 
