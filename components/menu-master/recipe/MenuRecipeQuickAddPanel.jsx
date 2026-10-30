@@ -1,6 +1,8 @@
 'use client';
+import { useCallback, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { formatQuickPrice } from '@/components/menu-master/recipe/quickAddHelpers';
+import { FloatingSuggestionList } from '@/components/menu-master/recipe/FloatingSuggestionList';
 
 // MenuRecipeSection의 "식자재 빠른 추가" 그리드(검색+수량+구성품 추가 버튼) — 순수 표시용.
 // 상태/핸들러는 useMenuRecipeQuickAdd에서 만들어 그대로 내려받는다.
@@ -22,6 +24,8 @@ export function MenuRecipeQuickAddPanel({
   onQuickAddCompositionEnd,
   onAddRow,
 }) {
+  const searchInputRef = useRef(null);
+  const getSearchAnchor = useCallback(() => searchInputRef.current, []);
   return (
     <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--divider)' }}>
       <div
@@ -61,6 +65,7 @@ export function MenuRecipeQuickAddPanel({
               type="text"
               className="form-input"
               data-menu-recipe-quick-add="search"
+              ref={searchInputRef}
               value={quickAddQ}
               onChange={e => {
                 setQuickAddQ(e.target.value);
@@ -84,22 +89,7 @@ export function MenuRecipeQuickAddPanel({
             />
           </div>
           {quickAddOpen && quickAddQ.trim() && (
-            <div
-              role="listbox"
-              style={{
-                position: 'absolute',
-                zIndex: 70,
-                top: '100%',
-                left: 0,
-                right: 0,
-                marginTop: 4,
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                background: 'var(--surface)',
-                boxShadow: 'var(--shadow-md)',
-                overflow: 'hidden',
-              }}
-            >
+            <FloatingSuggestionList getAnchor={getSearchAnchor} maxHeight={320}>
               {quickAddSuggestions.length > 0 ? (
                 quickAddSuggestions.map((ingredient, suggestionIndex) => {
                   const upmKey =
@@ -203,7 +193,7 @@ export function MenuRecipeQuickAddPanel({
                   검색어 그대로 수동 추가
                 </button>
               )}
-            </div>
+            </FloatingSuggestionList>
           )}
         </div>
 

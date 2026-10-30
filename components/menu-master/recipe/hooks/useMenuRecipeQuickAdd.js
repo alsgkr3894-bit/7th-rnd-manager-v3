@@ -153,11 +153,19 @@ export function useMenuRecipeQuickAdd({
 
       if (e.key === 'Escape') {
         e.preventDefault();
+        // 목록이 열려 있을 때는 목록만 닫는다 — 수정 창까지 닫혀 입력 중인 내용을 잃지 않게
+        if (quickAddOpen) e.stopPropagation?.();
         setQuickAddOpen(false);
         setQuickAddActiveIdx(-1);
       }
     },
-    [addManualQuickIngredient, pickQuickIngredient, quickAddActiveIdx, quickAddSuggestions]
+    [
+      addManualQuickIngredient,
+      pickQuickIngredient,
+      quickAddActiveIdx,
+      quickAddOpen,
+      quickAddSuggestions,
+    ]
   );
 
   useEffect(() => {

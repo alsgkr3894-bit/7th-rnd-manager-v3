@@ -112,6 +112,7 @@ export function useRecipeIngredientSearch({
           });
         } else if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation?.(); // 목록만 닫는다 — 수정 창까지 닫혀 입력 중인 내용을 잃지 않게
           setSearchIdx(null);
           setSearchQ('');
           setActiveSuggestionIdx(-1);
@@ -130,6 +131,7 @@ export function useRecipeIngredientSearch({
         if (target) pickSuggestion(idx, target);
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation?.(); // 목록만 닫는다 — 수정 창까지 닫혀 입력 중인 내용을 잃지 않게
         setSearchIdx(null);
         setSearchQ('');
         setActiveSuggestionIdx(-1);

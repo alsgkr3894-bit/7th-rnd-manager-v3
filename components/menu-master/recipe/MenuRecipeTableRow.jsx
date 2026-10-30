@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons';
@@ -10,6 +11,7 @@ import {
   hasRecipeComponentIdentity,
   isRecipeComponentMissingQuantity,
 } from '@/components/menu-master/recipeComponentRows';
+import { FloatingSuggestionList } from './FloatingSuggestionList';
 import { SuggestionItem } from './SuggestionItem';
 import { UnitPriceCell } from './UnitPriceCell';
 
@@ -40,6 +42,11 @@ export function MenuRecipeTableRow({
   // 필터 등으로 화면 순서가 원본과 달라졌을 때) — MenuRecipeComponentsTable 참고.
   dragHandleId = null,
 }) {
+  // 자동완성 목록을 띄울 기준 입력칸 — 목록은 body로 포털돼 표·수정 창의 overflow에 잘리지 않는다
+  const getIngredientAnchor = useCallback(
+    () => ingredientInputRefs?.current?.[component._key] ?? null,
+    [ingredientInputRefs, component._key]
+  );
   const currentUnitPrice = componentEffectiveUnitPrice(component, unitPriceMap);
   const subtotal =
     currentUnitPrice != null && Number(component.quantity) > 0
@@ -122,22 +129,7 @@ export function MenuRecipeTableRow({
           </div>
         )}
         {searchIdx === idx && suggestions.length > 0 && (
-          <div
-            role="listbox"
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              zIndex: 50,
-              maxHeight: 220,
-              overflowY: 'auto',
-              boxShadow: 'var(--shadow-md)',
-            }}
-          >
+          <FloatingSuggestionList getAnchor={getIngredientAnchor} maxHeight={220}>
             {suggestions.map((ingredient, suggestionIndex) => (
               <SuggestionItem
                 key={ingredient.id || ingredient.productCode}
@@ -147,7 +139,7 @@ export function MenuRecipeTableRow({
                 onPick={() => onPickSuggestion(idx, ingredient)}
               />
             ))}
-          </div>
+          </FloatingSuggestionList>
         )}
       </td>
       <td style={{ padding: '7px 6px' }}>
