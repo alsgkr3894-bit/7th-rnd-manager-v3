@@ -1,9 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import {
+  deleteRecipeVersionsForMenu,
   findOrphanRecipeVersions,
   restoreRecipeFromVersion,
 } from '@/lib/menu-master/recipe-versions';
@@ -62,6 +64,21 @@ export function MenuRecipeOrphanBanner({ isViewer = false }) {
 
 function OrphanRecipeModal({ orphans, onClose, onRestored }) {
   const [restoringCode, setRestoringCode] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  async function handleDelete(orphan) {
+    setDeleteTarget(null);
+    try {
+      const result = await deleteRecipeVersionsForMenu(orphan.menuCode);
+      showToast(
+        `'${orphan.menuName || orphan.menuCode}' 이력 ${result.deletedCount}건 삭제됨`,
+        'ok'
+      );
+      onRestored();
+    } catch (err) {
+      showToast('삭제 실패: ' + (err?.message || err), 'error');
+    }
+  }
 
   async function handleRestore(orphan) {
     setRestoringCode(orphan.menuCode);
@@ -117,7 +134,20 @@ function OrphanRecipeModal({ orphans, onClose, onRestored }) {
                 .filter(Boolean)
                 .join(', ')}
             </div>
-            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+            {!orphan.menuExists && (
+              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-3)' }}>
+                메뉴마스터에서 삭제된 메뉴라 복구할 수 없습니다. 필요 없으면 이력을 삭제하세요.
+              </div>
+            )}
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                className="btn sm"
+                disabled={restoringCode === orphan.menuCode}
+                onClick={() => setDeleteTarget(orphan)}
+                title="복구 목록에서 이 메뉴의 저장 이력을 지웁니다"
+              >
+                이력 삭제
+              </button>
               <button
                 className="btn sm primary"
                 disabled={!orphan.menuExists || restoringCode === orphan.menuCode}
@@ -132,6 +162,14 @@ function OrphanRecipeModal({ orphans, onClose, onRestored }) {
           </div>
         ))}
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        danger
+        confirmLabel="삭제"
+        message={`'${deleteTarget?.menuName || deleteTarget?.menuCode}' 레시피 저장 이력을 모두 삭제합니다. 현재 레시피와 메뉴마스터는 그대로입니다. 삭제하면 이 이력으로는 복구할 수 없어요. 계속할까요?`}
+        onConfirm={() => handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </ModalFrame>
   );
 }
