@@ -6,7 +6,7 @@ import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { PIZZA_CATEGORY_VARIANTS, getMenuCodeRank } from '@/lib/menu-categories';
 import { getMenuMasterMap } from '@/lib/menu-master';
-import { loadPlatforms } from '@/lib/cost/margin/platforms';
+import { loadPlatforms, PLATFORMS_UPDATED_EVENT } from '@/lib/cost/margin/platforms';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
@@ -28,6 +28,12 @@ import { useDBLoad } from '@/hooks/useDBLoad';
 export function useMarginData() {
   // platforms은 localStorage 동기 로드 — DB 의존 없음, 페이지에서 setPlatforms 직접 호출 가능
   const [platforms, setPlatforms] = useState(loadPlatforms);
+  // 다른 PC에서 고친 수수료가 서버를 거쳐 들어오면 화면의 값도 바꾼다
+  useEffect(() => {
+    const refresh = () => setPlatforms(loadPlatforms());
+    window.addEventListener(PLATFORMS_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(PLATFORMS_UPDATED_EVENT, refresh);
+  }, []);
 
   const {
     data: rows = [],

@@ -15,6 +15,7 @@ import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
+import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { formatNumber } from '@/lib/format';
 import { ServerRepushCard } from './_ServerRepushCard';
 
@@ -163,6 +164,8 @@ export default function ServerSyncPage() {
       // 서버에서 실제로 불러왔으니 "로컬이 비어 있는 authoritative" 가드는 해제한다 —
       // 안 그러면 방금 받아온 데이터도 계속 서버로 안 밀린다(lib/db/sync-guard.js).
       clearSyncGuard();
+      // 서버에서 받은 마진 플랫폼 수수료가 이 브라우저 값보다 최근이면 바로 따라간다
+      await hydratePlatformsFromDB();
       if (result.ok) {
         showToast(`서버 데이터 ${formatNumber(result.totalRows)}건을 불러왔습니다`, 'ok');
       } else {

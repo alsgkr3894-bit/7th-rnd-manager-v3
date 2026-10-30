@@ -100,8 +100,12 @@ export default function AppShell({ children }) {
     }
   }, [canEdit]);
 
+  // 플랫폼 수수료는 다른 PC에서 고쳐 서버로 온 값이 있으면 따라간다 — 처음 열 때와 창으로 돌아올 때 확인
   useEffect(() => {
-    hydratePlatformsFromDB().catch(() => {});
+    const sync = () => void hydratePlatformsFromDB();
+    sync();
+    window.addEventListener('focus', sync);
+    return () => window.removeEventListener('focus', sync);
   }, []);
 
   useEffect(() => {

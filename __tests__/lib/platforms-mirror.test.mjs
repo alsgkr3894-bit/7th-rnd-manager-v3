@@ -130,6 +130,8 @@ describe('savePlatforms()', () => {
     expect(putCalls[0].record.id).toBe('config');
     expect(putCalls[0].record.platforms).toEqual(data);
     expect(typeof putCalls[0].record.updatedAt).toBe('string');
+    // 이 브라우저에도 같은 저장 시각을 남겨, 다음에 서버 값과 최근 것을 가릴 수 있게 한다
+    expect(_ls[`${KEYS.COST_PLATFORMS}:updated-at`]).toBe(putCalls[0].record.updatedAt);
   });
 
   test('스토어 없으면 IndexedDB put 호출 안 함', async () => {
@@ -164,13 +166,40 @@ describe('hydratePlatformsFromDB()', () => {
     expect(_ls[KEYS.COST_PLATFORMS]).toBeUndefined();
   });
 
-  test('localStorage 이미 있으면 덮어쓰지 않음 (localStorage 우선)', async () => {
+  test('이 브라우저 값이 DB 레코드보다 최근이면 덮어쓰지 않음', async () => {
     const existing = [{ id: 'existing', name: '기존', fees: [] }];
     _ls[KEYS.COST_PLATFORMS] = JSON.stringify(existing);
+    _ls[`${KEYS.COST_PLATFORMS}:updated-at`] = '2026-06-01T00:00:00.000Z';
     const dbData = [{ id: 'from-db', name: 'DB', fees: [] }];
     _dbRecord = { id: 'config', platforms: dbData, updatedAt: '2026-01-01T00:00:00.000Z' };
-    await hydratePlatformsFromDB();
+    await expect(hydratePlatformsFromDB()).resolves.toBe(false);
     expect(JSON.parse(_ls[KEYS.COST_PLATFORMS])).toEqual(existing);
+  });
+
+  test('DB 레코드(다른 PC에서 고친 값)가 더 최근이면 localStorage를 그 값으로 바꾼다', async () => {
+    _ls[KEYS.COST_PLATFORMS] = JSON.stringify([{ id: 'old', name: '옛 값', fees: [] }]);
+    _ls[`${KEYS.COST_PLATFORMS}:updated-at`] = '2026-01-01T00:00:00.000Z';
+    const dbData = [{ id: 'new', name: '새 값', fees: [] }];
+    _dbRecord = { id: 'config', platforms: dbData, updatedAt: '2026-06-01T00:00:00.000Z' };
+    await expect(hydratePlatformsFromDB()).resolves.toBe(true);
+    expect(JSON.parse(_ls[KEYS.COST_PLATFORMS])).toEqual(dbData);
+    expect(_ls[`${KEYS.COST_PLATFORMS}:updated-at`]).toBe('2026-06-01T00:00:00.000Z');
+  });
+
+  test('저장 시각이 없는 옛 localStorage 값은 가장 오래된 것으로 보고 DB 레코드를 따른다', async () => {
+    _ls[KEYS.COST_PLATFORMS] = JSON.stringify([{ id: 'legacy', name: '옛 값', fees: [] }]);
+    const dbData = [{ id: 'synced', name: '서버 값', fees: [] }];
+    _dbRecord = { id: 'config', platforms: dbData, updatedAt: '2026-01-01T00:00:00.000Z' };
+    await hydratePlatformsFromDB();
+    expect(JSON.parse(_ls[KEYS.COST_PLATFORMS])).toEqual(dbData);
+  });
+
+  test('내용이 같으면 저장 시각만 맞추고 true를 돌려주지 않는다', async () => {
+    const same = [{ id: 'same', name: '같음', fees: [] }];
+    _ls[KEYS.COST_PLATFORMS] = JSON.stringify(same);
+    _dbRecord = { id: 'config', platforms: same, updatedAt: '2026-03-01T00:00:00.000Z' };
+    await expect(hydratePlatformsFromDB()).resolves.toBe(false);
+    expect(_ls[`${KEYS.COST_PLATFORMS}:updated-at`]).toBe('2026-03-01T00:00:00.000Z');
   });
 
   test('스토어 없으면 아무것도 하지 않음', async () => {
@@ -187,12 +216,12 @@ describe('hydratePlatformsFromDB()', () => {
   });
 
   test('오류 발생해도 예외를 throw하지 않음', async () => {
-    // hasStore가 throw하도록 임시 override
-    const orig = dbStub.hasStore;
-    dbStub.hasStore = async () => {
-      throw new Error('DB error');
+    // DB 레코드를 읽다 throw하도록 만든다
+    _dbRecord = {
+      get platforms() {
+        throw new Error('DB error');
+      },
     };
     await expect(hydratePlatformsFromDB()).resolves.toBeUndefined();
-    dbStub.hasStore = orig;
   });
 });
