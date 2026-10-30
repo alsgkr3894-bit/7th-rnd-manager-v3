@@ -1,4 +1,9 @@
-import { formatSizeUsage, money, sectionCost } from './recipePrintFormat';
+import {
+  formatSizeMoney,
+  formatSizeUsage,
+  sectionCost,
+  sectionSizeCosts,
+} from './recipePrintFormat';
 
 export function RecipeComponentTable({
   title,
@@ -13,14 +18,15 @@ export function RecipeComponentTable({
       <thead>
         <tr>
           <th colSpan={5} style={{ fontWeight: 800, background: 'var(--surface-2)' }}>
-            {title} · {money(sectionCost(components))}
+            {title} ·{' '}
+            {formatSizeMoney(sectionSizeCosts(components), sizes, sectionCost(components))}
           </th>
         </tr>
         <tr>
           <th style={{ width: '24%' }}>원가식자재</th>
           <th style={{ width: '18%' }}>제품코드</th>
           <th>사이즈별 사용량</th>
-          <th style={{ width: 84, textAlign: 'right' }}>소계</th>
+          <th style={{ width: sizes.length > 1 ? 132 : 84, textAlign: 'right' }}>소계</th>
           <th style={{ width: '16%' }}>비고</th>
         </tr>
       </thead>
@@ -39,7 +45,9 @@ export function RecipeComponentTable({
                 {component.productCode || '—'}
               </td>
               <td>{formatSizeUsage(component, sizes)}</td>
-              <td className="num right">{money(component.totalCost)}</td>
+              <td className="num right">
+                {formatSizeMoney(component.sizeSubtotals, sizes, component.totalCost)}
+              </td>
               <td className="muted">
                 {showSource
                   ? component.sourceLabel || '공통관리'

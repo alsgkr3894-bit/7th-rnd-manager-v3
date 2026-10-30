@@ -4,7 +4,7 @@ import {
   commonComponentsOf,
   directComponentsOf,
   formatIngredientUsage,
-  money,
+  formatSizeMoney,
 } from './recipePrintFormat';
 
 /**
@@ -108,8 +108,11 @@ export function RecipeMenuBlock({ menu, pageBreak = true }) {
             <td colSpan={3} style={{ fontWeight: 800 }}>
               메뉴 합계
             </td>
-            <td className="num right" style={{ width: 84, fontWeight: 800 }}>
-              {money(menu.totalCost)}
+            <td
+              className="num right"
+              style={{ width: sizes.length > 1 ? 132 : 84, fontWeight: 800 }}
+            >
+              {formatSizeMoney(menu.sizeTotals, sizes, menu.totalCost)}
             </td>
             <td className="muted" style={{ width: '16%' }}>
               직접 {directComponents.length}개 · 공통 {commonComponents.length}개
