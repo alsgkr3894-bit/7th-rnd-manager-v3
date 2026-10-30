@@ -4,10 +4,10 @@ import {
   createBlankRecipeComponentRow,
 } from '@/components/menu-master/recipeComponentRows';
 import {
-  ingredientSearchText,
-  normalizeIngredientSearchText,
   quickQuantityValue,
+  rankIngredientSuggestions,
 } from '@/components/menu-master/recipe/quickAddHelpers';
+import { isImeComposing } from '@/lib/ui/ime';
 
 // MenuRecipeSection의 "식자재 빠른 추가" 패널 상태/핸들러.
 // 아래 "빠른 추가 검색칸 재포커스" 이펙트는 pendingFocusQuantityKeyRef /
@@ -31,14 +31,19 @@ export function useMenuRecipeQuickAdd({
   const [quickAddActiveIdx, setQuickAddActiveIdx] = useState(-1);
   const quickAddBlurTimerRef = useRef(null);
 
-  const quickAddSuggestions = useMemo(() => {
-    const q = normalizeIngredientSearchText(quickAddQ);
-    if (!q) return [];
-    return allIngredients
-      .filter(ingredient => !ingredient.discontinued && !ingredient.excluded)
-      .filter(ingredient => ingredientSearchText(ingredient).includes(q))
-      .slice(0, 10);
-  }, [allIngredients, quickAddQ]);
+  const quickAddSuggestions = useMemo(
+    () =>
+      rankIngredientSuggestions(
+        allIngredients.filter(ingredient => !ingredient.discontinued && !ingredient.excluded),
+        quickAddQ,
+        10
+      ),
+    [allIngredients, quickAddQ]
+  );
+  // 한글 조합 중에 Enter를 친 경우 — 조합이 끝난 뒤 한 번 처리한다(handleQuickAddKeyDown 참고)
+  const pendingEnterRef = useRef(false);
+  const composeTimerRef = useRef(null);
+  const latestKeyDownRef = useRef(null);
 
   useEffect(() => {
     setQuickAddActiveIdx(-1);
@@ -47,6 +52,7 @@ export function useMenuRecipeQuickAdd({
   useEffect(
     () => () => {
       clearTimeout(quickAddBlurTimerRef.current);
+      clearTimeout(composeTimerRef.current);
     },
     []
   );
@@ -117,7 +123,7 @@ export function useMenuRecipeQuickAdd({
     quickAddQty,
   ]);
 
-  const handleQuickAddKeyDown = useCallback(
+  const processQuickAddKeyDown = useCallback(
     e => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -154,6 +160,33 @@ export function useMenuRecipeQuickAdd({
     [addManualQuickIngredient, pickQuickIngredient, quickAddActiveIdx, quickAddSuggestions]
   );
 
+  useEffect(() => {
+    latestKeyDownRef.current = processQuickAddKeyDown;
+  }, [processQuickAddKeyDown]);
+
+  // 조합 중 키는 무시하고, Enter였다면 조합이 끝난 직후 최신 입력값으로 한 번 처리한다.
+  const handleQuickAddKeyDown = useCallback(
+    e => {
+      if (isImeComposing(e)) {
+        if (e.key === 'Enter') pendingEnterRef.current = true;
+        return;
+      }
+      pendingEnterRef.current = false;
+      processQuickAddKeyDown(e);
+    },
+    [processQuickAddKeyDown]
+  );
+
+  const handleQuickAddCompositionEnd = useCallback(() => {
+    if (!pendingEnterRef.current) return;
+    pendingEnterRef.current = false;
+    clearTimeout(composeTimerRef.current);
+    composeTimerRef.current = setTimeout(() => {
+      composeTimerRef.current = null;
+      latestKeyDownRef.current?.({ key: 'Enter', preventDefault() {} });
+    }, 0);
+  }, []);
+
   return {
     quickAddQ,
     setQuickAddQ,
@@ -168,5 +201,6 @@ export function useMenuRecipeQuickAdd({
     pickQuickIngredient,
     addManualQuickIngredient,
     handleQuickAddKeyDown,
+    handleQuickAddCompositionEnd,
   };
 }

@@ -102,6 +102,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     handleIngredientFocus,
     handleIngredientBlur,
     handleIngredientKeyDown,
+    handleIngredientCompositionEnd,
     pickSuggestion,
   } = useRecipeIngredientSearch({
     allIngredients,
@@ -127,6 +128,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     pickQuickIngredient,
     addManualQuickIngredient,
     handleQuickAddKeyDown,
+    handleQuickAddCompositionEnd,
   } = useMenuRecipeQuickAdd({
     components,
     setComponents,
@@ -231,6 +233,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         onPickQuickIngredient={pickQuickIngredient}
         onAddManualQuickIngredient={addManualQuickIngredient}
         onQuickAddKeyDown={handleQuickAddKeyDown}
+        onQuickAddCompositionEnd={handleQuickAddCompositionEnd}
         onAddRow={handleQuickAddRow}
       />
 
@@ -272,6 +275,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
           onIngredientFocus={handleIngredientFocus}
           onIngredientBlur={handleIngredientBlur}
           onIngredientKeyDown={handleIngredientKeyDown}
+          onIngredientCompositionEnd={handleIngredientCompositionEnd}
           onPickSuggestion={pickSuggestion}
           onQuantityChange={(idx, value) => updateRow(idx, 'quantity', value)}
           onQuantityKeyDown={handleQuantityKeyDown}

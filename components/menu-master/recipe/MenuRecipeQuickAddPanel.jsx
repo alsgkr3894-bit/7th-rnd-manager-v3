@@ -19,6 +19,7 @@ export function MenuRecipeQuickAddPanel({
   onPickQuickIngredient,
   onAddManualQuickIngredient,
   onQuickAddKeyDown,
+  onQuickAddCompositionEnd,
   onAddRow,
 }) {
   return (
@@ -71,6 +72,7 @@ export function MenuRecipeQuickAddPanel({
                 quickAddBlurTimerRef.current = setTimeout(() => setQuickAddOpen(false), 140);
               }}
               onKeyDown={onQuickAddKeyDown}
+              onCompositionEnd={onQuickAddCompositionEnd}
               placeholder="식자재명 또는 제품코드"
               style={{
                 width: '100%',

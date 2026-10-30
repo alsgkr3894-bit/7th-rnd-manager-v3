@@ -18,6 +18,7 @@ export function MenuRecipeComponentsTable({
   onIngredientFocus,
   onIngredientBlur,
   onIngredientKeyDown,
+  onIngredientCompositionEnd,
   onPickSuggestion,
   onQuantityChange,
   onQuantityKeyDown,
@@ -163,6 +164,7 @@ export function MenuRecipeComponentsTable({
                     onIngredientFocus={onIngredientFocus}
                     onIngredientBlur={onIngredientBlur}
                     onIngredientKeyDown={onIngredientKeyDown}
+                    onIngredientCompositionEnd={onIngredientCompositionEnd}
                     onPickSuggestion={onPickSuggestion}
                     onQuantityChange={onQuantityChange}
                     onQuantityKeyDown={onQuantityKeyDown}

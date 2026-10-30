@@ -6,6 +6,8 @@ import {
   applyTypedIngredientName,
   linkTypedIngredientByName,
 } from '@/components/menu-master/recipeComponentRows';
+import { rankIngredientSuggestions } from '@/components/menu-master/recipe/quickAddHelpers';
+import { isImeComposing } from '@/lib/ui/ime';
 
 export function useRecipeIngredientSearch({
   allIngredients,
@@ -18,29 +20,29 @@ export function useRecipeIngredientSearch({
   const [activeSuggestionIdx, setActiveSuggestionIdx] = useState(-1);
   const blurTimerRef = useRef(null);
   const focusTimerRef = useRef(null);
+  const composeTimerRef = useRef(null);
+  // 한글 조합 중에 Enter를 친 행(조합이 끝난 뒤 한 번 처리한다) — 아래 handleIngredientKeyDown 참고
+  const pendingEnterIdxRef = useRef(null);
+  const latestKeyDownRef = useRef(null);
 
   useEffect(
     () => () => {
       clearTimeout(blurTimerRef.current);
       clearTimeout(focusTimerRef.current);
+      clearTimeout(composeTimerRef.current);
     },
     []
   );
 
-  const suggestions = useMemo(() => {
-    const active = allIngredients.filter(i => !i.discontinued && !i.excluded);
-    if (!searchQ.trim()) {
-      return [];
-    }
-    const q = searchQ.toLowerCase().replace(/\s/g, '');
-    return active
-      .filter(
-        i =>
-          (i.ingredientName || '').toLowerCase().replace(/\s/g, '').includes(q) ||
-          (i.productCode || '').toLowerCase().replace(/\s/g, '').includes(q)
-      )
-      .slice(0, 8);
-  }, [searchQ, allIngredients]);
+  const suggestions = useMemo(
+    () =>
+      rankIngredientSuggestions(
+        allIngredients.filter(i => !i.discontinued && !i.excluded),
+        searchQ,
+        8
+      ),
+    [searchQ, allIngredients]
+  );
 
   useEffect(() => {
     setActiveSuggestionIdx(-1);
@@ -84,7 +86,7 @@ export function useRecipeIngredientSearch({
     [quantityInputRefs, setComponents, unitPriceMap]
   );
 
-  const handleIngredientKeyDown = useCallback(
+  const processKeyDown = useCallback(
     (idx, e) => {
       if (searchIdx !== idx) return;
       if (suggestions.length === 0) {
@@ -145,6 +147,35 @@ export function useRecipeIngredientSearch({
     ]
   );
 
+  useEffect(() => {
+    latestKeyDownRef.current = processKeyDown;
+  }, [processKeyDown]);
+
+  // 한글 마지막 글자가 조합 중일 때 Enter를 치면 조합 확정 키가 먼저 오는데, 이때 선택을 실행하면
+  // 조합이 끝나며 뒤늦게 오는 입력값이 선택을 되돌려(제품코드·단가가 끊기고 목록이 다시 열림) 지우고
+  // 새로 입력해야 했다. 조합 중 키는 무시하고, Enter였다면 조합이 끝난 직후 최신 상태로 한 번 처리한다.
+  const handleIngredientKeyDown = useCallback(
+    (idx, e) => {
+      if (isImeComposing(e)) {
+        if (e.key === 'Enter' && searchIdx === idx) pendingEnterIdxRef.current = idx;
+        return;
+      }
+      pendingEnterIdxRef.current = null;
+      processKeyDown(idx, e);
+    },
+    [processKeyDown, searchIdx]
+  );
+
+  const handleIngredientCompositionEnd = useCallback(idx => {
+    if (pendingEnterIdxRef.current !== idx) return;
+    pendingEnterIdxRef.current = null;
+    clearTimeout(composeTimerRef.current);
+    composeTimerRef.current = setTimeout(() => {
+      composeTimerRef.current = null;
+      latestKeyDownRef.current?.(idx, { key: 'Enter', preventDefault() {} });
+    }, 0);
+  }, []);
+
   const handleIngredientInputChange = useCallback(
     (idx, value) => {
       // 이전 blur에서 예약된 닫기 타이머가 이번 입력 뒤에 뒤늦게 발동해 searchIdx를
@@ -190,6 +221,7 @@ export function useRecipeIngredientSearch({
     handleIngredientFocus,
     handleIngredientBlur,
     handleIngredientKeyDown,
+    handleIngredientCompositionEnd,
     pickSuggestion,
   };
 }

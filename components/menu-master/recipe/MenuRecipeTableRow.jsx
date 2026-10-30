@@ -28,6 +28,7 @@ export function MenuRecipeTableRow({
   onIngredientFocus,
   onIngredientBlur,
   onIngredientKeyDown,
+  onIngredientCompositionEnd,
   onPickSuggestion,
   onQuantityChange,
   onQuantityKeyDown,
@@ -111,6 +112,7 @@ export function MenuRecipeTableRow({
           onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
           onBlur={() => onIngredientBlur(idx)}
           onKeyDown={e => onIngredientKeyDown?.(idx, e)}
+          onCompositionEnd={() => onIngredientCompositionEnd?.(idx)}
           placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"
           aria-autocomplete="list"
         />

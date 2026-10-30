@@ -151,6 +151,8 @@ export function applyIngredientSuggestionToComponent(component, ingredient, unit
  * 식자재에 없는 이름으로 직접 입력한 수동 구성품은 입력해 둔 단가를 유지한다.
  */
 export function applyTypedIngredientName(component, value, allIngredients = []) {
+  // 값이 그대로면(조합이 끝나며 뒤늦게 같은 값의 입력 이벤트가 오는 경우 등) 연결을 끊지 않는다
+  if (value === component?.ingredientName) return component;
   const next = { ...component, ingredientName: value, _typed: true };
   const linked =
     Boolean(recipeComponentProductCode(component)) ||
