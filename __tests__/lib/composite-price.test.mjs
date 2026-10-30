@@ -60,8 +60,27 @@ describe('resolveCompositePrice', () => {
     expect(resolveCompositePrice(['A', 'B', 'C'], lookup, { mode: 'partial' })).toMatchObject({
       priceWithTax: null,
       isComplete: false,
-      missingCodes: ['A', 'C'],
-      pricedCodes: ['B'],
+      missingCodes: ['A', 'B', 'C'],
+      pricedCodes: [],
+    });
+  });
+
+  // 2026-10-30 원가 흐름 점검: 0원 구성품을 "가격 있음"으로 세면 strict 합산이 완전한 것처럼 통과해
+  // 원가가 과소 계산된다
+  test('strict: 0원 구성품이 있으면 가격 없음으로 본다(과소 원가 방지)', () => {
+    const lookup = makeMap([
+      ['A', 1000],
+      ['B', 0],
+    ]);
+    expect(resolveCompositePrice(['A', 'B'], lookup, { mode: 'strict' })).toMatchObject({
+      priceWithTax: null,
+      isComplete: false,
+      missingCodes: ['B'],
+    });
+    // partial(단가표 참고용)은 가격 있는 것만 합산
+    expect(resolveCompositePrice(['A', 'B'], lookup, { mode: 'partial' })).toMatchObject({
+      priceWithTax: 1000,
+      pricedCodes: ['A'],
     });
   });
 });

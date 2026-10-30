@@ -238,7 +238,7 @@ describe('익명화 업무 fixture 회귀', () => {
     expect(missingColumn.ok).toBe(false);
     expect(missingColumn.error).toContain('taxType');
 
-    const headerOnly = parsePriceRows(['제품명', '과세구분', '단가'], []);
+    const headerOnly = parsePriceRows(['제품코드', '제품명', '과세구분', '단가'], []);
     expect(headerOnly.ok).toBe(true);
     expect(headerOnly.success).toHaveLength(0);
   });
