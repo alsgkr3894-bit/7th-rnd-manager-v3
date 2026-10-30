@@ -6,6 +6,7 @@ import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { showToast } from '@/components/Toast';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useJettePrice } from '@/lib/price/use-price-upload';
+import { PriceRiseModal } from '@/components/cost/PriceRiseModal';
 import { PriceLatestView } from '@/components/jette/PriceLatestView';
 import { PriceSummaryCards } from '@/components/jette/PriceSummaryCards';
 import { PriceCompareControls } from '@/components/jette/PriceCompareControls';
@@ -35,6 +36,7 @@ export default function Page() {
     handleFile,
     handleDelete,
     handleTypeChange,
+    priceRiseAlert,
   } = useJettePrice();
 
   const [tab, setTab] = useState('latest');
@@ -54,6 +56,11 @@ export default function Page() {
 
   return (
     <main className="main">
+      <PriceRiseModal
+        result={priceRiseAlert.priceRise}
+        onConfirm={priceRiseAlert.confirmPriceRise}
+        onLater={priceRiseAlert.laterPriceRise}
+      />
       <PageHeader
         breadcrumb={['제때데이터', '단가']}
         title="제때 단가"

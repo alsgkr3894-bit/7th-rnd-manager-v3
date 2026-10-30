@@ -8,6 +8,9 @@ import {
   upsertIngredientMeta,
   replaceIngredientProductCode,
 } from '@/lib/ingredient';
+import { getAllIngredients } from '@/lib/ingredient';
+import { computeManualPriceRises } from '@/lib/cost/price-rise-service';
+import { changesCostInputs } from '@/lib/cost/changes-cost-inputs';
 import { syncManagedScope } from './ingredientManageUtils';
 
 /**
@@ -72,11 +75,33 @@ export async function saveIngredientAndReplace({
   await load();
 }
 
-/** useIngredientManageActions에서 쓰는 훅 형태 — 위 saveIngredientAndReplace를 useCallback으로 감싼다. */
-export function useIngredientSaveAction({ canEdit, formTarget, setFormTarget, load }) {
+/**
+ * useIngredientManageActions에서 쓰는 훅 형태 — 위 saveIngredientAndReplace를 useCallback으로 감싼다.
+ * onPriceRise(result)를 주면, 수동 단가 등을 바꿔 메뉴 원가가 오른 경우 저장 직후 그 결과를 넘긴다.
+ */
+export function useIngredientSaveAction({ canEdit, formTarget, setFormTarget, load, onPriceRise }) {
   return useCallback(
-    (formData, saveOptions = {}) =>
-      saveIngredientAndReplace({ formData, saveOptions, canEdit, formTarget, setFormTarget, load }),
-    [canEdit, formTarget, load, setFormTarget]
+    async (formData, saveOptions = {}) => {
+      const watch = typeof onPriceRise === 'function' && changesCostInputs(formTarget, formData);
+      const before = watch ? await getAllIngredients().catch(() => null) : null;
+      await saveIngredientAndReplace({
+        formData,
+        saveOptions,
+        canEdit,
+        formTarget,
+        setFormTarget,
+        load,
+      });
+      if (!watch || !before) return;
+      // 저장은 이미 끝났다 — 알림 계산이 실패해도 저장 흐름에는 영향이 없게 한다
+      try {
+        const after = await getAllIngredients();
+        const label = formData.ingredientName || formTarget.ingredientName || '';
+        onPriceRise(await computeManualPriceRises(before, after, label));
+      } catch (err) {
+        console.warn('[ingredient] 원가 상승 계산 실패:', err);
+      }
+    },
+    [canEdit, formTarget, load, onPriceRise, setFormTarget]
   );
 }

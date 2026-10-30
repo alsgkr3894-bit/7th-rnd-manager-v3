@@ -1,5 +1,6 @@
 'use client';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { PriceRiseModal } from '@/components/cost/PriceRiseModal';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManagePage } from './useIngredientManagePage';
 import { IngredientManagePageHeaderActions } from './IngredientManagePageHeaderActions';
@@ -19,12 +20,18 @@ export default function Page() {
     view,
     batch,
     actions,
+    priceRiseAlert,
   } = p;
   const { rows, brokenRefs, productCodeDupes, loading } = data;
   const currentView = pageState.view;
 
   return (
     <main className="main page-enter">
+      <PriceRiseModal
+        result={priceRiseAlert.priceRise}
+        onConfirm={priceRiseAlert.confirmPriceRise}
+        onLater={priceRiseAlert.laterPriceRise}
+      />
       <PageHeader
         breadcrumb={['식자재', '식자재 관리']}
         title="식자재 관리"

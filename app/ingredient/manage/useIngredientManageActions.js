@@ -55,6 +55,7 @@ export function useIngredientManageActions({
   setCatFilter,
   setTagFilter,
   canEdit = false,
+  onPriceRise,
 }) {
   async function handleReset() {
     if (!canEdit) return;
@@ -121,7 +122,13 @@ export function useIngredientManageActions({
     }
   }
 
-  const handleSave = useIngredientSaveAction({ canEdit, formTarget, setFormTarget, load });
+  const handleSave = useIngredientSaveAction({
+    canEdit,
+    formTarget,
+    setFormTarget,
+    load,
+    onPriceRise,
+  });
 
   const handleExclude = useCallback(
     async row => {

@@ -23,6 +23,7 @@ import { getRecentPaletteItems } from '@/lib/palette-recent';
 import { getNoteKpi, getRecentActivities } from '@/lib/stats';
 import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
 import { ActionCenterWidget } from '@/components/home/ActionCenterWidget';
+import { readPendingPriceRise } from '@/lib/cost/price-rise-pending';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 const INITIAL_TODAY_LABEL = '오늘';
@@ -64,6 +65,14 @@ export default function HomePage() {
   const [greeting, setGreeting] = useState(INITIAL_GREETING);
   const quickResetTimer = useRef(null);
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
+  // 확인 전인 "원가 상승 메뉴" 알림 — 단가 업로드/저장 직후 팝업에서 [확인]을 누르기 전까지 남는다
+  const [priceRisePending, setPriceRisePending] = useState(null);
+  useEffect(() => {
+    const read = () => setPriceRisePending(readPendingPriceRise());
+    read();
+    window.addEventListener('focus', read);
+    return () => window.removeEventListener('focus', read);
+  }, []);
 
   const {
     isVisible,
@@ -280,6 +289,7 @@ export default function HomePage() {
             uploadFreshness={uploadFreshness}
             backupReminder={backupReminder}
             ingredientHealth={ingredientHealth}
+            priceRisePending={priceRisePending}
             isMain={isMain}
             canEdit={canEdit}
           />

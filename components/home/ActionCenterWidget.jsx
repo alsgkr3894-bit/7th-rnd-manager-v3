@@ -15,6 +15,7 @@ export function ActionCenterWidget({
   uploadFreshness,
   backupReminder,
   ingredientHealth,
+  priceRisePending = null,
   isMain = true,
   canEdit = false,
 }) {
@@ -28,9 +29,18 @@ export function ActionCenterWidget({
         uploadFreshness: isMain ? uploadFreshness : { ...uploadFreshness, shipment: null },
         backupReminder,
         ingredientHealth,
+        priceRisePending,
         canEdit,
       }),
-    [unmatchedCount, uploadFreshness, backupReminder, ingredientHealth, canEdit, isMain]
+    [
+      unmatchedCount,
+      uploadFreshness,
+      backupReminder,
+      ingredientHealth,
+      priceRisePending,
+      canEdit,
+      isMain,
+    ]
   );
 
   // rev가 변경될 때(dismiss/snooze 후 refresh) localStorage 상태를 재읽음

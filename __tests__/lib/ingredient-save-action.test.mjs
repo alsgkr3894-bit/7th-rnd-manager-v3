@@ -12,8 +12,12 @@ jest.unstable_mockModule('@/lib/ingredient', () => ({
   updateIngredient,
   upsertIngredientMeta,
   replaceIngredientProductCode,
+  getAllIngredients: jest.fn().mockResolvedValue([]),
 }));
 jest.unstable_mockModule('@/components/Toast', () => ({ showToast }));
+jest.unstable_mockModule('@/lib/cost/price-rise-service', () => ({
+  computeManualPriceRises: jest.fn(),
+}));
 jest.unstable_mockModule('@/lib/change-log', () => ({ logIngredientSave: jest.fn() }));
 jest.unstable_mockModule('../../app/ingredient/manage/ingredientManageUtils.js', () => ({
   syncManagedScope,

@@ -9,6 +9,7 @@ import { useIngredientManagePageState } from './useIngredientManagePageState';
 import { useIngredientBatchSelection } from './useIngredientBatchSelection';
 import { useIngredientJetteIssueVisibility } from './useIngredientJetteIssueVisibility';
 import { productCodeKey } from './ingredientManageUtils';
+import { usePriceRiseAlert } from '@/hooks/usePriceRiseAlert';
 
 /**
  * page.jsx가 JSX 조립에만 집중하도록, 데이터 로드·화면 상태·파생 목록·일괄선택·액션·
@@ -16,6 +17,7 @@ import { productCodeKey } from './ingredientManageUtils';
  */
 export function useIngredientManagePage() {
   const { isViewer } = useCurrentRole();
+  const priceRiseAlert = usePriceRiseAlert();
   const data = useIngredientManageData();
   const { refs: discontinuedRefs, loading: discontinuedRefsLoading } = useDiscontinuedRefs(
     data.rows,
@@ -55,6 +57,7 @@ export function useIngredientManagePage() {
     setCatFilter: pageState.setCatFilter,
     setTagFilter: pageState.setTagFilter,
     canEdit: !isViewer,
+    onPriceRise: priceRiseAlert.showPriceRise,
   });
   const jette = useIngredientJetteIssueVisibility({
     newJetteRows: data.newJetteRows,
@@ -82,5 +85,6 @@ export function useIngredientManagePage() {
     jette,
     onCopy,
     onLinkSubstitute,
+    priceRiseAlert,
   };
 }
