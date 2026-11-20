@@ -8,10 +8,11 @@ import { useState, useEffect } from 'react';
  *   - silent catch → 에러 로깅(배지가 0일 때 "데이터 없음" vs "실패" 구분 가능)
  *   - unmount 후 상태 업데이트 방지(alive guard)
  *
- * @returns {{ unmatchedCount: number }}
+ * @returns {{ unmatchedCount: number, menuMasterIssueCount: number }}
  */
 export function usePageStats(pathname) {
   const [unmatchedCount, setUnmatchedCount] = useState(0);
+  const [menuMasterIssueCount, setMenuMasterIssueCount] = useState(0);
   const [tick, setTick] = useState(0);
 
   // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
@@ -29,11 +30,31 @@ export function usePageStats(pathname) {
       try {
         const { initDB } = await import('@/lib/db');
         await initDB();
-        const { getIssues } = await import('@/lib/sales');
-        const issues = await getIssues({ status: 'open' });
+        const [salesModule, menuMasterModule, recipeSummaryModule, recipeIssuesModule] =
+          await Promise.all([
+            import('@/lib/sales'),
+            import('@/lib/menu-master'),
+            import('@/lib/menu-master/recipe-summary'),
+            import('@/lib/menu-master/recipe-issues'),
+          ]);
+        const [issues, menus] = await Promise.all([
+          salesModule.getIssues({ status: 'open' }),
+          menuMasterModule.getAllMenuMaster(),
+        ]);
+        const menuRows = Array.isArray(menus) ? menus : [];
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
+        try {
+          const recipeSummaryMap = await recipeSummaryModule.loadMenuRecipeSummaryMap(menuRows);
+          if (alive) {
+            setMenuMasterIssueCount(
+              recipeIssuesModule.buildRecipeIssues(menuRows, recipeSummaryMap).length
+            );
+          }
+        } catch (e) {
+          if (alive) console.warn('[usePageStats] 메뉴마스터 이슈 로드 실패', e);
+        }
       } catch (e) {
         if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
       }
@@ -43,5 +64,5 @@ export function usePageStats(pathname) {
     };
   }, [pathname, tick]);
 
-  return { unmatchedCount };
+  return { unmatchedCount, menuMasterIssueCount };
 }

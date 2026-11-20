@@ -28,6 +28,7 @@ import {
   loadMenuRecipeSummaryMap,
   MENU_RECIPE_SUMMARY_STATUS,
 } from '@/lib/menu-master/recipe-summary';
+import { buildRecipeIssues } from '@/lib/menu-master/recipe-issues';
 import { isRecipeSummaryExcludedFromTracking } from '@/lib/menu-master/recipe-issues';
 import {
   normalizeMenuCodeCategories,
@@ -195,6 +196,8 @@ export default function Page() {
   const recipeNeedsCheck = recipeSummaries.filter(
     summary => summary.hasRecipe && summary.status !== MENU_RECIPE_SUMMARY_STATUS.READY
   ).length;
+  // 이슈 탭과 동일한 판정 함수를 사용해야 레시피 미작성·판매가 누락도 배지에 포함된다.
+  const menuIssueCount = buildRecipeIssues(rows, recipeSummaryMap).length;
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
 
@@ -313,7 +316,7 @@ export default function Page() {
               className={'chip' + (viewMode === 'issues' ? ' active' : '')}
               onClick={() => setViewMode('issues')}
             >
-              이슈{recipeNeedsCheck > 0 && ` ${recipeNeedsCheck}`}
+              이슈{menuIssueCount > 0 && ` ${menuIssueCount}`}
             </button>
             <button
               className={'chip' + (viewMode === 'readiness' ? ' active' : '')}

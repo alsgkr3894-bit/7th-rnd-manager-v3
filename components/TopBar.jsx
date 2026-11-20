@@ -18,6 +18,7 @@ export default function TopBar({
   companies = [],
   onCompanyChange,
   unmatchedCount = 0,
+  menuMasterIssueCount = 0,
   canEdit = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
@@ -86,6 +87,17 @@ export default function TopBar({
             time: '지금',
             desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
             href: '/menu-sales/unmatched',
+          },
+        ]
+      : []),
+    ...(menuMasterIssueCount > 0
+      ? [
+          {
+            kind: 'alert',
+            title: `메뉴마스터 이슈 ${menuMasterIssueCount}건 확인 필요`,
+            time: '지금',
+            desc: '레시피·수량·단가·판매가 누락 항목을 확인할 수 있어요',
+            href: '/menu-master',
           },
         ]
       : []),
