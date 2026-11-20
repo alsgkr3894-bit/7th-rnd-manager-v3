@@ -19,6 +19,7 @@ export default function TopBar({
   onCompanyChange,
   unmatchedCount = 0,
   menuMasterIssueCount = 0,
+  ingredientIssueCount = 0,
   canEdit = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
@@ -98,6 +99,17 @@ export default function TopBar({
             time: '지금',
             desc: '레시피·수량·단가·판매가 누락 항목을 확인할 수 있어요',
             href: '/menu-master',
+          },
+        ]
+      : []),
+    ...(ingredientIssueCount > 0
+      ? [
+          {
+            kind: 'alert',
+            title: `식자재관리 이슈 ${ingredientIssueCount}건 확인 필요`,
+            time: '지금',
+            desc: '분류·포장수량·단가·표기 누락과 단가 변동을 확인할 수 있어요',
+            href: '/ingredient/manage?view=issues',
           },
         ]
       : []),

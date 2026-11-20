@@ -55,7 +55,7 @@ export default function AppShell({ children }) {
   );
 
   const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
-  const { unmatchedCount, menuMasterIssueCount } = usePageStats(pathname);
+  const { unmatchedCount, menuMasterIssueCount, ingredientIssueCount } = usePageStats(pathname);
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
@@ -160,6 +160,7 @@ export default function AppShell({ children }) {
           onCompanyChange={handleCompanyChange}
           unmatchedCount={visibleUnmatchedCount}
           menuMasterIssueCount={menuMasterIssueCount}
+          ingredientIssueCount={ingredientIssueCount}
           canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>

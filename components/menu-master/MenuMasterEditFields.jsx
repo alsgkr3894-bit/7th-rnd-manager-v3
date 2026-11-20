@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ComponentOnlyField,
   HiddenField,
   NoteField,
   OriginAllergenExcludeField,
@@ -101,6 +102,7 @@ export function MenuMasterEditFields({
           <StatusField value={form.status} setField={setField} />
         </div>
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ComponentOnlyField value={form.componentOnly} setField={setField} />
           <OriginAllergenExcludeField value={form.excludeFromOrigin} setField={setField} />
           <HiddenField value={form.hidden} setField={setField} />
           <OutputMenuLinkField

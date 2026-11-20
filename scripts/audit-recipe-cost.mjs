@@ -323,6 +323,7 @@ try {
     .filter(
       m =>
         m.status !== 'discontinued' &&
+        m.componentOnly !== true &&
         summaries.get(m.menuCode)?.hasRecipe &&
         !(Number(m.price) > 0)
     )

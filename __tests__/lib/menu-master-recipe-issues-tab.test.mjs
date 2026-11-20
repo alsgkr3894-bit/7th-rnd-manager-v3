@@ -85,6 +85,33 @@ describe('buildRecipeIssues — 이슈 분류 로직', () => {
     expect(issues.some(i => i.kind === ISSUE_KINDS.NO_PRICE)).toBe(true);
   });
 
+  test('구성품 전용 메뉴는 판매가가 없어도 no-price로 분류하지 않는다', () => {
+    const menus = [makeMenu({ componentOnly: true, price: null })];
+    const map = makeSummaryMap([
+      ['P001', { status: MENU_RECIPE_SUMMARY_STATUS.READY, hasRecipe: true }],
+    ]);
+
+    expect(buildRecipeIssues(menus, map)).toHaveLength(0);
+  });
+
+  test('단종 메뉴는 판매가가 없어도 이슈 목록에서 제외한다', () => {
+    const menus = [makeMenu({ status: 'discontinued', price: 0 })];
+    const map = makeSummaryMap([
+      ['P001', { status: MENU_RECIPE_SUMMARY_STATUS.MISSING, hasRecipe: false }],
+    ]);
+
+    expect(buildRecipeIssues(menus, map)).toHaveLength(0);
+  });
+
+  test('숨김 메뉴는 판매가가 없어도 이슈 목록에서 제외한다', () => {
+    const menus = [makeMenu({ hidden: true, price: 0 })];
+    const map = makeSummaryMap([
+      ['P001', { status: MENU_RECIPE_SUMMARY_STATUS.MISSING, hasRecipe: false }],
+    ]);
+
+    expect(buildRecipeIssues(menus, map)).toHaveLength(0);
+  });
+
   test('UNSUPPORTED 카테고리 메뉴는 이슈 목록에서 제외한다', () => {
     const menus = [makeMenu({ menuCode: 'E001', category: '엣지' })];
     const map = makeSummaryMap([

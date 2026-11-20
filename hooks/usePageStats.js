@@ -8,11 +8,12 @@ import { useState, useEffect } from 'react';
  *   - silent catch → 에러 로깅(배지가 0일 때 "데이터 없음" vs "실패" 구분 가능)
  *   - unmount 후 상태 업데이트 방지(alive guard)
  *
- * @returns {{ unmatchedCount: number, menuMasterIssueCount: number }}
+ * @returns {{ unmatchedCount: number, menuMasterIssueCount: number, ingredientIssueCount: number }}
  */
 export function usePageStats(pathname) {
   const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [menuMasterIssueCount, setMenuMasterIssueCount] = useState(0);
+  const [ingredientIssueCount, setIngredientIssueCount] = useState(0);
   const [tick, setTick] = useState(0);
 
   // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
@@ -30,21 +31,33 @@ export function usePageStats(pathname) {
       try {
         const { initDB } = await import('@/lib/db');
         await initDB();
-        const [salesModule, menuMasterModule, recipeSummaryModule, recipeIssuesModule] =
+        const [
+          salesModule,
+          menuMasterModule,
+          recipeSummaryModule,
+          recipeIssuesModule,
+          ingredientIssueModule,
+        ] =
           await Promise.all([
             import('@/lib/sales'),
             import('@/lib/menu-master'),
             import('@/lib/menu-master/recipe-summary'),
             import('@/lib/menu-master/recipe-issues'),
+            import('@/lib/ingredient/issue-count'),
           ]);
-        const [issues, menus] = await Promise.all([
+        const [issues, menus, ingredientCount] = await Promise.all([
           salesModule.getIssues({ status: 'open' }),
           menuMasterModule.getAllMenuMaster(),
+          ingredientIssueModule.getIngredientIssueCount().catch(e => {
+            console.warn('[usePageStats] 식자재 이슈 로드 실패', e);
+            return 0;
+          }),
         ]);
         const menuRows = Array.isArray(menus) ? menus : [];
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
+        setIngredientIssueCount(ingredientCount);
         try {
           const recipeSummaryMap = await recipeSummaryModule.loadMenuRecipeSummaryMap(menuRows);
           if (alive) {
@@ -64,5 +77,5 @@ export function usePageStats(pathname) {
     };
   }, [pathname, tick]);
 
-  return { unmatchedCount, menuMasterIssueCount };
+  return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount };
 }

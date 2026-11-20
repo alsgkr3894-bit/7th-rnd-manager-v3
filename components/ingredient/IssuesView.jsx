@@ -198,6 +198,7 @@ export function IssuesView({
       uncategorized: safeIssueRows.filter(r => hasIssue(r, 'uncategorized')).length,
       'no-unit': safeIssueRows.filter(r => hasIssue(r, 'no-unit')).length,
       'no-price-link': safeIssueRows.filter(r => hasIssue(r, 'no-price-link')).length,
+      'no-scope': safeIssueRows.filter(r => hasIssue(r, 'no-scope')).length,
       'missing-origin': safeIssueRows.filter(r => hasIssue(r, 'missing-origin')).length,
       'missing-allergen': safeIssueRows.filter(r => hasIssue(r, 'missing-allergen')).length,
     }),
@@ -210,6 +211,7 @@ export function IssuesView({
     { id: 'uncategorized', label: '미분류', count: counts.uncategorized },
     { id: 'no-unit', label: '포장수량 없음', count: counts['no-unit'] },
     { id: 'no-price-link', label: '단가 미연동', count: counts['no-price-link'] },
+    { id: 'no-scope', label: '전용/범용 미지정', count: counts['no-scope'] },
     { id: 'missing-origin', label: '원산지 미표기', count: counts['missing-origin'] },
     { id: 'missing-allergen', label: '알레르기 미표기', count: counts['missing-allergen'] },
   ];

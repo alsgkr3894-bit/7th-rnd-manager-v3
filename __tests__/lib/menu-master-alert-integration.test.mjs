@@ -15,7 +15,9 @@ describe('메뉴마스터 이슈 배지·알림 연결', () => {
     const source = readSource('hooks/usePageStats.js');
 
     expect(source).toContain('buildRecipeIssues(menuRows, recipeSummaryMap).length');
-    expect(source).toContain('return { unmatchedCount, menuMasterIssueCount }');
+    expect(source).toContain(
+      'return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount }'
+    );
   });
 
   test('상단 알림에 메뉴마스터 이슈와 이동 경로가 표시된다', () => {
@@ -23,5 +25,21 @@ describe('메뉴마스터 이슈 배지·알림 연결', () => {
 
     expect(source).toContain('메뉴마스터 이슈 ${menuMasterIssueCount}건 확인 필요');
     expect(source).toContain("href: '/menu-master'");
+  });
+
+  test('상단 알림에 식자재관리 이슈와 이슈 탭 이동 경로가 표시된다', () => {
+    const topBarSource = readSource('components/TopBar.jsx');
+    const statsSource = readSource('hooks/usePageStats.js');
+
+    expect(statsSource).toContain('getIngredientIssueCount()');
+    expect(topBarSource).toContain('식자재관리 이슈 ${ingredientIssueCount}건 확인 필요');
+    expect(topBarSource).toContain("href: '/ingredient/manage?view=issues'");
+  });
+
+  test('식자재 이슈 화면에서 전용·범용 미지정만 필터링할 수 있다', () => {
+    const source = readSource('components/ingredient/IssuesView.jsx');
+
+    expect(source).toContain("'no-scope': safeIssueRows.filter");
+    expect(source).toContain("{ id: 'no-scope', label: '전용/범용 미지정'");
   });
 });
