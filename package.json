@@ -63,11 +63,11 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "dotenv": "^17.4.2",
-    "next": "15.5.28",
+    "next": "^15.5.29",
     "pg": "^8.22.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
