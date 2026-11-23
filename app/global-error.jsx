@@ -40,22 +40,6 @@ export default function GlobalError({ error, reset }) {
             <br />
             페이지를 새로 고침하거나 다시 시도해 주세요.
           </p>
-          {error?.message && (
-            <p
-              style={{
-                fontSize: 11,
-                color: '#64748b',
-                fontFamily: 'monospace',
-                background: 'rgba(255,255,255,.05)',
-                borderRadius: 6,
-                padding: '6px 12px',
-                marginBottom: 24,
-                wordBreak: 'break-all',
-              }}
-            >
-              {error.message}
-            </p>
-          )}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={reset}

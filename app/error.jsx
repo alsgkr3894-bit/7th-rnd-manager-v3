@@ -84,24 +84,6 @@ export default function ErrorPage({ error, reset }) {
           <br />
           문제가 지속되면 시스템 관리자에게 문의해 주세요.
         </p>
-        {error?.message && (
-          <p
-            style={{
-              fontSize: 11,
-              color: 'var(--text-4, #888)',
-              fontFamily: 'monospace',
-              background: 'rgba(0,0,0,.18)',
-              borderRadius: 6,
-              padding: '6px 12px',
-              marginTop: 8,
-              maxWidth: 480,
-              wordBreak: 'break-all',
-            }}
-          >
-            {error.message}
-          </p>
-        )}
-
         <div className={styles.actions}>
           <button
             className={`${styles.btn} ${styles.btnErr}`}

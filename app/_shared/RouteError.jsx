@@ -17,23 +17,6 @@ export default function RouteError({ error, reset }) {
       <p style={{ color: 'var(--text-2)', fontSize: 14, margin: 0 }}>
         이 화면에서 오류가 발생했습니다.
       </p>
-      {error?.message && (
-        <p
-          style={{
-            color: 'var(--text-4)',
-            fontSize: 11,
-            fontFamily: 'monospace',
-            background: 'rgba(0,0,0,.06)',
-            borderRadius: 6,
-            padding: '4px 10px',
-            margin: 0,
-            maxWidth: 400,
-            wordBreak: 'break-all',
-          }}
-        >
-          {error.message}
-        </p>
-      )}
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           onClick={reset}
