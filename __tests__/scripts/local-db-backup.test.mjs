@@ -3,7 +3,7 @@
  * 2026-09-14~18에 로그인 직후 자동 백업이 Postgres가 뜨기 전에 실행돼 0바이트 .dump만
  * 남기고, autoBackup()이 그걸 "최신 백업"으로 세 20시간을 스킵한 사고가 있었다.
  */
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from '@jest/globals';
@@ -12,6 +12,7 @@ import {
   backupFiles,
   createBackup,
   DEFAULT_AUTO_RETRY_DELAY_MS,
+  pruneBackups,
 } from '../../prisma/local-db-backup.mjs';
 
 let tempDir = null;
@@ -60,6 +61,35 @@ describe('createBackup — pg_dump 실패 시 잔해를 남기지 않는다', ()
     const leftoverDumps = readdirSync(tempDir).filter(name => name.endsWith('.dump'));
     expect(leftoverDumps).toHaveLength(0);
   }, 20_000);
+});
+
+describe('pruneBackups — 보관 개수 상한', () => {
+  test('최신 14개만 남기고 오래된 dump와 sidecar를 함께 삭제한다', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rnd-prune-backup-'));
+
+    for (let index = 0; index < 17; index++) {
+      const name = `rnd_local-${String(index).padStart(2, '0')}.dump`;
+      const dumpPath = join(tempDir, name);
+      writeFileSync(dumpPath, `dump-${index}`);
+      writeFileSync(`${dumpPath}.json`, JSON.stringify({ database: 'rnd_local' }));
+      const modifiedAt = new Date(Date.UTC(2026, 0, 1, 0, 0, index));
+      utimesSync(dumpPath, modifiedAt, modifiedAt);
+    }
+    const unrelated = join(tempDir, '사용자메모.txt');
+    writeFileSync(unrelated, '삭제하면 안 됨');
+
+    const result = pruneBackups(tempDir);
+
+    expect(result).toMatchObject({ keep: 14, remaining: 14 });
+    expect(result.removed).toEqual([
+      'rnd_local-02.dump',
+      'rnd_local-01.dump',
+      'rnd_local-00.dump',
+    ]);
+    expect(existsSync(join(tempDir, 'rnd_local-00.dump'))).toBe(false);
+    expect(existsSync(join(tempDir, 'rnd_local-00.dump.json'))).toBe(false);
+    expect(existsSync(unrelated)).toBe(true);
+  });
 });
 
 describe('autoBackup — 실패 시 재시도 후 포기한다', () => {

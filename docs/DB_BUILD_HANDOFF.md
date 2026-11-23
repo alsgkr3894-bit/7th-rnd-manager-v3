@@ -237,7 +237,7 @@ npm.cmd run db:backup:prune
 npm.cmd run db:backup:autostart
 ```
 
-자동 백업은 마지막 백업이 20시간보다 오래된 경우에만 새 dump를 만든다. 기본 보관 정책은 최신 14개를 보존하고, 30일보다 오래된 나머지 dump를 정리한다.
+자동 백업은 마지막 백업이 20시간보다 오래된 경우에만 새 dump를 만든다. 자동·수동 백업 생성 직후 최신 14개만 보존하고 나머지 dump와 sidecar를 함께 정리한다. 필요하면 `DB_BACKUP_KEEP` 환경변수 또는 `--keep` 옵션으로 상한을 조정할 수 있다.
 
 ## 다음 작업자가 주의할 점
 

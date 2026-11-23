@@ -7,7 +7,6 @@ import { pathToFileURL } from 'node:url';
 const ROOT = process.cwd();
 const BACKUP_DIR = resolve(ROOT, process.env.DB_BACKUP_DIR || '.db-backups');
 const DEFAULT_KEEP = 14;
-const DEFAULT_MAX_AGE_DAYS = 30;
 const DEFAULT_AUTO_INTERVAL_HOURS = 20;
 // 로그인 직후 자동 시작(register-db-backup-autostart.ps1)으로 실행되면 로컬 Postgres가
 // 아직 안 떠 있어 pg_dump가 곧바로 실패하는 경우가 실제로 여러 번 있었다(2026-09-14~18에
@@ -25,8 +24,7 @@ function usage() {
     '',
     'Options:',
     '  --dir <path>       Backup directory. Default: .db-backups',
-    '  --keep <number>    Number of latest backups to keep during prune. Default: 14',
-    '  --days <number>    Delete backups older than this during prune. Default: 30',
+    '  --keep <number>    Maximum number of latest backups to keep. Default: 14',
     '  --hours <number>   Auto backup interval. Default: 20',
   ].join('\n');
 }
@@ -40,6 +38,11 @@ function argValue(name, fallback) {
 function numberArg(name, fallback) {
   const value = Number(argValue(name, fallback));
   return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 export function getBackupDir(overrideDir) {
@@ -183,14 +186,12 @@ export function listBackups(overrideDir) {
 
 export function pruneBackups(overrideDir) {
   const dir = getBackupDir(overrideDir);
-  const keep = numberArg('--keep', DEFAULT_KEEP);
-  const days = numberArg('--days', DEFAULT_MAX_AGE_DAYS);
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const keep = numberArg('--keep', positiveInteger(process.env.DB_BACKUP_KEEP, DEFAULT_KEEP));
   const files = backupFiles(dir);
   const removed = [];
 
   files.forEach((file, index) => {
-    if (index < keep || file.mtimeMs >= cutoff) return;
+    if (index < keep) return;
     rmSync(file.path, { force: true });
     rmSync(`${file.path}.json`, { force: true });
     removed.push(file.name);
@@ -200,10 +201,15 @@ export function pruneBackups(overrideDir) {
     ok: true,
     backupDir: dir,
     keep,
-    days,
     removed,
     remaining: backupFiles(dir).length,
   };
+}
+
+export function createBackupWithRetention(overrideDir) {
+  const created = createBackup(overrideDir);
+  const pruned = pruneBackups(overrideDir);
+  return { ...created, pruned };
 }
 
 function delay(ms) {
@@ -240,9 +246,7 @@ export async function autoBackup(options = {}) {
   let lastError = null;
   for (let attempt = 1; attempt <= retryAttempts; attempt++) {
     try {
-      const created = createBackup(dir);
-      const pruned = pruneBackups(dir);
-      return { ...created, pruned, attempts: attempt };
+      return { ...createBackupWithRetention(dir), attempts: attempt };
     } catch (err) {
       lastError = err;
       if (!isTransientBackupError(err)) break;
@@ -262,7 +266,7 @@ async function main() {
     console.log(usage());
     return;
   }
-  if (command === 'create') return print(createBackup());
+  if (command === 'create') return print(createBackupWithRetention());
   if (command === 'list') return print(listBackups());
   if (command === 'prune') return print(pruneBackups());
   if (command === 'auto') return print(await autoBackup());
