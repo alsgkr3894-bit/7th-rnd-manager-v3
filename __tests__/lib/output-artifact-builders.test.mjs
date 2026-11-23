@@ -608,6 +608,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       10,
       'g',
       100,
+      'g당 100원',
       1000,
       1200,
       '',
@@ -795,7 +796,8 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       const recipe = wb.Sheets['레시피 출력'];
       expect(cellOf(recipe, 1, 9).s.numFmt).toBe('#,##0.00');
       expect(cellOf(recipe, 1, 9).v).toBe(45.8333); // 반올림해서 저장하지 않는다
-      expect(cellOf(recipe, 1, 10).s.numFmt).toBe('#,##0');
+      expect(cellOf(recipe, 1, 10).v).toBe('g당 45.8333원');
+      expect(cellOf(recipe, 1, 11).s.numFmt).toBe('#,##0');
     });
 
     test('위험 원가율만 강조하고, 기준 미만은 강조하지 않는다', async () => {
@@ -845,7 +847,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       const wb = lastWrite().workbook;
       expect(wb.Sheets['카테고리 요약']['!autofilter'].ref).toBe('A1:F3');
       expect(wb.Sheets['메뉴 상세']['!autofilter'].ref).toBe('A1:K4');
-      expect(wb.Sheets['레시피 출력']['!autofilter'].ref).toBe('A1:M4');
+      expect(wb.Sheets['레시피 출력']['!autofilter'].ref).toBe('A1:N4');
     });
 
     test('시트 구성·헤더는 서식을 입혀도 그대로다', async () => {
@@ -860,7 +862,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
         '최고(%)',
         '위험 메뉴',
       ]);
-      expect(rowsOf(wb, '레시피 출력')[0]).toHaveLength(13);
+      expect(rowsOf(wb, '레시피 출력')[0]).toHaveLength(14);
     });
   });
 

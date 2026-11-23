@@ -1,5 +1,7 @@
 'use client';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * "단종/숨김 식자재를 아직 참조하는 레시피" 배너 — 대체 연결 없이 단종 처리됐거나
@@ -11,8 +13,10 @@ export function DiscontinuedRefsBanner({
   refs = [],
   loading = false,
   onLinkSubstitute,
+  onResolveCompleteDiscontinued,
   isViewer = false,
 }) {
+  const [resolveTarget, setResolveTarget] = useState(null);
   if (loading || refs.length === 0) return null;
   const visible = refs.slice(0, 10);
 
@@ -61,14 +65,23 @@ export function DiscontinuedRefsBanner({
                   → {ref.replacedByProductCode}로 대체됨(새 레시피에서 재참조)
                 </span>
               )}
-              <button
-                className="btn sm"
-                style={{ flexShrink: 0 }}
-                onClick={() => onLinkSubstitute?.(ref)}
-                disabled={isViewer}
-              >
-                대체 연결
-              </button>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  className="btn sm"
+                  onClick={() => setResolveTarget(ref)}
+                  disabled={isViewer}
+                  title="대체품 없이 완전 단종으로 검토 완료"
+                >
+                  완전 단종
+                </button>
+                <button
+                  className="btn sm"
+                  onClick={() => onLinkSubstitute?.(ref)}
+                  disabled={isViewer}
+                >
+                  대체 연결
+                </button>
+              </div>
             </div>
           ))}
           {refs.length > visible.length && (
@@ -78,6 +91,18 @@ export function DiscontinuedRefsBanner({
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={!!resolveTarget}
+        title="완전 단종으로 검토 완료"
+        message={`'${resolveTarget?.ingredientName || resolveTarget?.productCode || ''}'은(는) 대체품 없이 완전 단종된 품목으로 처리할까요? 기존 레시피 기록은 복구를 위해 보존하고, 이 검토 목록에서만 제외합니다.`}
+        confirmLabel="검토 완료"
+        onConfirm={() => {
+          const target = resolveTarget;
+          setResolveTarget(null);
+          onResolveCompleteDiscontinued?.(target);
+        }}
+        onCancel={() => setResolveTarget(null)}
+      />
     </div>
   );
 }

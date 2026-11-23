@@ -11,7 +11,10 @@ import {
   foldIngredientToMenus,
   resolveOutputMenuCode,
 } from '../../lib/menu-master/output-alias.js';
-import { applyOutputAliasesToLabelInputs } from '../../lib/nutrition/label/context.js';
+import {
+  applyOutputAliasesToLabelInputs,
+  mergeLabelMenuRefs,
+} from '../../lib/nutrition/label/context.js';
 import { buildNutritionLinkedMenuCodeSetFrom } from '../../lib/menu-master/readiness-nutrition.js';
 
 const masters = [
@@ -96,6 +99,30 @@ describe('applyOutputAliasesToLabelInputs (영양성분표)', () => {
       aliasMap: map,
     });
     expect(both.menuRefs.map(r => r.menuCode)).toEqual(['S-SPG-002']);
+  });
+});
+
+describe('mergeLabelMenuRefs (전 품목 표 출력)', () => {
+  test('영양 참조에 없는 메뉴마스터 품목도 출력 행으로 추가한다', () => {
+    const refs = [{ menuCode: 'S-001', menuName: '기존 사이드', category: '사이드' }];
+    const rows = mergeLabelMenuRefs(refs, [
+      { menuCode: 'S-001', menuName: '기존 사이드', category: '사이드' },
+      { menuCode: 'S-002', menuName: '신규 사이드', category: '사이드' },
+      { menuCode: 'T-001', menuName: '베이컨 추가', category: '추가토핑' },
+    ]);
+
+    expect(rows.map(row => row.menuCode)).toEqual(['S-001', 'S-002', 'T-001']);
+    expect(rows.find(row => row.menuCode === 'S-002')?.source).toBe('menu-master');
+  });
+
+  test('피자 L/R은 베이스 코드 한 행으로 합친다', () => {
+    const rows = mergeLabelMenuRefs([], [
+      { menuCode: 'P-OR-001-L', menuName: '콤보 피자 L', category: '피자', size: 'L' },
+      { menuCode: 'P-OR-001-R', menuName: '콤보 피자 R', category: '피자', size: 'R' },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ menuCode: 'P-OR-001', menuName: '콤보 피자' });
   });
 });
 

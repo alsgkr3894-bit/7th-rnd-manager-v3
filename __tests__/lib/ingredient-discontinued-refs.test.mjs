@@ -52,6 +52,21 @@ describe('collectDiscontinuedIngredientRefs', () => {
     expect(rows).toHaveLength(0);
   });
 
+  test('대체품 없이 완전 단종 검토를 마친 식자재는 후보에서 제외한다', () => {
+    const rows = collectDiscontinuedIngredientRefs({
+      ingredients: [
+        {
+          productCode: 'OLD01',
+          ingredientName: '완전단종',
+          discontinued: true,
+          discontinuedReviewResolved: true,
+        },
+      ],
+      menuRecipes: [{ menuName: '기존 레시피', components: [{ productCode: 'OLD01' }] }],
+    });
+    expect(rows).toEqual([]);
+  });
+
   test('배열이 없어도 던지지 않는다', () => {
     expect(collectDiscontinuedIngredientRefs()).toEqual([]);
     expect(collectDiscontinuedIngredientRefs({ ingredients: [] })).toEqual([]);

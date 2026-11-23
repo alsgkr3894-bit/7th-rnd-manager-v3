@@ -46,6 +46,7 @@ export function MenuMasterEditFields({
   onRecipeSaved,
   recipeSectionRef,
   initialFocus,
+  menuRows = [],
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -71,6 +72,8 @@ export function MenuMasterEditFields({
               setField={setField}
               setErrors={setErrors}
               autoFocus={isNew}
+              menuRows={menuRows}
+              excludeId={row?.id}
             />
             <MenuNameField
               value={form.menuName}

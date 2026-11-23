@@ -22,7 +22,7 @@ describe('note merge helpers', () => {
         patch: {
           title: '트러플 피자',
           menuName: '트러플 피자',
-          status: '테스트',
+          status: '기획',
           testRound: '1',
           parentId: null,
         },
@@ -33,7 +33,7 @@ describe('note merge helpers', () => {
         patch: {
           title: '트러플 피자',
           menuName: '트러플 피자',
-          status: '테스트',
+          status: '기획',
           testRound: '2',
           parentId: 3,
         },
@@ -44,7 +44,7 @@ describe('note merge helpers', () => {
         patch: {
           title: '트러플 피자',
           menuName: '트러플 피자',
-          status: '테스트',
+          status: '기획',
           testRound: '3',
           parentId: 5,
         },
@@ -81,7 +81,7 @@ describe('note merge helpers', () => {
     expect(plan.changes.map(change => change.id)).toEqual([10, 11, 12, 20]);
     expect(plan.changes.map(change => change.patch.testRound)).toEqual(['1', '2', '3', '4']);
     expect(plan.changes.map(change => change.patch.parentId)).toEqual([null, 10, 11, 12]);
-    expect(plan.changes.every(change => change.patch.status === '테스트')).toBe(true);
+    expect(plan.changes.every(change => change.patch.status === '기획')).toBe(true);
   });
 
   test('드롭 병합은 대상 카드 차수를 먼저 유지하고 끌어온 카드를 뒤에 붙인다', () => {
@@ -101,7 +101,7 @@ describe('note merge helpers', () => {
     expect(plan.changes.map(change => change.id)).toEqual([1, 2, 9, 10]);
     expect(plan.changes.map(change => change.patch.testRound)).toEqual(['1', '2', '3', '4']);
     expect(plan.changes.map(change => change.patch.parentId)).toEqual([null, 1, 2, 9]);
-    expect(plan.changes.every(change => change.patch.status === '테스트')).toBe(true);
+    expect(plan.changes.every(change => change.patch.status === '기획')).toBe(true);
   });
 
   test('병합하면 마지막 차수 상태를 메뉴 상태로 전체 차수에 적용한다', () => {

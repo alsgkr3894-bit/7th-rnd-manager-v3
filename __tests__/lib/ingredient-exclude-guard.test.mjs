@@ -41,7 +41,9 @@ jest.unstable_mockModule('@/lib/db', () => ({
 
 jest.unstable_mockModule('@/lib/auth/guard', () => ({ assertActiveAdmin }));
 
-const { excludeIngredientByCode } = await import('../../lib/ingredient/destructive.js');
+const { excludeIngredientByCode, restoreIngredientByCode } = await import(
+  '../../lib/ingredient/destructive.js'
+);
 
 describe('excludeIngredientByCode — 빈 productCode 가드', () => {
   beforeEach(() => {
@@ -63,5 +65,27 @@ describe('excludeIngredientByCode — 빈 productCode 가드', () => {
     stores.cost_ingredients = [{ id: 1, productCode: 'A1', ingredientName: '설탕' }];
     await excludeIngredientByCode('A1');
     expect(stores.cost_ingredients.find(r => r.id === 1).excluded).toBe(true);
+  });
+
+  test('복원하면 숨김과 단종 상태를 함께 해제한다', async () => {
+    stores.cost_ingredients = [
+      {
+        id: 1,
+        productCode: 'A1',
+        ingredientName: '설탕',
+        excluded: true,
+        discontinued: true,
+        discontinuedReviewResolved: true,
+      },
+    ];
+
+    await restoreIngredientByCode('A1');
+
+    expect(stores.cost_ingredients[0]).toMatchObject({
+      excluded: false,
+      discontinued: false,
+      discontinuedReviewResolved: false,
+      discontinuedReviewResolvedAt: null,
+    });
   });
 });

@@ -11,6 +11,7 @@ import {
   parseMenuCode,
   updateMenuCodeSubCategory,
 } from '@/lib/cost/menu-price';
+import { getMenuCodeSegmentSuggestions } from '@/lib/menu-master/code-suggestions';
 
 function defaultSizesFor(category) {
   if (isPizzaCategory(category) || isSetCategory(category)) return ['L', 'R'];
@@ -35,7 +36,23 @@ function menuCodeSubCode(menuCode) {
   return parts[0] === 'P' ? parts[1] || '' : '';
 }
 
-export function MenuCodeField({ value, error, setField, setErrors, autoFocus }) {
+export function MenuCodeField({
+  value,
+  error,
+  setField,
+  setErrors,
+  autoFocus,
+  menuRows,
+  excludeId,
+}) {
+  const suggestions = getMenuCodeSegmentSuggestions(value, menuRows, excludeId);
+
+  function applyCode(code) {
+    setField('menuCode', code);
+    applyMenuCodeMetadata(code, setField);
+    setErrors(prev => ({ ...prev, menuCode: undefined }));
+  }
+
   return (
     <div>
       <FieldLabel>메뉴코드</FieldLabel>
@@ -44,15 +61,35 @@ export function MenuCodeField({ value, error, setField, setErrors, autoFocus }) 
         value={value}
         onChange={e => {
           const code = e.target.value.toUpperCase();
-          setField('menuCode', code);
-          applyMenuCodeMetadata(code, setField);
-          setErrors(prev => ({ ...prev, menuCode: undefined }));
+          applyCode(code);
         }}
         placeholder="예) P-OR-005-L"
         style={{ fontFamily: 'monospace' }}
         aria-describedby={error ? 'menu-master-code-error' : undefined}
         autoFocus={autoFocus}
       />
+      {suggestions.length > 0 && (
+        <div
+          aria-label="메뉴코드 자동완성"
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 7 }}
+        >
+          <span style={{ fontSize: 11, color: 'var(--text-3)', alignSelf: 'center' }}>
+            기존 코드 다음 항목
+          </span>
+          {suggestions.map(suggestion => (
+            <button
+              key={suggestion.value}
+              type="button"
+              className="btn btn-sm"
+              onClick={() => applyCode(suggestion.value)}
+              title={`${suggestion.value} 입력`}
+              style={{ fontFamily: 'monospace', padding: '3px 8px', minHeight: 0 }}
+            >
+              {suggestion.segment}
+            </button>
+          ))}
+        </div>
+      )}
       <FieldError id="menu-master-code-error">{error}</FieldError>
       <div style={{ marginTop: 6 }}>
         <CategoryTags menuCode={value} />

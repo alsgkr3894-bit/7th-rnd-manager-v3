@@ -279,7 +279,7 @@ export function IngredientManagePanel({
                       onDeleteStart={() => onDeleteStart(row)}
                       onDeleteCancel={onDeleteCancel}
                       onDeleteConfirm={() => onDeleteConfirm(row)}
-                      onRestore={() => onRestore(row.productCode)}
+                      onRestore={() => onRestore(row)}
                       onLinkSubstitute={onLinkSubstitute ? () => onLinkSubstitute(row) : undefined}
                       isViewer={isViewer}
                       batchMode={batchMode}

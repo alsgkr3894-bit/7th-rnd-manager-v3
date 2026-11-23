@@ -98,6 +98,8 @@ describe('ingredient manage row structure', () => {
     expect(nameSource).not.toContain('ingredient-row-dash');
     expect(nameSource).not.toContain('originText');
     expect(nameSource).not.toContain('allergenText');
+    expect(rowSource).toContain('discontinued={r.discontinued}');
+    expect(actionSource).toContain('excluded || discontinued');
     expect(scopeSource).toContain('SCOPE_STYLES');
     expect(priceSource).toContain('formatNumber(priceWithTax)');
     expect(categorySource).toContain('getCategoryStyle(category)');

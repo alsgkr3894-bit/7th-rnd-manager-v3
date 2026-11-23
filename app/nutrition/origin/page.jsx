@@ -82,7 +82,8 @@ export default function Page() {
           asObjectArray(recipeArrays.pizza),
           asObjectArray(recipeArrays.personal),
           asObjectArray(recipeArrays.side),
-          asObjectArray(recipeArrays.set)
+          asObjectArray(recipeArrays.set),
+          asObjectArray(recipeArrays.topping)
         );
         setIngredients(safeIngredients);
         setMenuMasters(safeMenuMasters);

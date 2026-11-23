@@ -131,6 +131,7 @@ export const ManageRow = memo(function ManageRow({
       </td>
       <ManageRowActionCell
         excluded={r.excluded}
+        discontinued={r.discontinued}
         deletePending={deletePending}
         deletePreview={deletePreview}
         isManual={r.isManual}

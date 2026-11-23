@@ -347,6 +347,7 @@ export function MenuMasterEditModal({
             onRecipeSaved={onRecipeSaved}
             recipeSectionRef={recipeSectionRef}
             initialFocus={initialFocus}
+            menuRows={allMenuRows}
           />
         </div>
       </div>

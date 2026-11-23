@@ -81,6 +81,7 @@ export default function Page() {
         discontinuedRefs={discontinuedRefs}
         discontinuedRefsLoading={discontinuedRefsLoading}
         onLinkSubstitute={p.onLinkSubstitute}
+        onResolveCompleteDiscontinued={actions.handleResolveCompleteDiscontinued}
         productCodeDupes={productCodeDupes}
         duplicateGroupCount={view.duplicateGroupCount}
         duplicateDiagnostics={view.duplicateDiagnostics}

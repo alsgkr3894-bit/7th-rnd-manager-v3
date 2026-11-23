@@ -957,6 +957,53 @@ describe('buildToppingSheet', () => {
     expect(rows[1].allergen).toBe('우유');
   });
 
+  test('표 출력은 추가토핑에 연결된 메뉴마스터 레시피 알레르기를 합친다', () => {
+    const rows = buildToppingSheet({
+      menus: [],
+      rawMap: {},
+      masterByCode: {},
+      menuAllergenMap: new Map([['T-MENU-001', new Set(['AL10', 'AL05'])]]),
+      toppings: [
+        {
+          toppingCode: 'TOP-PEP',
+          menuCode: 'T-MENU-001',
+          toppingName: '페퍼로니 추가',
+        },
+      ],
+      toppingAllergenMap: new Map([['TOP-PEP', new Set(['AL06'])]]),
+    });
+
+    expect(rows[0].allergen).toBe('밀, 대두, 돼지고기');
+  });
+
+  test('메뉴코드 연결이 없어도 추가토핑 이름으로 레시피 알레르기를 찾는다', () => {
+    const rows = buildToppingSheet({
+      menus: [
+        { menuCode: 'T-MENU-002', menuName: '베이컨 추가', category: '추가토핑' },
+      ],
+      rawMap: {
+        'T-MENU-002__석쇠L': { basis: 'serving', weight: 20 },
+      },
+      masterByCode: {
+        'T-MENU-002': {
+          menuCode: 'T-MENU-002',
+          menuName: '베이컨 추가',
+          category: '추가토핑',
+        },
+      },
+      menuAllergenMap: new Map([['T-MENU-002', new Set(['AL10'])]]),
+      toppings: [{ toppingCode: 'TOP-BACON', toppingName: '베이컨 추가' }],
+      toppingAllergenMap: new Map(),
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      menuCode: 'TOP-BACON',
+      linkedMenuCode: 'T-MENU-002',
+      allergen: '돼지고기',
+    });
+  });
+
   test('추가토핑 출력도 satFat을 포화지방 컬럼에 우선 사용한다', () => {
     const rows = buildToppingSheet({
       menus: [],

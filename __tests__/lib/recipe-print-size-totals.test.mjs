@@ -64,9 +64,9 @@ describe('레시피 출력 규격별 합계', () => {
   });
 
   test('메뉴 합계·소계 칸이 규격별 표시를 쓴다', () => {
-    expect(read('components/report/cost/recipe-print/RecipeMenuBlock.jsx')).toContain(
-      'formatSizeMoney(menu.sizeTotals'
-    );
+    const menuBlock = read('components/report/cost/recipe-print/RecipeMenuBlock.jsx');
+    expect(menuBlock).toContain('formatSizeMoney(menu.sizeTotals');
+    expect(menuBlock).toContain('<td colSpan={4}');
     expect(read('components/report/cost/recipe-print/RecipeComponentTable.jsx')).toContain(
       'formatSizeMoney(component.sizeSubtotals'
     );

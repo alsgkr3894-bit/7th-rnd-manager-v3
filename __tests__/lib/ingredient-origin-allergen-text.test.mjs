@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import {
   allergenStateLabel,
   allergenText,
+  isOriginAllergenOptional,
   originStateLabel,
   originText,
 } from '../../lib/ingredient/origin-allergen-text.js';
@@ -42,5 +43,13 @@ describe('origin-allergen-text — 원산지·알레르기 요약/상태 텍스�
     expect(allergenStateLabel({ allergenNone: true })).toBe('알레르기 없음');
     expect(allergenStateLabel({ allergens: ['AL06'] })).toBe('표기');
     expect(allergenStateLabel({})).toBe('미입력');
+  });
+
+  test('공산품은 원산지·알레르기 표기가 선택 사항이다', () => {
+    const industrial = { temperature: '공산품', origin: [], allergens: [] };
+    expect(isOriginAllergenOptional(industrial)).toBe(true);
+    expect(originStateLabel(industrial)).toBe('표기 불필요(공산품)');
+    expect(allergenStateLabel(industrial)).toBe('표기 불필요(공산품)');
+    expect(isOriginAllergenOptional({ temperature: '상온' })).toBe(false);
   });
 });

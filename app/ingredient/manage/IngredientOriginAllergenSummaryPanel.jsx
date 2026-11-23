@@ -2,6 +2,7 @@
 import {
   allergenStateLabel,
   allergenText,
+  isOriginAllergenOptional,
   originStateLabel,
   originText,
 } from '@/lib/ingredient/origin-allergen-text';
@@ -15,6 +16,8 @@ import { SourceField } from './IngredientFieldPrimitives';
  */
 export function IngredientOriginAllergenSummaryPanel({ form }) {
   if (!form) return null;
+  const optional = isOriginAllergenOptional(form);
+  const emptyLabel = optional ? '표기 불필요' : '미입력';
 
   return (
     <div
@@ -37,14 +40,15 @@ export function IngredientOriginAllergenSummaryPanel({ form }) {
           color: 'var(--text-2)',
         }}
       >
-        <SourceField label="원산지" value={originText(form) || '미입력'} />
+        <SourceField label="원산지" value={originText(form) || emptyLabel} />
         <SourceField label="원산지 상태" value={originStateLabel(form)} />
-        <SourceField label="알레르기" value={allergenText(form) || '미입력'} />
+        <SourceField label="알레르기" value={allergenText(form) || emptyLabel} />
         <SourceField label="알레르기 상태" value={allergenStateLabel(form)} />
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8, fontStyle: 'italic' }}>
-        ※ &lsquo;원산지 없음&rsquo;은 원산지 자체가 없음, &lsquo;미표시대상&rsquo;은 출력물에
-        표기하지 않음
+        {optional
+          ? '※ 공산품은 원산지·알레르기 정보를 입력하지 않아도 미표기 이슈로 분류되지 않음'
+          : '※ ‘원산지 없음’은 원산지 자체가 없음, ‘미표시대상’은 출력물에 표기하지 않음'}
       </div>
     </div>
   );

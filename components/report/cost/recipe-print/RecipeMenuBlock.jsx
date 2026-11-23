@@ -105,7 +105,7 @@ export function RecipeMenuBlock({ menu, pageBreak = true }) {
       <table className="paper-table recipe-print-table" style={{ marginTop: 8 }}>
         <tbody>
           <tr>
-            <td colSpan={3} style={{ fontWeight: 800 }}>
+            <td colSpan={4} style={{ fontWeight: 800 }}>
               메뉴 합계
             </td>
             <td

@@ -79,10 +79,12 @@ describe('note stats display guards', () => {
     ]);
 
     const result = await getPipelineStats();
+    const planning = result.columns.find(col => col.key === 'planning');
     const testing = result.columns.find(col => col.key === 'testing');
     const released = result.columns.find(col => col.key === 'released');
 
-    expect(testing).toMatchObject({ count: 4, items: ['새 아이디어', '123', '테스트'], more: 1 });
+    expect(planning).toMatchObject({ count: 1, items: ['빈 상태'], more: 0 });
+    expect(testing).toMatchObject({ count: 3, items: ['새 아이디어', '123', '테스트'], more: 0 });
     expect(released).toMatchObject({ count: 1, items: ['출시'] });
     expect(result.quarterGoal).toEqual({ done: 1, target: 6 });
   });
@@ -112,7 +114,7 @@ describe('note stats display guards', () => {
     expect(result.thisMonth).toBe(1);
     expect(result.released).toBe(1);
     expect(result.releaseRate).toBe(25);
-    expect(result.byStatus).toMatchObject({ 테스트: 2, 출시: 1, 7: 1 });
+    expect(result.byStatus).toMatchObject({ 기획: 2, 출시: 1, 7: 1 });
     expect(result.byCategory).toMatchObject({ 미분류: 2, 피자: 1, 9: 1 });
     expect(result.monthly.reduce((sum, row) => sum + row.count, 0)).toBeGreaterThanOrEqual(2);
   });

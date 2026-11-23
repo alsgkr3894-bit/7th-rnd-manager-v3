@@ -337,6 +337,27 @@ describe('bulkSetOriginAllergenNone', () => {
     );
     expect(after).toEqual([]);
   });
+
+  test('공산품은 원산지·알레르기 미입력 이슈에서 제외한다', () => {
+    const result = computeIngredientIssues(
+      [
+        {
+          id: 1,
+          ingredientName: '포장 소스',
+          hasRecord: true,
+          category: '소스류',
+          baseQuantity: 1000,
+          jetteLinked: true,
+          temperature: '공산품',
+          origin: [],
+          allergens: [],
+        },
+      ],
+      null
+    );
+
+    expect(result).toEqual([]);
+  });
 });
 
 // ── removeManyTagsFromAll ────────────────────────────────────────────────────

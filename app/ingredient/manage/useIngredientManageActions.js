@@ -22,6 +22,7 @@ import {
   bulkSetOriginAllergenNone,
   bulkDeleteIngredients,
   replaceIngredientProductCode,
+  setIngredientDiscontinuedReviewResolved,
 } from '@/lib/ingredient';
 import {
   restoreDeletedIngredientBackup,
@@ -172,12 +173,29 @@ export function useIngredientManageActions({
   );
 
   const handleRestore = useCallback(
-    async productCode => {
+    async row => {
       if (!canEdit) return;
       try {
-        await restoreIngredientByCode(productCode);
+        if (row?.productCode) {
+          await restoreIngredientByCode(row.productCode);
+        } else if (row?.id != null) {
+          await bulkSetDiscontinued([row.id], false);
+        } else {
+          throw new Error('복원할 식자재 정보를 찾을 수 없습니다.');
+        }
         setRows(prev =>
-          prev.map(r => (r.productCode === productCode ? { ...r, excluded: false } : r))
+          prev.map(r =>
+            (row.productCode && r.productCode === row.productCode) ||
+            (!row.productCode && r.id === row.id)
+              ? {
+                  ...r,
+                  excluded: false,
+                  discontinued: false,
+                  discontinuedReviewResolved: false,
+                  discontinuedReviewResolvedAt: null,
+                }
+              : r
+          )
         );
         showToast('복원됐습니다', 'ok');
       } catch (err) {
@@ -285,6 +303,20 @@ export function useIngredientManageActions({
         await load();
       } catch (err) {
         showToast('대체 연결 실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, load]
+  );
+
+  const handleResolveCompleteDiscontinued = useCallback(
+    async row => {
+      if (!canEdit || !row?.productCode) return;
+      try {
+        await setIngredientDiscontinuedReviewResolved(row.productCode, true);
+        showToast(`${row.ingredientName || row.productCode} · 완전 단종 검토 완료`, 'ok');
+        await load();
+      } catch (err) {
+        showToast('완전 단종 처리 실패: ' + err.message, 'error');
       }
     },
     [canEdit, load]
@@ -448,6 +480,7 @@ export function useIngredientManageActions({
     handleAckAllPriceChanges,
     handleAutoRegister,
     handleReplaceJetteProduct,
+    handleResolveCompleteDiscontinued,
     handleBatchDelete,
     handleBulkDiscontinue,
     handleBulkSetCategory,

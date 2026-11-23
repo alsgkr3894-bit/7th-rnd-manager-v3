@@ -12,6 +12,7 @@ export function IngredientDiagnostics({
   discontinuedRefs = [],
   discontinuedRefsLoading = false,
   onLinkSubstitute,
+  onResolveCompleteDiscontinued,
   productCodeDupes,
   duplicateGroupCount,
   duplicateDiagnostics,
@@ -35,6 +36,7 @@ export function IngredientDiagnostics({
         refs={discontinuedRefs}
         loading={discontinuedRefsLoading}
         onLinkSubstitute={onLinkSubstitute}
+        onResolveCompleteDiscontinued={onResolveCompleteDiscontinued}
         isViewer={!isAdmin}
       />
       <BrokenRefsBanner brokenRefs={brokenRefs} />

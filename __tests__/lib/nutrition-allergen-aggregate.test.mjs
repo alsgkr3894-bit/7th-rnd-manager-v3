@@ -7,6 +7,25 @@ import {
 } from '@/lib/nutrition/allergen/aggregate';
 import { buildMenuMatrix } from '@/lib/nutrition/allergen/matrix';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
+import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
+
+test('메뉴마스터 추가토핑 레시피도 알레르기 집계 입력에 포함된다', () => {
+  const detailRecipes = tagDetailRecipes([], [], [], [], [
+    {
+      menuCode: 'T-001',
+      menuName: '페퍼로니 추가',
+      components: [{ productCode: 'PEP', ingredientName: '페퍼로니' }],
+    },
+  ]);
+  const mapData = buildIngredientMenuMap({ detailRecipes });
+  const allergenMap = buildMenuAllergenMap({
+    ingredients: [{ productCode: 'PEP', ingredientName: '페퍼로니', allergens: ['AL10'] }],
+    ingredientToMenus: mapData.ingredientToMenus,
+  });
+
+  expect(detailRecipes[0].category).toBe('추가토핑');
+  expect([...(allergenMap.get('T-001') || [])]).toEqual(['AL10']);
+});
 
 /**
  * B1 회귀 방지: 출력 영양성분표의 메뉴별 알레르기 집계.

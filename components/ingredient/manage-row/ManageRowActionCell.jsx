@@ -2,6 +2,7 @@ import { Icon } from '@/components/icons';
 
 export function ManageRowActionCell({
   excluded,
+  discontinued,
   deletePending,
   deletePreview,
   isManual,
@@ -16,7 +17,7 @@ export function ManageRowActionCell({
 }) {
   return (
     <td style={{ textAlign: 'center' }} onClick={event => event.stopPropagation()}>
-      {excluded ? (
+      {excluded || discontinued ? (
         <button className="btn sm" style={{ fontSize: 11 }} onClick={onRestore} disabled={isViewer}>
           복원
         </button>

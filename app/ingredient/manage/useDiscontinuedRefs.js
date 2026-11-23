@@ -24,12 +24,14 @@ export function useDiscontinuedRefs(rows, refreshKey) {
   // 가격확인·카테고리변경 등 무관한 수정마다 setRows가 rows를 새 배열로 만든다 — rows
   // 자체를 deps로 쓰면 단종/숨김 항목이 하나라도 있는 한(실사용에선 거의 항상) 그때마다
   // 레시피/세트그룹/엣지 3개 스토어를 통째로 다시 읽는다. 단종/숨김 productCode 집합이
-  // 실제로 바뀔 때만 재조회하도록 짧은 키로 축약한다.
+  // 실제로 바뀔 때만 재조회하도록 짧은 키로 축약한다. 대체 연결 뒤에도 기존 품목은
+  // 단종 상태와 productCode가 그대로라 코드만 키로 쓰면 effect가 재실행되지 않는다.
+  // replacedByProductCode까지 포함해 레시피 재연결 직후 진단을 새로 읽는다.
   const flaggedKey = useMemo(
     () =>
       (rows || [])
         .filter(r => (r?.discontinued === true || r?.excluded === true) && r?.productCode)
-        .map(r => r.productCode)
+        .map(r => `${r.productCode}>${r.replacedByProductCode || ''}`)
         .sort()
         .join(','),
     [rows]

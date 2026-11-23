@@ -12,8 +12,9 @@ import {
 
 describe('NOTE_STATUS', () => {
   test('필수 상태 키 존재', () => {
+    expect(NOTE_STATUS.PLANNING).toBe('기획');
     expect(NOTE_STATUS.TEST).toBe('테스트');
-    expect(NOTE_STATUS.TEST_SCHEDULED).toBe('테스트예정');
+    expect(NOTE_STATUS.TEST_SCHEDULED).toBe('기획');
     expect(NOTE_STATUS.TESTING).toBe('테스트중');
     expect(NOTE_STATUS.REPORTING).toBeUndefined();
   });
@@ -61,7 +62,7 @@ describe('NOTE_TYPES', () => {
 
 describe('STATUSES', () => {
   test('노트 작성 상태는 운영 상태만 노출한다', () => {
-    expect(STATUSES).toEqual(['테스트', '테스트예정', '보류', '출시', '폐기']);
+    expect(STATUSES).toEqual(['기획', '테스트', '출시', '보류', '폐기']);
     expect(STATUSES).not.toContain('아이디어');
     expect(STATUSES).not.toContain('메뉴테스트');
     expect(STATUSES).not.toContain('보고예정');
@@ -71,8 +72,9 @@ describe('STATUSES', () => {
     expect(STATUSES).not.toContain('테스트중');
   });
 
-  test('테스트예정 상태를 정규화한다', () => {
-    expect(normalizeNoteStatus('테스트예정')).toBe('테스트예정');
-    expect(normalizeNoteStatus(' 테스트 예정 ')).toBe('테스트예정');
+  test('기존 테스트예정 상태를 기획으로 통합한다', () => {
+    expect(normalizeNoteStatus('기획')).toBe('기획');
+    expect(normalizeNoteStatus('테스트예정')).toBe('기획');
+    expect(normalizeNoteStatus(' 테스트 예정 ')).toBe('기획');
   });
 });
