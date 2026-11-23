@@ -40,7 +40,7 @@ export default function LoginInfoPage() {
     try {
       setRows(await getLoginCredentials());
     } catch (err) {
-      console.error('[login-info] load failed', err);
+      console.error('[login-info] load failed');
       showToast('로그인정보를 불러오지 못했습니다', 'error');
     }
   }, []);
@@ -77,7 +77,7 @@ export default function LoginInfoPage() {
       await load();
       showToast('로그인정보를 저장했습니다', 'ok');
     } catch (err) {
-      console.error('[login-info] save failed', err);
+      console.error('[login-info] save failed');
       showToast('저장 중 오류가 발생했습니다', 'error');
     }
   }
@@ -95,7 +95,7 @@ export default function LoginInfoPage() {
       await load();
       showToast('로그인정보를 삭제했습니다', 'ok');
     } catch (err) {
-      console.error('[login-info] delete failed', err);
+      console.error('[login-info] delete failed');
       showToast('삭제에 실패했습니다: ' + (err?.message || '알 수 없는 오류'), 'error');
     }
   }

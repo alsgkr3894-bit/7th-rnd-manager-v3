@@ -52,7 +52,7 @@ export default function CorporateCardPage() {
     try {
       setRows(await getCorporateCardEntries());
     } catch (err) {
-      console.error('[corporate-card] load failed', err);
+      console.error('[corporate-card] load failed');
       showToast('법인카드 내역을 불러오지 못했습니다', 'error');
     } finally {
       setLoading(false);
@@ -97,7 +97,7 @@ export default function CorporateCardPage() {
       const skippedNote = saved.skipped ? ` (중복 ${saved.skipped}건 제외)` : '';
       showToast(`법인카드 내역 ${saved.inserted}건을 업로드했습니다${skippedNote}`, 'ok');
     } catch (err) {
-      console.error('[corporate-card] upload failed', err);
+      console.error('[corporate-card] upload failed');
       showToast('엑셀 업로드 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
     } finally {
       setUploading(false);
@@ -111,7 +111,7 @@ export default function CorporateCardPage() {
       await load();
       showToast('법인카드 내역을 삭제했습니다', 'ok');
     } catch (err) {
-      console.error('[corporate-card] delete failed', err);
+      console.error('[corporate-card] delete failed');
       showToast('삭제에 실패했습니다: ' + (err?.message || '알 수 없는 오류'), 'error');
     }
   }

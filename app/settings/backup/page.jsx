@@ -39,7 +39,7 @@ export default function Page() {
   const { data: stats } = useDBLoad(() => collectStoreStats(), {
     initialData: null,
     onError: err => {
-      console.error('[Backup] DB 초기화 실패:', err);
+      console.error('[Backup] DB 초기화 실패');
       showToast('DB 초기화에 실패했습니다.', 'error');
     },
   });

@@ -46,6 +46,8 @@ yarn-error.log*
 /.pgdata/
 /.pglog/
 /.db-backups/
+/.runtime-auth.json
+/.runtime-auth.json.tmp
 /.pgpass-*
 
 # vercel

@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('server db status helpers', () => {
-  test('readDbHealth maps PostgreSQL counts, brands, and recent import jobs', async () => {
+  test('readDbHealth는 내부 DB 식별자 없이 집계와 최근 작업만 반환한다', async () => {
     const prisma = {
       $queryRaw: async () => [{ database: 'rnd_local', schema: 'public' }],
       brand: {
@@ -56,15 +56,16 @@ describe('server db status helpers', () => {
     const health = await readDbHealth(prisma);
 
     expect(health.ok).toBe(true);
-    expect(health.database).toBe('rnd_local');
+    expect(health).not.toHaveProperty('database');
+    expect(health).not.toHaveProperty('schema');
+    expect(health).not.toHaveProperty('brands');
     expect(health.counts.storeRows).toBe(340);
-    expect(health.brands[0]).toMatchObject({ id: 'main', name: '7번가피자' });
     expect(health.recentImportJobs[0]).toMatchObject({
-      id: 'job-1',
       errorCount: 2,
       rowCount: 120,
       startedAt: '2026-06-23T01:00:00.000Z',
     });
+    expect(health.recentImportJobs[0]).not.toHaveProperty('targetBrandId');
   });
 
   test('listLocalDbBackups reads dump files and sidecar metadata', () => {
@@ -86,10 +87,11 @@ describe('server db status helpers', () => {
     expect(status.ok).toBe(true);
     expect(status.count).toBe(1);
     expect(status.latest).toMatchObject({
-      name: 'rnd_local-20260623-100000.dump',
-      database: 'rnd_local',
-      host: '127.0.0.1',
+      name: 'backup-20260623-100000.dump',
     });
+    expect(status).not.toHaveProperty('backupDir');
+    expect(status.latest).not.toHaveProperty('database');
+    expect(status.latest).not.toHaveProperty('host');
     expect(status.totalSize).toBeGreaterThan(0);
   });
 
@@ -115,6 +117,6 @@ describe('server db status helpers', () => {
     const status = listLocalDbBackups({ backupDir: tempDir });
 
     expect(status.count).toBe(1);
-    expect(status.latest.name).toBe('rnd_local-20260622-100000.dump');
+    expect(status.latest.name).toBe('backup-20260622-100000.dump');
   });
 });

@@ -8,9 +8,9 @@ import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 export function ProfileMenu({ profileRef, profileOpen, onToggle, profile }) {
   const router = useRouter();
 
-  function handleLogout() {
+  async function handleLogout() {
     if (!confirmUnsavedLeave()) return;
-    clearAuthCookie();
+    await clearAuthCookie();
     window.location.href = '/login';
   }
 

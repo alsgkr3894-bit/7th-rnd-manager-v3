@@ -7,6 +7,7 @@ import {
 import { getPrismaClient } from '@/lib/server/prisma';
 import { assertLocalRequest, RequestNotLocalError } from '@/lib/server/request-guard';
 import { readLimitedJson, RequestBodyTooLargeError } from '@/lib/server/request-body-limit';
+import { assertAuthenticatedRequest, SessionAuthenticationError } from '@/lib/server/session-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,6 +20,7 @@ export const runtime = 'nodejs';
 export async function GET(request) {
   try {
     assertLocalRequest(request);
+    assertAuthenticatedRequest(request);
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get('manifest') === '1') {
@@ -34,7 +36,10 @@ export async function GET(request) {
     if (error instanceof RequestNotLocalError) {
       return Response.json({ ok: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
     }
-    console.error('[api/db/store-rows] 조회 실패:', error);
+    if (error instanceof SessionAuthenticationError) {
+      return Response.json({ ok: false, error: '로그인이 필요합니다.' }, { status: 401 });
+    }
+    console.error('[api/db/store-rows] 조회 실패');
     return Response.json(
       {
         ok: false,
@@ -57,6 +62,7 @@ function isSandboxWriteRejected() {
 export async function POST(request) {
   try {
     assertLocalRequest(request);
+    assertAuthenticatedRequest(request);
     if (isSandboxWriteRejected()) {
       return Response.json(
         { ok: false, error: '샌드박스 서버는 쓰기를 받지 않습니다.' },
@@ -70,6 +76,9 @@ export async function POST(request) {
     if (error instanceof RequestNotLocalError) {
       return Response.json({ ok: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
     }
+    if (error instanceof SessionAuthenticationError) {
+      return Response.json({ ok: false, error: '로그인이 필요합니다.' }, { status: 401 });
+    }
     if (error instanceof RequestBodyTooLargeError || error?.name === 'RequestBodyTooLargeError') {
       return Response.json(
         { ok: false, error: '요청 데이터가 너무 큽니다. 여러 번으로 나누어 다시 시도해 주세요.' },
@@ -77,7 +86,7 @@ export async function POST(request) {
       );
     }
     // 내부 오류 상세(DB 제약·컬럼명·경로 등)는 서버 로그에만 남기고 클라이언트에는 일반 메시지.
-    console.error('[api/db/store-rows] 처리 실패:', error);
+    console.error('[api/db/store-rows] 처리 실패');
     // 요청 자체가 잘못된 경우(검증 실패·깨진 JSON)만 400 — 클라이언트가 그 작업을 영구 거절로 격리한다.
     // DB 다운·연결 실패·교착 같은 서버 쪽 일시 오류는 503으로 답해 큐에 남겨 재시도하게 한다
     // (전엔 전부 400이라 Postgres가 잠깐 내려가면 그 사이 저장이 재시도 없이 버려졌다).

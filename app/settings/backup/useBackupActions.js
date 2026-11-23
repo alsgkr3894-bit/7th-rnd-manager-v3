@@ -69,7 +69,7 @@ export function useBackupActions({
         );
       }
     } catch (err) {
-      console.error('[Backup] 실패:', err);
+      console.error('[Backup] 실패');
       showToast('백업 중 오류가 발생했습니다.', 'error');
     } finally {
       setBusy(false);

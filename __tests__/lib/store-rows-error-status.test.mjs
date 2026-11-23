@@ -14,6 +14,11 @@ jest.unstable_mockModule('@/lib/server/prisma', () => ({
   }),
 }));
 
+jest.unstable_mockModule('@/lib/server/session-auth', () => ({
+  assertAuthenticatedRequest: () => {},
+  SessionAuthenticationError: class SessionAuthenticationError extends Error {},
+}));
+
 const request = body =>
   new Request('http://localhost:3000/api/db/store-rows', {
     method: 'POST',

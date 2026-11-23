@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { verifyPassword, savePassword } from '@/lib/auth';
+import { changeServerPassword, verifyPassword, savePassword } from '@/lib/auth';
 import { showToast } from '@/components/Toast';
 
 export function PasswordChangeCard() {
@@ -34,6 +34,7 @@ export function PasswordChangeCard() {
         setErr('현재 비밀번호가 올바르지 않습니다.');
         return;
       }
+      await changeServerPassword(next);
       await savePassword(next);
       setCur('');
       setNext('');

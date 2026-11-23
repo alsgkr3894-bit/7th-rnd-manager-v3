@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/_next', '/favicon.ico', '/logo-', '/manifest.json', '/api/'];
-const COOKIE_NAME = 'v3:auth';
+const COOKIE_NAME = 'v3:session';
 const MAX_API_BODY_BYTES = 20 * 1024 * 1024;
 
 export function middleware(req: NextRequest) {

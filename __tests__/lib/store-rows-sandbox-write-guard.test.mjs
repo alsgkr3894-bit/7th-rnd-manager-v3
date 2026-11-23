@@ -4,7 +4,12 @@
  * 테스트 데이터를 덮어쓴 사고 이후 추가한 이중 안전장치(브라우저 쪽은
  * lib/db/sync-mode.js NEXT_PUBLIC_SERVER_SYNC_FORCE_READONLY, 서버 쪽은 이 플래그).
  */
-import { afterEach, beforeEach, describe, expect, test } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
+
+jest.unstable_mockModule('@/lib/server/session-auth', () => ({
+  assertAuthenticatedRequest: () => {},
+  SessionAuthenticationError: class SessionAuthenticationError extends Error {},
+}));
 
 const ENV_KEY = 'RND_SANDBOX_REJECT_WRITES';
 

@@ -1,15 +1,15 @@
 'use client';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
 import {
   clearLoginFailures,
+  establishServerSession,
+  getServerAuthStatus,
   getLoginThrottle,
   isAuthSetup,
   recordLoginFailure,
-  verifyPassword,
   savePassword,
-  setAuthCookie,
 } from '@/lib/auth';
 import { PasswordField } from './PasswordField';
 import { PARENT_COMPANY } from '@/lib/companies';
@@ -25,8 +25,6 @@ export default function LoginPage() {
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isSetup = searchParams.get('setup') === '1';
 
   const [profile, setProfileState] = useState({ name: '', team: '' });
   const [password, setPassword] = useState('');
@@ -42,11 +40,19 @@ function LoginForm() {
   useEffect(() => {
     const p = getProfile();
     setProfileState(p);
-    // 초기 설정이 안 됐거나 URL에 setup=1이면 설정 모드
-    if (isSetup || !isAuthSetup()) setMode('setup');
-    else setMode('login');
+    let alive = true;
+    getServerAuthStatus()
+      .then(status => {
+        if (alive) setMode(status.configured || isAuthSetup() ? 'login' : 'setup');
+      })
+      .catch(() => {
+        if (alive) setMode(isAuthSetup() ? 'login' : 'setup');
+      });
     pwRef.current?.focus();
-  }, [isSetup]);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -66,9 +72,9 @@ function LoginForm() {
           setError('비밀번호가 일치하지 않습니다.');
           return;
         }
+        await establishServerSession(password, remember);
         await savePassword(password);
         clearLoginFailures();
-        setAuthCookie(remember);
         router.replace('/');
       } else {
         const throttle = getLoginThrottle();
@@ -77,22 +83,22 @@ function LoginForm() {
           setError(`로그인 시도가 너무 많습니다. 약 ${minutes}분 후 다시 시도해 주세요.`);
           return;
         }
-        const ok = await verifyPassword(password);
-        if (!ok) {
-          const next = recordLoginFailure();
-          if (next.locked) {
-            setError('비밀번호를 5회 잘못 입력해 15분 동안 로그인이 제한됩니다.');
-          } else {
-            setError(`비밀번호가 올바르지 않습니다. (${5 - next.failures}회 남음)`);
-          }
-          return;
-        }
+        await establishServerSession(password, remember);
+        await savePassword(password);
         clearLoginFailures();
-        setAuthCookie(remember);
         router.replace('/');
       }
     } catch (err) {
-      setError(err?.message || '오류가 발생했습니다. 다시 시도해 주세요.');
+      if (mode === 'login' && err?.status === 401) {
+        const next = recordLoginFailure();
+        setError(
+          next.locked
+            ? '비밀번호를 5회 잘못 입력해 15분 동안 로그인이 제한됩니다.'
+            : `비밀번호가 올바르지 않습니다. (${5 - next.failures}회 남음)`
+        );
+      } else {
+        setError(err?.message || '오류가 발생했습니다. 다시 시도해 주세요.');
+      }
     } finally {
       setLoading(false);
     }

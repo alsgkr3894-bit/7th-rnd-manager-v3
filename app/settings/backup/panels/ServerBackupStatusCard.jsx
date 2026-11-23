@@ -85,7 +85,7 @@ export function ServerBackupStatusCard({
           value={loading && !dbStatus ? '확인 중' : dbOk ? '연결됨' : '오류'}
           sub={
             dbOk
-              ? `${dbStatus.database || '-'} / ${formatNumber(dbStatus.counts?.storeRows || 0)}행`
+              ? `동기화 데이터 ${formatNumber(dbStatus.counts?.storeRows || 0)}행`
               : '서버 DB 읽기 API 대기'
           }
         />
@@ -101,7 +101,7 @@ export function ServerBackupStatusCard({
         <SettingTile
           label="백업 파일"
           value={`${formatNumber(backupStatus?.count || 0)}개`}
-          sub={`${formatBytes(backupStatus?.totalSize || 0)} · ${backupStatus?.backupDir || '.db-backups'}`}
+          sub={`${formatBytes(backupStatus?.totalSize || 0)} · 서버 내부 안전 보관`}
         />
       </div>
 
@@ -163,7 +163,7 @@ export function ServerBackupStatusCard({
             <div style={{ display: 'grid', gap: 8 }}>
               {recentImportJobs.map(job => (
                 <div
-                  key={job.id}
+                  key={`${job.startedAt || 'job'}-${job.status}`}
                   style={{
                     border: '1px solid var(--divider)',
                     borderRadius: 8,
@@ -179,7 +179,7 @@ export function ServerBackupStatusCard({
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                    {job.targetBrandId || '-'} · {formatNumber(job.rowCount || 0)}행 · store{' '}
+                    가져오기 · {formatNumber(job.rowCount || 0)}행 · store{' '}
                     {formatNumber(job.storeCount || 0)}개
                   </div>
                   {job.errorCount > 0 && (
