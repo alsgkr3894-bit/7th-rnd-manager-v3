@@ -6,6 +6,7 @@ import {
 } from '@/lib/server/store-row-read';
 import { getPrismaClient } from '@/lib/server/prisma';
 import { assertLocalRequest, RequestNotLocalError } from '@/lib/server/request-guard';
+import { readLimitedJson, RequestBodyTooLargeError } from '@/lib/server/request-body-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -62,12 +63,18 @@ export async function POST(request) {
         { status: 403 }
       );
     }
-    const payload = await request.json();
+    const payload = await readLimitedJson(request);
     const result = await applyStoreRowOperations(getPrismaClient(), payload);
     return Response.json(result);
   } catch (error) {
     if (error instanceof RequestNotLocalError) {
       return Response.json({ ok: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
+    }
+    if (error instanceof RequestBodyTooLargeError || error?.name === 'RequestBodyTooLargeError') {
+      return Response.json(
+        { ok: false, error: '요청 데이터가 너무 큽니다. 여러 번으로 나누어 다시 시도해 주세요.' },
+        { status: 413 }
+      );
     }
     // 내부 오류 상세(DB 제약·컬럼명·경로 등)는 서버 로그에만 남기고 클라이언트에는 일반 메시지.
     console.error('[api/db/store-rows] 처리 실패:', error);

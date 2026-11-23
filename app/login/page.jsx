@@ -2,7 +2,15 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
-import { isAuthSetup, verifyPassword, savePassword, setAuthCookie } from '@/lib/auth';
+import {
+  clearLoginFailures,
+  getLoginThrottle,
+  isAuthSetup,
+  recordLoginFailure,
+  verifyPassword,
+  savePassword,
+  setAuthCookie,
+} from '@/lib/auth';
 import { PasswordField } from './PasswordField';
 import { PARENT_COMPANY } from '@/lib/companies';
 
@@ -59,14 +67,27 @@ function LoginForm() {
           return;
         }
         await savePassword(password);
+        clearLoginFailures();
         setAuthCookie(remember);
         router.replace('/');
       } else {
-        const ok = await verifyPassword(password);
-        if (!ok) {
-          setError('비밀번호가 올바르지 않습니다.');
+        const throttle = getLoginThrottle();
+        if (throttle.locked) {
+          const minutes = Math.max(1, Math.ceil(throttle.remainingMs / 60000));
+          setError(`로그인 시도가 너무 많습니다. 약 ${minutes}분 후 다시 시도해 주세요.`);
           return;
         }
+        const ok = await verifyPassword(password);
+        if (!ok) {
+          const next = recordLoginFailure();
+          if (next.locked) {
+            setError('비밀번호를 5회 잘못 입력해 15분 동안 로그인이 제한됩니다.');
+          } else {
+            setError(`비밀번호가 올바르지 않습니다. (${5 - next.failures}회 남음)`);
+          }
+          return;
+        }
+        clearLoginFailures();
         setAuthCookie(remember);
         router.replace('/');
       }
