@@ -1,5 +1,8 @@
 import './fonts/pretendard.css';
 import './globals.css';
+// 오류 경계 CSS도 루트 번들에 포함해 정상 페이지에서 별도 preload 경고가 생기지 않게 한다.
+import './error.module.css';
+import './not-found.module.css';
 import AppShell from '@/components/AppShell';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PARENT_COMPANY } from '@/lib/companies';
