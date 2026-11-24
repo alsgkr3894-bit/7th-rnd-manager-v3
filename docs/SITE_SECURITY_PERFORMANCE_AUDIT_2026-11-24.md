@@ -1,7 +1,9 @@
 # 사이트 보안·성능·운영 품질 종합 감사
 
-> 기준일: 2026-11-24 (Asia/Seoul)  
-> 기준 브랜치: `codex/next16-prisma-security-upgrade`  
+> 기준일: 2026-11-24 (Asia/Seoul)
+>
+> 기준 브랜치: `codex/next16-prisma-security-upgrade`
+>
 > 운영 전제: 사내 LAN 전용, 계정별 `admin` / `viewer` 권한 적용 목표
 
 ## 1. 결론
