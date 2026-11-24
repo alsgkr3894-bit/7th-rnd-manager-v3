@@ -58,8 +58,8 @@
 
 **스택** (`package.json`, 패키지명 `wonpay-rnd-platform`, `"type": "module"`)
 
-- Next.js **15.5.26** App Router, React **19.3**
-- Prisma **7.8** + `@prisma/adapter-pg` + Postgres (서버 미러)
+- Next.js **16.4.6** App Router, React **19.3**
+- Prisma **7.10** + `@prisma/adapter-pg` + Postgres (서버 미러)
 - 브라우저 저장: **IndexedDB** (DB 이름 `rnd_manager_v3`, **버전 29, store 48개**)
 - 엑셀: `xlsx`, `xlsx-js-style` · 드래그: `@dnd-kit`
 - 테스트: Jest 29 (네이티브 ESM, `--experimental-vm-modules`) · QA: Playwright 스크립트
@@ -80,7 +80,7 @@ prisma/           schema.prisma, 마이그레이션, store 카탈로그, 백업/
 scripts/          개발 서버·샌드박스·QA·제때 다운로드·자동시작 스크립트
 __tests__/        Jest 테스트 (lib 414개, hooks, scripts, audit)
 docs/             기획·감사·작업 기록 문서 (대부분 시점 기록)
-middleware.ts     로그인 쿠키 검사
+proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
 ```
 
 설계 원칙: 페이지 파일은 화면 조립만, 반복 로직은 `hooks/`·`lib/`로. `lib/ui`는 React 없는 순수 함수. 도메인 정책이 강한 로직(원가·영양·식자재)은 도메인 폴더에 둔다.
@@ -125,7 +125,7 @@ middleware.ts     로그인 쿠키 검사
 
 ## 5. 인증·권한·브랜드
 
-- **로그인**: `middleware.ts`가 쿠키 `v3:auth`가 없으면 `/login`으로 보냄. 비밀번호는 클라이언트에서 SHA-256 해시해 localStorage `v3:auth-hash`에 저장(`lib/auth.js`). 사내용 간이 잠금이며 서버 인증이 아니다. `/api/*`는 쿠키 검사 대상이 아니다(출처 제한만).
+- **로그인**: `proxy.ts`가 서명된 HttpOnly 쿠키 `v3:session`이 없으면 `/login`으로 보낸다. API는 서버에서 세션 서명과 만료를 검증하며, 로그인 API에는 실패 횟수 제한이 적용된다.
 - **역할**: `admin`(관리자) / `viewer`(조회자). 계정은 store `ref_accounts`, 현재 계정은 브랜드별 localStorage. `hooks/useCurrentRole.js` → 화면은 `canEdit = ready && isAdmin`으로 쓰기 버튼을 막는다.
   - 계정이 0개면 admin, 판정 실패면 viewer, readonly 동기화 모드면 항상 viewer.
   - 쓰기 함수 대부분은 저장 직전 `assertActiveAdmin(label)`(`lib/auth/guard.js`)로 한 번 더 막는다.

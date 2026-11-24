@@ -74,7 +74,6 @@ function verifyBuildOutput() {
     '.next/BUILD_ID',
     '.next/prerender-manifest.json',
     '.next/server/app-paths-manifest.json',
-    '.next/server/pages/_error.js',
   ];
   for (const file of requiredFiles) {
     if (!existsSync(file)) throw new Error(`missing build output: ${file}`);

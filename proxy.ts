@@ -4,7 +4,7 @@ const PUBLIC_PATHS = ['/login', '/_next', '/favicon.ico', '/logo-', '/manifest.j
 const COOKIE_NAME = 'v3:session';
 const MAX_API_BODY_BYTES = 20 * 1024 * 1024;
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
@@ -17,7 +17,6 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // /login: 이미 인증된 사용자는 홈으로 리디렉트
   if (pathname.startsWith('/login')) {
     if (req.cookies.has(COOKIE_NAME)) {
       const url = req.nextUrl.clone();
@@ -27,13 +26,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 나머지 공개 경로 통과
-  if (PUBLIC_PATHS.slice(1).some(p => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
+  if (PUBLIC_PATHS.slice(1).some(p => pathname.startsWith(p))) return NextResponse.next();
 
-  const authed = req.cookies.has(COOKIE_NAME);
-  if (!authed) {
+  if (!req.cookies.has(COOKIE_NAME)) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

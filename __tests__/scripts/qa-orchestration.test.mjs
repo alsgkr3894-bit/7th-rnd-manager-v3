@@ -85,10 +85,8 @@ describe('QA orchestration scripts', () => {
     expect(safety).toContain("'--exit-on-error'");
   });
 
-  test('production start 오류 fallback을 위한 pages/_error.js가 있다', () => {
-    const errorPage = src('pages/_error.js');
-
-    expect(errorPage).toContain('ErrorPage.getInitialProps');
-    expect(errorPage).toContain('statusCode');
+  test('App Router 오류 fallback이 있다', () => {
+    expect(src('app/error.jsx')).toContain('export default function ErrorPage');
+    expect(src('app/global-error.jsx')).toContain('export default function GlobalError');
   });
 });
