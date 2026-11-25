@@ -149,7 +149,7 @@ export default function AppShell({ children }) {
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapsed}
       />
-      {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
+      <div className="nav-scrim" aria-hidden="true" onClick={() => setMobileNav(false)} />
 
       <div className="app-main-shell">
         <TopBar
@@ -164,7 +164,7 @@ export default function AppShell({ children }) {
           canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>
-          <div id="main-content" style={{ animation: 'fade-in 180ms ease both' }}>
+          <div id="main-content">
             {children}
           </div>
         </ErrorBoundary>
