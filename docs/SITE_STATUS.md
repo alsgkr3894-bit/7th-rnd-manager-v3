@@ -1,7 +1,8 @@
 # 7번가 R&D 플랫폼 사이트 현황 (집중 탐색 결과)
 
 > 작성일: 2026-06-17  
-> ⚠️ 2026-06 시점 탐색 결과다. 최신 전체 안내는 [`AI_SITE_GUIDE.md`](../AI_SITE_GUIDE.md)(2026-10-08). 아래 DB 수치만 2026-10-08에 정정했다.  
+> ⚠️ 설명 본문은 2026-06 시점 탐색 결과다. 최신 전체 안내는 [`AI_SITE_GUIDE.md`](../AI_SITE_GUIDE.md)(2026-10-08).  
+> 수치 갱신: 2026-11-26 — 페이지·화면·훅·useDBLoad·테스트 수치(`npm run audit:docs`)와 빠져 있던 화면 6개, 기술 스택 버전.  
 > 탐색 방식: 7개 영역 병렬 에이전트 → 종합 정리  
 > 대상 브랜치: master (HEAD)
 
@@ -24,7 +25,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 프레임워크 | Next.js 14 (App Router, `'use client'` 컴포넌트 중심) |
+| 프레임워크 | Next.js 16 (App Router, `'use client'` 컴포넌트 중심), React 19 |
 | 언어 | JavaScript (TypeScript 미사용) |
 | 스타일 | CSS custom properties (`tokens.css`), 외부 CSS 프레임워크 없음 |
 | 데이터 저장 | IndexedDB(클라이언트, 오프라인 우선) + PostgreSQL(운영 PC 서버 DB, LAN 공유용) |
@@ -37,7 +38,7 @@
 
 ## 2. 라우트 및 화면 목록
 
-총 61개 page 파일 (실제 화면 48개 + 리다이렉트 13개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템)·노트(목록+작성+상세+캘린더+보드+일지+시제품+시장조사)·R&D(법인카드+로그인정보) 총 11개 섹션 구성.
+총 62개 page 파일 (실제 화면 49개 + 리다이렉트 13개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가+추가토핑)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템·서버 불러오기·시제품 복구)·노트(목록+작성+상세+캘린더+보드+일지+시제품+시장조사)·R&D(법인카드+로그인정보) 총 11개 섹션 구성.
 
 ### 홈 / 인증
 
@@ -60,6 +61,7 @@
 | `/cost/recipe` | 공통 원가 관리 — 공통묶음(groups 탭)·엣지 원가(edges 탭) 두 탭으로 공통 재료 묶음과 엣지/도우 항목 원가 관리 | `app/cost/recipe/page.jsx` |
 | `/cost/margin` | 원가마진표 — 카테고리별 원가율·마진율 테이블, 플랫폼(배달앱) 할인 시뮬레이션, 경고 임계값 설정, 엑셀 내보내기 | `app/cost/margin/page.jsx` |
 | `/cost/all-summary` | 전체 종합 원가표 — 모든 카테고리 통합 원가 현황, 카테고리 필터, 페이지네이션, CSV 내보내기 | `app/cost/all-summary/page.jsx` |
+| `/cost/topping` | 추가토핑 원가 — 주문 시 추가하는 토핑의 수량·판매가·원가율 관리 | `app/cost/topping/page.jsx` |
 
 ### 보고서
 
@@ -70,7 +72,6 @@
 | `/report/cost` | 원가 보고서 빌더 — 카테고리별 원가·레시피 인쇄본 생성, Strict Posting 검증, 엑셀 내보내기 | `app/report/cost/page.jsx` |
 | `/report/price` | 식자재 단가 보고서 빌더 — 기간별 단가 변동 요약·원가 영향도 포함, PDF/엑셀 출력 | `app/report/price/page.jsx` |
 | `/report/shipment` | 출고량 보고서 빌더 — 월별 출고량 차트·카테고리 요약·전체 목록 옵션 선택 후 생성 | `app/report/shipment/page.jsx` |
-| `/report/menu-sales-compare` | 판매량 비교 보고서 빌더 — MoM/YoY/커스텀 두 기간 비교, 카테고리 그룹 순위 변동 포함 | `app/report/menu-sales-compare/page.jsx` |
 
 ### 메뉴 판매량
 
@@ -115,8 +116,10 @@
 |---|---|---|
 | `/settings/brands` | 브랜드 마스터 — 브랜드 추가/수정/숨김, 활성 브랜드 전환, 브랜드별 DB 백업·복원(관리자 전용) | `app/settings/brands/page.jsx` |
 | `/settings/account` | 계정 설정 — 프로필 편집·핀 설정·비밀번호 변경·세션 정보, 멤버 관리·권한 매트릭스(관리자) | `app/settings/account/page.jsx` |
-| `/settings/backup` | 데이터 백업 — 모듈 범위 선택 후 JSON 백업 파일 다운로드, 백업 이력·핀 고정 | `app/settings/backup/page.jsx` |
+| `/settings/backup` | 데이터 백업 — JSON 백업 다운로드와 저장 파일 확인, 서버 백업 목록·복원 검증 결과, 백업 이력·핀 고정 | `app/settings/backup/page.jsx` |
 | `/settings/restore` | 데이터 복원 — 백업 JSON 파일 업로드, 영향 스토어 미리보기·충돌 경고 후 복원 실행 | `app/settings/restore/page.jsx` |
+| `/settings/sync` | 서버 데이터 불러오기 — 서버 DB의 데이터를 이 브라우저로 내려받음, 동기화 상태 확인 | `app/settings/sync/page.jsx` |
+| `/settings/sample-recovery` | 시제품 기록 복구 (사이드바에 없는 내부 화면) | `app/settings/sample-recovery/page.jsx` |
 | `/settings/system` | 시스템 설정 — DB 버전·스토어별 레코드 수·스토리지 사용량 확인, 테마·각종 알림 토글, 스토어 초기화·DB 삭제(위험) | `app/settings/system/page.jsx` |
 
 ### 노트
@@ -132,6 +135,14 @@
 | `/note/sample` | 시제품 목록 — 시제품 레코드 리스트·캘린더 뷰, 기간·평점 필터, 비교 바, CSV 내보내기 | `app/note/sample/page.jsx` |
 | `/note/sample/write` | 시제품 작성 — 새 시제품 폼(메뉴명·날짜·평점·태그·사진), 노트에서 정보 연동, Cmd+S 저장 | `app/note/sample/write/page.jsx` |
 | `/note/sample/[id]` | 시제품 상세/편집 — 기존 시제품 수정·평점·태그, CSV/인쇄 내보내기, 텍스트 복사 | `app/note/sample/[id]/page.jsx` |
+| `/note/market` | 시장조사 — 브랜드별 신제품·시장 흐름 기록, 국내/해외·연월 조회, PDF 출력 | `app/note/market/page.jsx` |
+
+### R&D 업무
+
+| 경로 | 설명 | 파일 |
+|---|---|---|
+| `/rnd/corporate-card` | 법인카드 내역서 (사이드바에서 숨김) | `app/rnd/corporate-card/page.jsx` |
+| `/rnd/login-info` | 계정 로그인정보 | `app/rnd/login-info/page.jsx` |
 
 ### 레거시 리다이렉트 (13개)
 
@@ -200,17 +211,17 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,914줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 67개 커스텀 훅 파일(5,313줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,914줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 67개 파일(66 .js + 1 .jsx), 5,313줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `hooks/useDBLoad.js`
 
-fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 정의 파일 포함 24개 파일(소비 기준 23개): app 페이지 17곳 + app 내부 hook/controller 3곳 + hooks 1곳 + components 2곳.
+fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 정의 파일 포함 33개 파일(소비 기준 32개): app 페이지 17곳 + app 내부 hook 4곳 + hooks 5곳 + components 6곳.
 
 ### `useLocalStorage — SSR 안전 영속 상태`
 `hooks/useLocalStorage.js`
@@ -264,7 +275,7 @@ document.visibilitychange 이벤트에서 visibilityState==='visible' 시 콜백
 
 ### `useDBLoad 적용 현황`
 
-소비 기준 23개 파일에서 사용. app/ 페이지 직접 사용 17곳(cost, ingredient, menu-master, menu-sales, nutrition, report, settings/backup|restore|system 등), app 내부 hook/controller 3곳, hooks/ 위임 훅 1곳(useIngredientPriceData), components/ 2곳(SuppliersView, CommonManageView). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
+소비 기준 32개 파일에서 사용. app/ 페이지 직접 사용 17곳(cost, ingredient, jette, menu-master, menu-sales, nutrition, report, settings/account|backup|restore|system 등), app 내부 hook 4곳, hooks/ 5곳(useIngredientPriceData, 메뉴 이름 집합 훅 등), components/ 6곳(SuppliersView, CommonManageView, menu-master 4곳). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
 
 ### `useCurrentRole — 권한 상태 관리`
 `hooks/useCurrentRole.js`
@@ -497,22 +508,32 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 339개 파일(lib 312, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 494개 파일(lib 461, hooks 21, scripts 10), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `__tests__/lib/`
 
-__tests__/lib/ 하위 312개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 461개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `__tests__/hooks/`
 
-__tests__/hooks/ 하위 20개 .test.mjs 파일. use-db-load, use-pagination, use-modal-shell, use-keyboard-save, use-local-storage, use-visibility-refresh 등 커스텀 훅 전반 검증
+__tests__/hooks/ 하위 21개 .test.mjs 파일. use-db-load, use-pagination, use-modal-shell, use-keyboard-save, use-local-storage, use-visibility-refresh 등 커스텀 훅 전반 검증
 
 ### Jest 단위 테스트 — scripts
 `__tests__/scripts/`
 
-__tests__/scripts/ 하위 7개 파일(clean-build-script, full-rt-script, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 내부 유틸과 전체 QA 오케스트레이션 구조 검증
+__tests__/scripts/ 하위 10개 파일(clean-build-script, db-restore-verify, dev-sandbox-distdir, full-rt-script, local-db-backup, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 유틸, 전체 QA 오케스트레이션, DB 백업·복원 검증
+
+### 실데이터 감사 테스트
+`__tests__/audit/`
+
+2개 파일·13개 테스트. 실데이터 사본(`RND_AUDIT_DATA_DIR`)이 있어야 실행되며 `npm test`에서는 건너뛴다. `npm run audit:cross-module`이 DB를 읽기 전용으로 임시 폴더에 받아 실행한 뒤 사본을 지운다. 대부분의 항목은 화면 간 차이를 콘솔에 기록하므로 통과 여부와 함께 출력 내용을 확인한다.
+
+### 백업 복원 검증
+`prisma/verify-db-restore.mjs`
+
+`npm run db:restore:verify` — 최신 DB 백업을 임시 폴더의 별도 PostgreSQL(다른 포트)에 실제로 복원해 마이그레이션·핵심 저장소·원가 계산·운영 DB와의 차이를 확인하고 결과를 `<백업>.dump.verify.json`에 남긴다. 운영 DB는 읽기 전용으로만 접근한다.
 
 ### 테스트 픽스처
 `__tests__/fixtures/business/`
