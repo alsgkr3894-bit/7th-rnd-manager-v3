@@ -357,7 +357,9 @@ export function useIngredientManageActions({
                   showToast(`${removed.length}개 복구했습니다`, 'ok');
                 } catch (err) {
                   console.error('[IngredientManage] undo batch delete failed', err);
-                  showToast('실행취소 실패: ' + err.message, 'error');
+                  showToast('실행취소 실패: ' + err.message, 'error', 10000);
+                  // 일부는 복구됐으므로 목록을 다시 읽는다
+                  await load();
                 }
               },
             }

@@ -74,7 +74,7 @@ describe('ingredient manage undo guards', () => {
   });
 
   test('일괄 실행취소는 실패 개수를 사용자 메시지로 만든다', () => {
-    expect(utilsSource).toContain('throw new Error(`${failures.length}개 항목 복구 실패`)');
+    expect(utilsSource).toContain('${failed.length}개 항목 복구 실패: ${shown}');
     expect(actionsSource).toContain("console.error('[IngredientManage] undo batch delete failed'");
   });
 

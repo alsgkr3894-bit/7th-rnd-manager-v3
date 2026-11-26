@@ -67,17 +67,31 @@ export async function restoreDeletedIngredientBackup(backup) {
   }
 }
 
+const MAX_FAILED_NAMES = 5;
+
+/** 사용자가 다시 찾을 수 있는 이름 — 제품코드 우선, 없으면(수동 식자재) 식자재명 */
+function restoreTargetName(backup) {
+  const item = backup?.ingredient;
+  return item?.productCode || item?.ingredientName || item?.productName || `ID ${item?.id}`;
+}
+
+/** 일괄 실행취소 — 일부가 실패해도 나머지는 계속 복구하고, 실패한 항목을 알려 준다 */
 export async function restoreDeletedIngredientBackups(backups) {
-  const failures = [];
+  const failed = [];
   for (const backup of backups) {
     try {
       await restoreDeletedIngredientBackup(backup);
     } catch (err) {
-      failures.push(err);
+      console.warn('[ingredient] 삭제 실행취소 실패', restoreTargetName(backup), err);
+      failed.push(restoreTargetName(backup));
     }
   }
-  if (failures.length > 0) {
-    throw new Error(`${failures.length}개 항목 복구 실패`);
+  if (failed.length > 0) {
+    const shown = failed.slice(0, MAX_FAILED_NAMES).join(', ');
+    const rest = failed.length - MAX_FAILED_NAMES;
+    throw new Error(
+      `${failed.length}개 항목 복구 실패: ${shown}${rest > 0 ? ` 외 ${rest}개` : ''}`
+    );
   }
 }
 
