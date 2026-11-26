@@ -49,7 +49,7 @@ export default function Page() {
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
 
-  const { parsed, setParsed, handleFile } = useRestoreFile({
+  const { parsed, setParsed, handleFile, reading, cancelRead } = useRestoreFile({
     onReset: () => {
       setConfirming(false);
       setRestoreDone(null);
@@ -318,6 +318,24 @@ export default function Page() {
             이전에 다운로드한 백업 파일(.gz 또는 예전 .json)을 선택하세요.
             {!ready && <span style={{ color: 'var(--accent)', marginLeft: 6 }}>DB 초기화 중…</span>}
           </p>
+          {reading && (
+            <div
+              role="status"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}
+            >
+              <span>파일을 읽는 중{reading.percent == null ? '…' : ` ${reading.percent}%`}</span>
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => {
+                  cancelRead();
+                  if (fileRef.current) fileRef.current.value = '';
+                }}
+              >
+                취소
+              </button>
+            </div>
+          )}
         </div>
       )}
 

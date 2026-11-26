@@ -1,12 +1,25 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
-import { parseBackupBlob } from '@/lib/backup/file-format';
+import { readBackupFile } from '@/lib/backup/read-file';
 import { validateBackupPayload } from '@/lib/backup/validation';
 import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
 
 export function useRestoreFile({ onReset } = {}) {
   const [parsed, setParsed] = useState(null);
+  const [reading, setReading] = useState(null); // { fileName, percent }
+  // 가장 최근에 고른 파일만 반영한다
+  const controllerRef = useRef(null);
+
+  useEffect(() => () => controllerRef.current?.abort(), []);
+
+  function cancelRead() {
+    if (!controllerRef.current) return;
+    controllerRef.current.abort();
+    controllerRef.current = null;
+    setReading(null);
+    showToast('파일 읽기를 취소했어요', 'warn');
+  }
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -23,8 +36,18 @@ export function useRestoreFile({ onReset } = {}) {
     }
     setParsed(null);
     onReset?.();
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    setReading({ fileName: file.name, percent: null });
     try {
-      const data = await parseBackupBlob(file);
+      const data = await readBackupFile(file, {
+        signal: controller.signal,
+        onProgress: percent => {
+          if (controllerRef.current === controller) setReading({ fileName: file.name, percent });
+        },
+      });
+      if (controllerRef.current !== controller) return;
       const { backup, summary } = validateBackupPayload(data);
       if (summary.versionMismatch) {
         showToast(
@@ -68,11 +91,18 @@ export function useRestoreFile({ onReset } = {}) {
         _failedStores: failedStores,
       });
     } catch (err) {
+      // 취소했거나 다른 파일을 골랐다
+      if (controller.signal.aborted) return;
       console.error('[Restore] 파일 파싱 실패:', err);
       const detail = (err instanceof Error ? err.message : String(err || '')).trim();
       showToast(`백업 파일을 읽을 수 없습니다${detail ? `: ${detail}` : ''}`, 'error');
+    } finally {
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+        setReading(null);
+      }
     }
   }
 
-  return { parsed, setParsed, handleFile };
+  return { parsed, setParsed, handleFile, reading, cancelRead };
 }

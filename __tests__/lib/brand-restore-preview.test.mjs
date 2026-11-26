@@ -21,7 +21,7 @@ describe('brand restore preview guards', () => {
     expect(source.indexOf('checkFileExt(file, UPLOAD_EXT.backup)')).toBeLessThan(
       source.indexOf('checkFileSize(file, UPLOAD_MAX_MB.backup)')
     );
-    expect(source).toContain('parseBackupBlob(file)');
+    expect(source).toContain('readBackupFile(file)');
   });
 
   test('브랜드 복원은 공유 store 보호 skip을 실제 오류와 분리한다', () => {

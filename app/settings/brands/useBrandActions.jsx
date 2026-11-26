@@ -17,7 +17,7 @@ import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/bra
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
 import { downloadBackup, makeFileName } from '@/lib/download';
-import { parseBackupBlob } from '@/lib/backup/file-format';
+import { readBackupFile } from '@/lib/backup/read-file';
 import { formatNumber } from '@/lib/format';
 import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
 import { countRows } from './brandUtils';
@@ -190,7 +190,7 @@ export function useBrandActions({
       }
       let raw;
       try {
-        raw = await parseBackupBlob(file);
+        raw = await readBackupFile(file);
       } catch (err) {
         showToast(err.message, 'error');
         return;

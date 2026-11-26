@@ -30,7 +30,7 @@ describe('restore failedStores guard', () => {
     expect(restoreFileHook.indexOf('checkFileExt(file, UPLOAD_EXT.backup)')).toBeLessThan(
       restoreFileHook.indexOf('checkFileSize(file, UPLOAD_MAX_MB.backup)')
     );
-    expect(restoreFileHook).toContain('parseBackupBlob(file)');
+    expect(restoreFileHook).toContain('readBackupFile(file, {');
     expect(restorePage).toContain('allowFailedStoreRestore');
     expect(restorePage).toContain('위험 승인 체크가 필요합니다');
     expect(restorePage).toContain('setBackupFailed(false)');
