@@ -203,7 +203,8 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
 
     const diffs = [];
     for (const menu of snapshot.menu_master) {
-      if (!menu.menuCode) continue;
+      // 단종 메뉴는 출시 준비 대상이 아니라 판정 자체가 없다.
+      if (!menu.menuCode || menu.status === 'discontinued') continue;
       const readinessOk = readinessMap.get(menu.menuCode)?.dims?.nutrition?.status === 'ok';
       const chipLinked = isMenuNutritionLinked(menu, linkedSet);
       if (readinessOk !== chipLinked) {
