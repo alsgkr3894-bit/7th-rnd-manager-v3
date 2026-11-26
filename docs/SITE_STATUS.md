@@ -508,7 +508,7 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 496개 파일(lib 463, hooks 21, scripts 10), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 498개 파일(lib 463, hooks 21, scripts 12), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `__tests__/lib/`
@@ -523,7 +523,7 @@ __tests__/hooks/ 하위 21개 .test.mjs 파일. use-db-load, use-pagination, use
 ### Jest 단위 테스트 — scripts
 `__tests__/scripts/`
 
-__tests__/scripts/ 하위 10개 파일(clean-build-script, db-restore-verify, dev-sandbox-distdir, full-rt-script, local-db-backup, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 유틸, 전체 QA 오케스트레이션, DB 백업·복원 검증
+__tests__/scripts/ 하위 12개 파일(clean-build-script, cost-baseline, perf-app-baseline, db-restore-verify, dev-sandbox-distdir, full-rt-script, local-db-backup, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 유틸, 전체 QA 오케스트레이션, DB 백업·복원 검증
 
 ### 실데이터 감사 테스트
 `__tests__/audit/`
