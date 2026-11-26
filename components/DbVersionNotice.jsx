@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { DB_ERROR_EVENT, DB_ERROR_MESSAGES } from '@/lib/db/errors';
 
 /**
  * DbVersionNotice — 다른 탭에서 DB가 업그레이드되었거나(업그레이드 차단 포함)
@@ -7,28 +8,37 @@ import { useEffect, useState } from 'react';
  *
  * lib/db/init.js 가 dispatch하는 'db:version-changed'(다른 탭에서 버전 변경 후
  * 현재 탭 연결이 닫힘) / 'db:blocked'(현재 탭이 업그레이드를 막고 있음)
- * 이벤트를 수신한다. 기존에는 이벤트만 발생하고 수신하는 쪽이 없었다.
+ * 이벤트를 수신한다. 저장 공간 부족·새 버전 데이터·저장소 손상(lib/db/errors.js)도 여기서 알린다.
  */
+const MESSAGES = {
+  ...DB_ERROR_MESSAGES,
+  changed: '다른 탭에서 데이터베이스가 업데이트되었습니다. 새로고침해 주세요.',
+  unblocked: '데이터베이스 업데이트가 끝났습니다. 새로고침해 주세요.',
+};
+
 export default function DbVersionNotice() {
-  const [reason, setReason] = useState(null); // null | 'changed' | 'blocked'
+  const [reason, setReason] = useState(null); // null | MESSAGES의 키
 
   useEffect(() => {
-    const onChanged = () => setReason('changed');
-    const onBlocked = () => setReason(prev => prev || 'blocked');
-    window.addEventListener('db:version-changed', onChanged);
-    window.addEventListener('db:blocked', onBlocked);
+    const listeners = {
+      'db:version-changed': () => setReason('changed'),
+      'db:blocked': () => setReason(prev => prev || 'blocked'),
+      'db:unblocked': () => setReason('unblocked'),
+      [DB_ERROR_EVENT]: event => setReason(event.detail?.kind || 'storage'),
+    };
+    for (const [name, handler] of Object.entries(listeners)) {
+      window.addEventListener(name, handler);
+    }
     return () => {
-      window.removeEventListener('db:version-changed', onChanged);
-      window.removeEventListener('db:blocked', onBlocked);
+      for (const [name, handler] of Object.entries(listeners)) {
+        window.removeEventListener(name, handler);
+      }
     };
   }, []);
 
   if (!reason) return null;
 
-  const message =
-    reason === 'changed'
-      ? '다른 탭에서 데이터베이스가 업데이트되었습니다. 새로고침해 주세요.'
-      : '다른 탭이 열려 있어 데이터베이스 업데이트가 보류되었습니다. 다른 탭을 닫거나 새로고침해 주세요.';
+  const message = MESSAGES[reason] || MESSAGES.storage;
 
   return (
     <div
