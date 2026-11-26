@@ -48,6 +48,8 @@ jest.unstable_mockModule('@/lib/ingredient', () => ({ getAllIngredients }));
 jest.unstable_mockModule('@/lib/cost/recipe-groups/store', () => ({ getAllRecipeGroups }));
 jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
+  getAllMenuRefs: async () => state.menuRefs || [],
+  getAllSetCompositions: async () => state.setComps || [],
   getAllCompositions,
   getAllToppings,
   getAllEdges: getAllNutritionEdges,

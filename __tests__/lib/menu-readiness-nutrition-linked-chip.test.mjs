@@ -60,6 +60,8 @@ jest.unstable_mockModule('@/lib/ingredient', () => ({ getAllIngredients }));
 jest.unstable_mockModule('@/lib/cost/recipe-groups/store', () => ({ getAllRecipeGroups }));
 jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
+  getAllMenuRefs: async () => state.menuRefs || [],
+  getAllSetCompositions: async () => state.setComps || [],
   getAllCompositions,
   getAllToppings,
   getAllEdges: getAllNutritionEdges,
@@ -170,6 +172,65 @@ describe('buildNutritionLinkedMenuCodeSet / isMenuNutritionLinked', () => {
         partialLinked
       )
     ).toBe(false);
+  });
+
+  test('매장 고정 음료표로 출력되는 음료는 입력값이 없어도 연동이다', async () => {
+    state.stores.add('menu_master');
+    const drinks = [
+      ['D-CC-001-355', '코카콜라355ml'],
+      ['D-CZ-001-500', '코카콜라제로500ml'], // 510ml 행으로 출력
+      ['D-CZ-001-1250', '코카콜라제로1.25L'],
+      ['D-SPR-001-1500', '스프라이트1.5L'],
+      ['D-NEW-001-355', '새음료355ml'], // 고정표에 없음
+      ['D-SPR-001-750', '스프라이트750ml'], // 없는 용량
+    ].map(([menuCode, menuName]) => ({ menuCode, menuName, category: '음료' }));
+    getAll.mockImplementation(async name => (name === 'menu_master' ? [...drinks] : []));
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    expect(drinks.map(menu => isMenuNutritionLinked(menu, linked))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+    getAll.mockImplementation(async () => []);
+  });
+
+  test('세트박스는 구성으로 열량이 계산되는 사이즈만 연동이다', async () => {
+    state.stores.add('menu_master');
+    state.stores.add('nutrition_set_composition');
+    const menus = [
+      { menuCode: 'P-OR-001-L', menuName: '치즈 피자 L', category: '피자/오리지널', size: 'L' },
+      { menuCode: 'S-001', menuName: '치즈볼', category: '사이드' },
+      { menuCode: 'SET-FAM-001-L', menuName: '패밀리박스 L', category: '세트박스', size: 'L' },
+      { menuCode: 'SET-FAM-001-R', menuName: '패밀리박스 R', category: '세트박스', size: 'R' },
+      { menuCode: 'SET-NEW-001-L', menuName: '새 세트 L', category: '세트박스', size: 'L' },
+    ];
+    getAll.mockImplementation(async name => (name === 'menu_master' ? [...menus] : []));
+    state.rawValues = [
+      { menuCode: 'P-OR-001', crustType: '석쇠L', weight: 500, kcal: 250 },
+      { menuCode: 'S-001', crustType: '단품', weight: 100, kcal: 300 },
+    ];
+    state.setComps = ['L', 'R'].map(setSide => ({
+      kind: 'set',
+      setName: '패밀리박스',
+      setSide,
+      slots: [{ label: '사이드', menuCodes: ['S-001'] }],
+    }));
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    // R 사이즈 피자 값이 없어 R 세트는 계산되지 않는다. 구성이 없는 세트도 누락이다.
+    expect(menus.slice(2).map(menu => isMenuNutritionLinked(menu, linked))).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    getAll.mockImplementation(async () => []);
+    state.setComps = [];
   });
 
   test('메뉴마스터 엣지 행(석쇠·씬바사삭)은 nutrition_raw_values에 해당 베이스 crustType이 하나라도 있으면 연동된다', async () => {

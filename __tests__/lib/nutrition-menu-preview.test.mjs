@@ -224,3 +224,26 @@ describe('buildMenuNutritionPreview — 엣지(크러스트) 카테고리', () =
     expect(result.rows).toHaveLength(2);
   });
 });
+
+describe('음료 미리보기는 실제 출력(고정 음료표)과 같다', () => {
+  const ctx = { menuRefs: [], rawMap: {}, masterByCode: {} };
+
+  test('고정표에 있는 음료는 그 행을 보여 준다', () => {
+    const preview = buildMenuNutritionPreview(ctx, {
+      menuCode: 'D-CZ-001-500',
+      menuName: '코카콜라제로500ml',
+      category: '음료',
+    });
+    expect(preview.missing).toBe(false);
+    expect(preview.rows).toEqual([expect.objectContaining({ weight: 510, sodium: 31 })]);
+  });
+
+  test('고정표에 없는 음료는 미입력이다', () => {
+    const preview = buildMenuNutritionPreview(ctx, {
+      menuCode: 'D-NEW-001-355',
+      menuName: '새음료355ml',
+      category: '음료',
+    });
+    expect(preview).toMatchObject({ missing: true, rows: [] });
+  });
+});
