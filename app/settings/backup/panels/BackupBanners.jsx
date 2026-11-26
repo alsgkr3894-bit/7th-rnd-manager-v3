@@ -30,13 +30,22 @@ export function BackupReminderBanner({ backupReminder }) {
       <Icon.alert style={S_ALERT_ICON} />
       <span style={{ fontSize: 13 }}>
         {backupReminder.never ? (
-          <>
-            <b>아직 백업하지 않았어요.</b> 데이터를 정기적으로 백업해 두세요.
-          </>
+          backupReminder.unconfirmed ? (
+            <>
+              <b>다운로드한 백업 파일을 아직 확인하지 않았어요.</b> 아래 [저장한 파일 확인]에서 그
+              파일을 선택해 주세요.
+            </>
+          ) : (
+            <>
+              <b>아직 백업하지 않았어요.</b> 데이터를 정기적으로 백업해 두세요.
+            </>
+          )
         ) : (
           <>
-            <b>마지막 백업 후 {backupReminder.daysSince}일이 지났어요.</b> 최신 데이터를 백업해
-            두세요.
+            <b>마지막으로 확인한 백업이 {backupReminder.daysSince}일 전 것이에요.</b>{' '}
+            {backupReminder.unconfirmed
+              ? '최근 다운로드한 파일을 [저장한 파일 확인]으로 확인해 주세요.'
+              : '최신 데이터를 백업해 두세요.'}
           </>
         )}
       </span>

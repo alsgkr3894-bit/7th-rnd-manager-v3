@@ -54,7 +54,7 @@ function backupMeta(reminder) {
   if (reminder.never)
     return {
       label: '백업 필요',
-      detail: '이력 없음',
+      detail: reminder.unconfirmed ? '파일 확인 전' : '이력 없음',
       color: 'var(--negative)',
       bg: 'var(--negative-soft)',
       border: 'rgba(239,68,68,.25)',

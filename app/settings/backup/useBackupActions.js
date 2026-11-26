@@ -4,7 +4,8 @@ import { showToast } from '@/components/Toast';
 import { logBackupCreate } from '@/lib/change-log';
 import { exportSelected } from '@/lib/db';
 import { downloadJson, makeFileName } from '@/lib/download';
-import { getHistory, addEntry, getLastBackupAt } from '@/lib/backup-history';
+import { addEntry } from '@/lib/backup-history';
+import { backupFileStamp } from '@/lib/backup/file-check';
 
 /**
  * 백업 실행 훅.
@@ -18,8 +19,7 @@ export function useBackupActions({
   selectedRows,
   setBackupProgress,
   backupProgressTimerRef,
-  setHistory,
-  setLastBackupAt,
+  onRecorded,
 }) {
   useEffect(
     () => () => {
@@ -57,14 +57,18 @@ export function useBackupActions({
         scopes: selectedKeys,
         totalRows: selectedRows,
         fileName,
+        ...backupFileStamp(data),
       });
-      setHistory(getHistory());
-      setLastBackupAt(getLastBackupAt());
+      onRecorded?.();
       logBackupCreate(fileName);
-      showToast(`백업 완료 — ${fileName}`, 'ok');
+      showToast(
+        `다운로드를 요청했어요 — ${fileName}. 저장한 뒤 [저장한 파일 확인]을 눌러 주세요.`,
+        'ok',
+        8000
+      );
       if (!recorded) {
         showToast(
-          '백업 이력 저장에 실패했어요 (저장 공간 부족). 백업 파일은 정상 다운로드되었습니다.',
+          '백업 이력 저장에 실패했어요 (저장 공간 부족). 다운로드한 파일은 직접 확인해 주세요.',
           'warn'
         );
       }

@@ -7,6 +7,7 @@ import { importAll, MODULE_KEYS, storesForScopes, collectStoreStats, exportAll }
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { downloadJson, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
+import { backupFileStamp } from '@/lib/backup/file-check';
 import { pickRestoreStores } from '@/lib/backup/restore-impact';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
@@ -116,8 +117,9 @@ export default function Page() {
             scopes: MODULE_KEYS,
             totalRows: Object.values(currentStats || {}).reduce((s, n) => s + n, 0),
             fileName,
+            ...backupFileStamp(backup),
           });
-          showToast(`자동 백업 완료 — ${fileName}`, 'ok');
+          showToast(`자동 백업 다운로드를 요청했어요 — ${fileName}`, 'ok');
         } catch (bkErr) {
           console.error('[Restore] 자동 백업 실패:', bkErr);
           // 자동백업 실패 → 복원 중단하고 재확인 요구

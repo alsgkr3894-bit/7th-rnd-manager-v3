@@ -15,6 +15,7 @@ import { drainServerStoreSyncQueue } from '@/lib/db/server-sync';
 import { validateBackupPayload } from '@/lib/backup/validation';
 import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 import { addEntry } from '@/lib/backup-history';
+import { backupFileStamp } from '@/lib/backup/file-check';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
 import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
@@ -145,6 +146,7 @@ export function useBrandActions({
         scopes: MODULE_KEYS,
         totalRows: countRows(data.stores),
         fileName,
+        ...backupFileStamp(data),
       });
       logBackupCreate(fileName);
       showToast(`${brand.name} 백업 파일을 다운로드했습니다.`, 'ok');

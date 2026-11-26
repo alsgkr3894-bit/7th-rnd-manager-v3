@@ -3,7 +3,13 @@ import { SettingTile } from '@/components/ui/SettingTile';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { MODULE_GROUPS, MODULE_KEYS } from '@/lib/db';
 
-export function BackupSummaryTiles({ lastBackupAt, selectedKeys, selectedRows, ready }) {
+export function BackupSummaryTiles({
+  lastBackupAt,
+  lastFileCheckedAt,
+  selectedKeys,
+  selectedRows,
+  ready,
+}) {
   return (
     <div
       style={{
@@ -14,10 +20,19 @@ export function BackupSummaryTiles({ lastBackupAt, selectedKeys, selectedRows, r
       }}
     >
       <SettingTile
-        label="마지막 백업"
+        label="마지막 다운로드 요청"
         value={lastBackupAt ? formatRelative(lastBackupAt) : '없음'}
         sub={
           lastBackupAt ? new Date(lastBackupAt).toLocaleString('ko-KR') : '아직 백업하지 않았습니다'
+        }
+      />
+      <SettingTile
+        label="마지막 파일 확인"
+        value={lastFileCheckedAt ? formatRelative(lastFileCheckedAt) : '없음'}
+        sub={
+          lastFileCheckedAt
+            ? new Date(lastFileCheckedAt).toLocaleString('ko-KR')
+            : '저장한 파일을 아직 확인하지 않았습니다'
         }
       />
       <SettingTile

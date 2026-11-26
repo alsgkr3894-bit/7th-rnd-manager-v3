@@ -2,9 +2,12 @@
 import { SearchBox } from '@/components/ui/SearchBox';
 import { formatNumber } from '@/lib/format';
 import { MODULE_GROUPS } from '@/lib/db';
-import { S_HISTORY_EMPTY } from './backupPanelShared';
+import { S_HISTORY_EMPTY, formatFileCheck } from './backupPanelShared';
+import { BackupFileCheckButton } from './BackupFileCheckButton';
 
 export function BackupHistoryCard({
+  checking,
+  onCheckFile,
   history,
   filteredHistory,
   historyQuery,
@@ -18,8 +21,8 @@ export function BackupHistoryCard({
     <div className="card" style={{ marginTop: 16 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>최근 백업 이력</h2>
       <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
-        이 브라우저에서 실행한 백업 기록입니다. 실제 백업 파일은 다운로드한 위치에 저장되어
-        있습니다.
+        이 브라우저에서 다운로드를 요청한 기록입니다. 저장 여부는 브라우저가 알 수 없으니, 저장한
+        파일을 [저장한 파일 확인]으로 확인해 주세요. 파일 읽기 확인은 DB 복원 검증과 다릅니다.
       </p>
 
       {history.length === 0 ? (
@@ -57,6 +60,7 @@ export function BackupHistoryCard({
                 </button>
               ))}
             </div>
+            <BackupFileCheckButton checking={checking} onCheckFile={onCheckFile} />
             <button
               className="btn sm"
               onClick={onExportCsv}
@@ -74,7 +78,8 @@ export function BackupHistoryCard({
                   <tr>
                     <th style={{ width: 44 }} />
                     <th style={{ width: 120 }}>백업 ID</th>
-                    <th style={{ width: 170 }}>일시</th>
+                    <th style={{ width: 170 }}>다운로드 요청</th>
+                    <th style={{ width: 170 }}>파일 확인</th>
                     <th>범위</th>
                     <th style={{ width: 100, textAlign: 'right' }}>행 수</th>
                     <th>파일명</th>
@@ -105,6 +110,9 @@ export function BackupHistoryCard({
                       </td>
                       <td className="num" style={{ fontSize: 12 }}>
                         {new Date(h.at).toLocaleString('ko-KR')}
+                      </td>
+                      <td className="num" style={{ fontSize: 12 }}>
+                        {formatFileCheck(h)}
                       </td>
                       <td style={{ fontSize: 12 }}>
                         {(h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(', ') ||

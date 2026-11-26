@@ -1,7 +1,12 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MODULE_GROUPS } from '@/lib/db';
-import { getHistory, getLastBackupAt, getBackupReminder } from '@/lib/backup-history';
+import {
+  getHistory,
+  getLastBackupAt,
+  getLastFileCheckedAt,
+  getBackupReminder,
+} from '@/lib/backup-history';
 
 export function useBackupHistory() {
   const [lastBackupAt, setLastBackupAt] = useState(null);
@@ -9,12 +14,19 @@ export function useBackupHistory() {
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupReminder, setBackupReminder] = useState(null);
+  const [lastFileCheckedAt, setLastFileCheckedAt] = useState(null);
 
-  useEffect(() => {
+  // 이력·마지막 시각·경고 배너는 항상 같은 이력에서 함께 다시 계산한다
+  const refreshHistory = useCallback(() => {
     setHistory(getHistory());
     setLastBackupAt(getLastBackupAt());
+    setLastFileCheckedAt(getLastFileCheckedAt());
     setBackupReminder(getBackupReminder());
   }, []);
+
+  useEffect(() => {
+    refreshHistory();
+  }, [refreshHistory]);
 
   const sortedHistory = useMemo(
     () =>
@@ -45,13 +57,8 @@ export function useBackupHistory() {
     });
   }, [historyFilter, historyQuery, sortedHistory]);
 
-  function refreshHistory() {
-    setHistory(getHistory());
-  }
-
   return {
     history,
-    setHistory,
     historyQuery,
     setHistoryQuery,
     historyFilter,
@@ -60,7 +67,7 @@ export function useBackupHistory() {
     filteredHistory,
     backupReminder,
     lastBackupAt,
-    setLastBackupAt,
+    lastFileCheckedAt,
     refreshHistory,
   };
 }

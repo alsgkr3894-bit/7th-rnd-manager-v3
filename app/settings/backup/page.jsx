@@ -9,6 +9,7 @@ import { togglePin } from '@/lib/backup-history';
 import { exportHistoryCsv } from './backupPageUtils';
 import { useBackupActions } from './useBackupActions';
 import { useBackupHistory } from './useBackupHistory';
+import { useBackupFileCheck } from './useBackupFileCheck';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { getActiveBrand } from '@/lib/active-brand';
@@ -50,7 +51,6 @@ export default function Page() {
 
   const {
     history,
-    setHistory,
     historyQuery,
     setHistoryQuery,
     historyFilter,
@@ -58,9 +58,10 @@ export default function Page() {
     filteredHistory,
     backupReminder,
     lastBackupAt,
-    setLastBackupAt,
+    lastFileCheckedAt,
     refreshHistory,
   } = useBackupHistory();
+  const fileCheck = useBackupFileCheck({ onChecked: refreshHistory });
 
   useEffect(() => {
     setActiveBrand(getActiveBrand());
@@ -80,8 +81,7 @@ export default function Page() {
     selectedRows,
     setBackupProgress,
     backupProgressTimerRef,
-    setHistory,
-    setLastBackupAt,
+    onRecorded: refreshHistory,
   });
 
   return (
@@ -115,6 +115,7 @@ export default function Page() {
 
       <BackupSummaryTiles
         lastBackupAt={lastBackupAt}
+        lastFileCheckedAt={lastFileCheckedAt}
         selectedKeys={selectedKeys}
         selectedRows={selectedRows}
         ready={ready}
@@ -145,6 +146,8 @@ export default function Page() {
       />
 
       <BackupHistoryCard
+        checking={fileCheck.checking}
+        onCheckFile={fileCheck.handleCheckFile}
         history={history}
         filteredHistory={filteredHistory}
         historyQuery={historyQuery}

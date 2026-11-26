@@ -43,7 +43,13 @@ export function buildGreetingSubline({
     );
   if (hasBackup)
     parts.push(
-      <>{backupReminder.never ? '백업 이력 없음' : `${backupReminder.daysSince}일 전 백업`}</>
+      <>
+        {backupReminder.never
+          ? backupReminder.unconfirmed
+            ? '백업 파일 확인 전'
+            : '백업 이력 없음'
+          : `${backupReminder.daysSince}일 전 백업`}
+      </>
     );
   const hasActionable = hasTodos || hasUnmatched;
   return (

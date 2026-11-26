@@ -33,6 +33,12 @@ export function formatBackupStatus(status) {
   return '정상';
 }
 
+/** 이력 한 건의 파일 확인 상태 — 필드가 없으면 구분이 생기기 전의 이력 */
+export function formatFileCheck(entry) {
+  if (entry?.fileCheckedAt) return new Date(entry.fileCheckedAt).toLocaleString('ko-KR');
+  return entry?.fileCheckedAt === undefined ? '기록 전' : '확인 안 함';
+}
+
 export function importStatusLabel(status) {
   const labels = {
     PENDING: '대기',
