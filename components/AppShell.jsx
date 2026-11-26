@@ -72,7 +72,8 @@ function WorkShell({ children }) {
   );
 
   const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
-  const { unmatchedCount, menuMasterIssueCount, ingredientIssueCount } = usePageStats(pathname);
+  const { unmatchedCount, menuMasterIssueCount, ingredientIssueCount, ingredientIssueFailed } =
+    usePageStats(pathname);
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
@@ -178,6 +179,7 @@ function WorkShell({ children }) {
           unmatchedCount={visibleUnmatchedCount}
           menuMasterIssueCount={menuMasterIssueCount}
           ingredientIssueCount={ingredientIssueCount}
+          ingredientIssueFailed={ingredientIssueFailed}
           canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>

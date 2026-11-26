@@ -16,7 +16,7 @@ describe('메뉴마스터 이슈 배지·알림 연결', () => {
 
     expect(source).toContain('buildRecipeIssues(menuRows, recipeSummaryMap).length');
     expect(source).toContain(
-      'return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount }'
+      'return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount, ingredientIssueFailed }'
     );
   });
 

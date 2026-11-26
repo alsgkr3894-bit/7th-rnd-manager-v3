@@ -8,12 +8,17 @@ import { useState, useEffect } from 'react';
  *   - silent catch → 에러 로깅(배지가 0일 때 "데이터 없음" vs "실패" 구분 가능)
  *   - unmount 후 상태 업데이트 방지(alive guard)
  *
- * @returns {{ unmatchedCount: number, menuMasterIssueCount: number, ingredientIssueCount: number }}
+ * 식자재 이슈 집계에 실패하면 0으로 바꾸지 않고 마지막 성공 건수를 둔 채 ingredientIssueFailed를 켠다.
+ * (한 번도 못 읽었으면 건수는 null)
+ *
+ * @returns {{ unmatchedCount: number, menuMasterIssueCount: number,
+ *   ingredientIssueCount: number|null, ingredientIssueFailed: boolean }}
  */
 export function usePageStats(pathname) {
   const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [menuMasterIssueCount, setMenuMasterIssueCount] = useState(0);
-  const [ingredientIssueCount, setIngredientIssueCount] = useState(0);
+  const [ingredientIssueCount, setIngredientIssueCount] = useState(null);
+  const [ingredientIssueFailed, setIngredientIssueFailed] = useState(false);
   const [tick, setTick] = useState(0);
 
   // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
@@ -28,36 +33,38 @@ export function usePageStats(pathname) {
   useEffect(() => {
     let alive = true;
     (async () => {
+      let dbReady = false;
       try {
         const { initDB } = await import('@/lib/db');
         await initDB();
-        const [
-          salesModule,
-          menuMasterModule,
-          recipeSummaryModule,
-          recipeIssuesModule,
-          ingredientIssueModule,
-        ] =
+        dbReady = true;
+        // 식자재 이슈는 다른 배지의 조회 실패와 따로 반영한다
+        import('@/lib/ingredient/issue-count')
+          .then(module => module.getIngredientIssueCount())
+          .then(count => {
+            if (!alive) return;
+            setIngredientIssueCount(count);
+            setIngredientIssueFailed(false);
+          })
+          .catch(e => {
+            console.warn('[usePageStats] 식자재 이슈 로드 실패', e);
+            if (alive) setIngredientIssueFailed(true);
+          });
+        const [salesModule, menuMasterModule, recipeSummaryModule, recipeIssuesModule] =
           await Promise.all([
             import('@/lib/sales'),
             import('@/lib/menu-master'),
             import('@/lib/menu-master/recipe-summary'),
             import('@/lib/menu-master/recipe-issues'),
-            import('@/lib/ingredient/issue-count'),
           ]);
-        const [issues, menus, ingredientCount] = await Promise.all([
+        const [issues, menus] = await Promise.all([
           salesModule.getIssues({ status: 'open' }),
           menuMasterModule.getAllMenuMaster(),
-          ingredientIssueModule.getIngredientIssueCount().catch(e => {
-            console.warn('[usePageStats] 식자재 이슈 로드 실패', e);
-            return 0;
-          }),
         ]);
         const menuRows = Array.isArray(menus) ? menus : [];
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
-        setIngredientIssueCount(ingredientCount);
         try {
           const recipeSummaryMap = await recipeSummaryModule.loadMenuRecipeSummaryMap(menuRows);
           if (alive) {
@@ -69,7 +76,10 @@ export function usePageStats(pathname) {
           if (alive) console.warn('[usePageStats] 메뉴마스터 이슈 로드 실패', e);
         }
       } catch (e) {
-        if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
+        if (!alive) return;
+        console.warn('[usePageStats] 배지 로드 실패', e);
+        // DB를 열지 못하면 식자재 이슈도 확인하지 못한 것이다
+        if (!dbReady) setIngredientIssueFailed(true);
       }
     })();
     return () => {
@@ -77,5 +87,5 @@ export function usePageStats(pathname) {
     };
   }, [pathname, tick]);
 
-  return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount };
+  return { unmatchedCount, menuMasterIssueCount, ingredientIssueCount, ingredientIssueFailed };
 }

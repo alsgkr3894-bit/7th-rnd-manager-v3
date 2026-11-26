@@ -11,6 +11,12 @@ import { NotificationPopover } from './topbar/NotificationPopover';
 import { ProfileMenu } from './topbar/ProfileMenu';
 import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
+function ingredientIssueFailedDesc(failed, count) {
+  if (!failed) return '분류·포장수량·단가·표기 누락과 단가 변동을 확인할 수 있어요';
+  if (count == null) return '이슈 건수를 읽지 못했어요. 식자재 관리에서 직접 확인해 주세요';
+  return `새로 읽지 못했어요. 마지막으로 확인한 건수는 ${count}건이에요`;
+}
+
 export default function TopBar({
   onOpenPalette,
   onToggleSidebar,
@@ -20,6 +26,7 @@ export default function TopBar({
   unmatchedCount = 0,
   menuMasterIssueCount = 0,
   ingredientIssueCount = 0,
+  ingredientIssueFailed = false,
   canEdit = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
@@ -102,13 +109,16 @@ export default function TopBar({
           },
         ]
       : []),
-    ...(ingredientIssueCount > 0
+    ...(ingredientIssueCount > 0 || ingredientIssueFailed
       ? [
           {
             kind: 'alert',
-            title: `식자재관리 이슈 ${ingredientIssueCount}건 확인 필요`,
-            time: '지금',
-            desc: '분류·포장수량·단가·표기 누락과 단가 변동을 확인할 수 있어요',
+            title:
+              ingredientIssueCount > 0
+                ? `식자재관리 이슈 ${ingredientIssueCount}건 확인 필요`
+                : '식자재관리 이슈 확인 필요',
+            time: ingredientIssueFailed ? '갱신 실패' : '지금',
+            desc: ingredientIssueFailedDesc(ingredientIssueFailed, ingredientIssueCount),
             href: '/ingredient/manage?view=issues',
           },
         ]
