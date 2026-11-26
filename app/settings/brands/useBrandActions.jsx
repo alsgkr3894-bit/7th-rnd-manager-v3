@@ -295,7 +295,10 @@ export function useBrandActions({
       const beforeFileName = makeFileName(`${target.name}_복원전자동백업`, 'json');
       downloadJson(before, beforeFileName);
 
-      const result = await importAllToBrand(backup, target.id);
+      const result = await importAllToBrand(backup, target.id, {
+        fileName: file.name,
+        safetyBackupFileName: beforeFileName,
+      });
       const restoreErrors = Array.isArray(result.errors) ? result.errors : [];
       const realErrors = restoreErrors.filter(e => e?.store !== SHARED_SKIP_STORE);
       const sharedSkip = restoreErrors.find(e => e?.store === SHARED_SKIP_STORE);

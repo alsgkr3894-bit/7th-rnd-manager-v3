@@ -26,6 +26,7 @@ import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
 import DbVersionNotice from './DbVersionNotice';
 import SyncGuardNotice from './SyncGuardNotice';
+import { RestoreJournalNotice } from './settings/restore/RestoreJournalNotice';
 import { UnsavedLinkGuard } from './UnsavedLinkGuard';
 import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -182,6 +183,8 @@ function WorkShell({ children }) {
           ingredientIssueFailed={ingredientIssueFailed}
           canEdit={canEdit}
         />
+        {/* 복원 화면에는 자세한 안내가 따로 있다 */}
+        {pathname !== '/settings/restore' && <RestoreJournalNotice />}
         <ErrorBoundary key={pathname}>
           <div id="main-content">{children}</div>
         </ErrorBoundary>

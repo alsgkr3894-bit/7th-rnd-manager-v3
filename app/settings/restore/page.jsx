@@ -19,6 +19,7 @@ import { pickLocalStorageForScopes } from '@/lib/backup/local-storage-keys';
 import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
 import { RestorePreview } from '@/components/settings/restore/RestorePreview';
 import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecutePanel';
+import { RestoreJournalNotice } from '@/components/settings/restore/RestoreJournalNotice';
 
 const SHARED_SKIP_STORE = '__shared_skipped__';
 
@@ -103,6 +104,7 @@ export default function Page() {
     });
     try {
       // 1) 복원 직전 자동 백업
+      let safetyBackupFileName = '';
       if (autoBackup && !skipBackupCheck) {
         try {
           setRestoreProgress({
@@ -113,6 +115,7 @@ export default function Page() {
           const backup = await exportAll();
           const fileName = makeFileName('복원용임시백업파일', 'json');
           downloadJson(backup, fileName);
+          safetyBackupFileName = fileName;
           addEntry({
             scopes: MODULE_KEYS,
             totalRows: Object.values(currentStats || {}).reduce((s, n) => s + n, 0),
@@ -139,6 +142,7 @@ export default function Page() {
       const restoreTotal = Object.keys(partialData.stores).length || 1;
       setRestoreProgress({ label: 'store 복원 시작', current: 0, total: restoreTotal });
       const result = await importAll(partialData, {
+        safetyBackupFileName,
         onProgress: ({ store, index, total }) => {
           const rowCount = Array.isArray(partialData.stores?.[store])
             ? partialData.stores[store].length
@@ -263,6 +267,9 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      {/* ── 끝나지 않았거나 일부 실패한 복원 안내 ─────────────── */}
+      {!busy && <RestoreJournalNotice variant="card" canAcknowledge={canRestore} />}
 
       {/* ── 완료 상태 카드 ─────────────────────────────────── */}
       {restoreDone && (
