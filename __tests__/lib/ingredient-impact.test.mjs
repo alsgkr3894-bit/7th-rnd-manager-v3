@@ -28,13 +28,32 @@ jest.unstable_mockModule('@/lib/db', () => ({
   hasStore,
 }));
 
+jest.unstable_mockModule('@/lib/menu-master/recipe-summary', () => ({
+  loadLatestUnitPriceMap: async () => state.unitPriceMap,
+}));
+
+jest.unstable_mockModule('@/lib/cost/recipe-groups/store', () => ({
+  getAllRecipeGroups: async () => state.groups,
+}));
+
+jest.unstable_mockModule('@/lib/menu-recipes', () => ({
+  normalizeSelectedRecipeGroupIds: ids => (Array.isArray(ids) ? ids : []),
+}));
+
 const { computeIngredientPriceImpact } = await import('@/lib/impact/ingredient-impact');
 
 beforeEach(() => {
   state.recipes = [];
   state.prices = [];
   state.menus = [];
-  state.stores = new Set(['menu_recipes', 'cost_selling_prices', 'menu_master']);
+  state.groups = [];
+  state.unitPriceMap = new Map();
+  state.stores = new Set([
+    'menu_recipes',
+    'cost_selling_prices',
+    'menu_master',
+    'cost_recipe_groups',
+  ]);
   getAllMenuRecipes.mockClear();
   getAllMenuPrices.mockClear();
   getAllMenuMaster.mockClear();
@@ -96,6 +115,48 @@ describe('ingredient impact preview', () => {
     expect(result.unitPriceDelta).toBeCloseTo(12.4);
     expect(result.affectedMenus[0].oldCostRate).toBeCloseTo(1.23);
     expect(result.affectedMenus[0].newCostRate).toBeCloseTo(2.47);
+  });
+
+  test('다른 재료는 최신 단가와 적용된 공통묶음까지 포함하고 단종 메뉴는 뺀다', async () => {
+    state.recipes = [
+      {
+        menuCode: 'S-001',
+        components: [
+          { productCode: 'CHEESE', quantity: 100 },
+          // 저장된 옛 단가 1이 아니라 최신 단가 3을 쓴다.
+          { productCode: 'SAUCE', quantity: 100, unitPrice: 1 },
+        ],
+        selectedRecipeGroupIds: ['G1'],
+      },
+      { menuCode: 'S-002', components: [{ productCode: 'CHEESE', quantity: 100 }] },
+    ];
+    state.groups = [
+      {
+        id: 'G1',
+        name: '포장',
+        defaultCategories: ['사이드'],
+        ingredients: [{ productCode: 'BOX', quantities: { 단일: 1 } }],
+      },
+    ];
+    state.unitPriceMap = new Map([
+      ['SAUCE', { unitPrice: 3 }],
+      ['BOX', { unitPrice: 200 }],
+    ]);
+    state.prices = [{ menuCode: 'S-001', price: 10000 }];
+    state.menus = [
+      { menuCode: 'S-001', menuName: '사이드', category: '사이드' },
+      { menuCode: 'S-002', menuName: '옛 메뉴', category: '사이드', status: 'discontinued' },
+    ];
+
+    const result = await computeIngredientPriceImpact('CHEESE', 10000, 20000, {
+      oldBaseQuantity: 1000,
+      newBaseQuantity: 1000,
+    });
+
+    expect(result.affectedMenus.map(menu => menu.menuCode)).toEqual(['S-001']);
+    // (치즈 1000 + 소스 300 + 상자 200) / 10000
+    expect(result.affectedMenus[0].oldCostRate).toBeCloseTo(15);
+    expect(result.affectedMenus[0].newCostRate).toBeCloseTo(25);
   });
 
   test('기준수량이 없으면 잘못된 0원 영향도를 만들지 않는다', async () => {

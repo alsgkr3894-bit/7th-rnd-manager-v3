@@ -77,6 +77,8 @@ export function IngredientForm({
     handlePhotoFile,
     removePhoto,
   } = ctrl;
+  // 제때 단가가 있으면 수동 단가를 바꿔도 원가에는 제때 단가가 쓰인다.
+  const jettePrice = isJetteLinked && initial?.priceWithTax > 0 ? initial.priceWithTax : null;
 
   return createPortal(
     <div
@@ -215,8 +217,10 @@ export function IngredientForm({
             {initial && initial.productCode && (
               <ImpactPreviewPanel
                 productCode={initial.productCode}
-                oldPrice={initial.priceOverride ?? initial.priceWithTax ?? null}
-                newPrice={form.priceOverride !== '' ? Number(form.priceOverride) : null}
+                oldPrice={jettePrice ?? initial.priceOverride ?? initial.priceWithTax ?? null}
+                newPrice={
+                  jettePrice ?? (form.priceOverride !== '' ? Number(form.priceOverride) : null)
+                }
                 oldBaseQuantity={initial.baseQuantity ?? null}
                 newBaseQuantity={
                   form.baseQuantity !== ''
