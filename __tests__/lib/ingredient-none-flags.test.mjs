@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, expect, test } from '@jest/globals';
+import { hasAllergenStatus, hasOriginStatus } from '../../lib/ingredient/origin-allergen-text.js';
 import { buildRecord } from '@/lib/ingredient/normalize';
 
 const formControllerSource = readFileSync(
@@ -53,8 +54,19 @@ describe('ingredient none flags', () => {
   });
 
   test('nutrition coverage treats explicit none flags as completed, not missing', () => {
-    expect(dashboardSource).toContain('r.allergenNone === true');
-    expect(dashboardSource).toContain('r.originNone === true');
-    expect(originPageSource).toContain('i.originNone === true');
+    expect(dashboardSource).toContain('filter(hasAllergenStatus)');
+    expect(dashboardSource).toContain('filter(hasOriginStatus)');
+    expect(originPageSource).toContain('!hasOriginStatus(i)');
+  });
+
+  test.each([
+    [{ originNone: true, allergenNone: true }, true, true],
+    [{ temperature: '공산품' }, true, true],
+    [{ originHidden: true }, true, false],
+    [{ origin: [{ country: '국산' }], allergens: ['AL01'] }, true, true],
+    [{ origin: [], allergens: [] }, false, false],
+  ])('입력 완료 판정 %j', (ingredient, origin, allergen) => {
+    expect(hasOriginStatus(ingredient)).toBe(origin);
+    expect(hasAllergenStatus(ingredient)).toBe(allergen);
   });
 });

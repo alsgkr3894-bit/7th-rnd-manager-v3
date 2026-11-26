@@ -21,6 +21,7 @@ import {
   buildOriginMenuRows,
   filterOriginOutputIngredients,
 } from '@/lib/nutrition/origin/build';
+import { hasOriginStatus } from '@/lib/ingredient/origin-allergen-text';
 import { buildOutputAliasMap, foldIngredientToMenus } from '@/lib/menu-master/output-alias';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -187,11 +188,10 @@ export default function Page() {
   const totalWithOrigin = asObjectArray(ingredients).filter(
     i => (asObjectArray(i.origin).length || i.originNone === true) && !i.discontinued && !i.excluded
   ).length;
-  const totalIngredients = asObjectArray(ingredients).filter(
-    i => !i.discontinued && !i.excluded
-  ).length;
-
-  const withoutOrigin = totalIngredients - totalWithOrigin;
+  const activeIngredients = asObjectArray(ingredients).filter(i => !i.discontinued && !i.excluded);
+  const totalIngredients = activeIngredients.length;
+  // 비표기·공산품은 등록 수에는 없지만 누락도 아니다.
+  const withoutOrigin = activeIngredients.filter(i => !hasOriginStatus(i)).length;
 
   function exportCsv() {
     const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);

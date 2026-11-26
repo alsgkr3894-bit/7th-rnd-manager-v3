@@ -1,4 +1,5 @@
 import { buildDetailRows } from '@/lib/nutrition/allergen/matrix';
+import { hasAllergenStatus } from '@/lib/ingredient/origin-allergen-text';
 import { buildIngredientLookup } from '@/lib/nutrition/allergen/ingredient-lookup';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 
@@ -15,11 +16,7 @@ export function buildAllergenSummaryCounts(ingredients, allergenIngredients) {
     ingredient => !ingredient.discontinued && !ingredient.excluded
   );
   return {
-    totalWithAllergen: activeIngredients.filter(
-      ingredient =>
-        ingredient.allergenNone === true ||
-        (Array.isArray(ingredient.allergens) && ingredient.allergens.length > 0)
-    ).length,
+    totalWithAllergen: activeIngredients.filter(hasAllergenStatus).length,
     totalIngredients: activeIngredients.length,
   };
 }
