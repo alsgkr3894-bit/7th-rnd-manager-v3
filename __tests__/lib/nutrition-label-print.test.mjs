@@ -137,6 +137,30 @@ describe('buildNutritionLabelPrintHtml', () => {
     expect(html).not.toContain('피자 <script>');
   });
 
+  test('통합 인쇄의 세트·하프앤하프 표는 알레르기 안내 문구를 표마다 한 칸으로 넣는다', () => {
+    const row = (kind, menuName, side) => ({
+      kind,
+      menuName,
+      side,
+      weight: 299,
+      minKcal: 100,
+      maxKcal: 200,
+      allergen: '개별 메뉴 표시 참조',
+    });
+    const html = buildNutritionLabelPrintHtml({
+      setHalfSheet: [
+        row('set', '패밀리박스 L세트', 'L'),
+        row('set', '패밀리박스 R세트', 'R'),
+        row('half', '하프앤하프 L', 'L'),
+        row('half', '하프앤하프 R', 'R'),
+      ],
+    });
+
+    const count = text => html.split(text).length - 1;
+    expect(count('<th>함유알레르기</th>')).toBe(2);
+    expect(count('<td rowspan="2" class="poster-allergen">개별 메뉴 표시 참조</td>')).toBe(2);
+  });
+
   test('배열이 아닌 시트와 잘못된 행은 빈 본문으로 안전하게 처리한다', () => {
     const html = buildNutritionLabelPrintHtml({
       pizzaSheet: null,

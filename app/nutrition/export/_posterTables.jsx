@@ -90,6 +90,7 @@ export function SetHalfPosterTable({ title, rows }) {
             <th>최소 열량(kcal)</th>
             <th>최대 열량(kcal)</th>
             <th>1회 중량(g)</th>
+            <th>함유알레르기</th>
           </tr>
         </thead>
         <tbody>
@@ -111,10 +112,16 @@ export function SetHalfPosterTable({ title, rows }) {
                 <td className="poster-num">
                   <CellText>{row?.weight}</CellText>
                 </td>
+                {/* 모든 행이 같은 안내 문구라 인쇄와 같이 한 칸으로 합친다 */}
+                {index === 0 && (
+                  <td rowSpan={safeRows.length} className="poster-allergen">
+                    <CellText>{row?.allergen}</CellText>
+                  </td>
+                )}
               </tr>
             ))
           ) : (
-            <EmptyRow colSpan={5} />
+            <EmptyRow colSpan={6} />
           )}
         </tbody>
       </table>
