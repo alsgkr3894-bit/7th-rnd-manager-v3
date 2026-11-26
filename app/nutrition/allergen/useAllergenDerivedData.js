@@ -7,7 +7,11 @@ import {
   buildMenuListForOrder,
   buildMenuNameEditMenus,
 } from './allergenPageOutputUtils';
-import { filterAllergenIngredients, filterIngredientRows } from './allergenPageDataUtils';
+import {
+  filterAllergenIngredients,
+  filterIngredientRows,
+  filterListedIngredients,
+} from './allergenPageDataUtils';
 import { useAllergenMatrixData } from './useAllergenMatrixData';
 
 export function useAllergenDerivedData({
@@ -24,11 +28,6 @@ export function useAllergenDerivedData({
 }) {
   const allergenIngredients = useMemo(() => filterAllergenIngredients(ingredients), [ingredients]);
 
-  const ingredientRows = useMemo(
-    () => filterIngredientRows(allergenIngredients, search),
-    [allergenIngredients, search]
-  );
-
   const { isExcludedMenu, menuMatrixAll, menuMatrix, orderedAllergens, allergenMatchedMenuCount } =
     useAllergenMatrixData({
       allergenIngredients,
@@ -41,6 +40,19 @@ export function useAllergenDerivedData({
       menuNameOverrides,
       search,
     });
+
+  const ingredientRows = useMemo(
+    () =>
+      filterIngredientRows(
+        filterListedIngredients(
+          allergenIngredients,
+          baseMapData?.ingredientToMenus,
+          isExcludedMenu
+        ),
+        search
+      ),
+    [allergenIngredients, baseMapData, isExcludedMenu, search]
+  );
 
   const detailRows = useMemo(
     () => buildAllergenDetailRows(detailRow, baseMapData, edges, allergenIngredients),

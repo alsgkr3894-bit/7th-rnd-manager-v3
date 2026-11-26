@@ -1,4 +1,9 @@
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
+import {
+  isInactiveIngredient,
+  isIngredientOnOutputMenu,
+  markShadowedNames,
+} from '@/lib/nutrition/allergen/ingredient-lookup';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 
 export {
@@ -13,10 +18,19 @@ export {
   buildMenuNameEditMenus,
 } from './allergenPageOutputUtils';
 
+/** 알레르기가 있는 식자재. 단종·제외도 레시피에 남아 있을 수 있어 매트릭스에는 함께 넘긴다. */
 export function filterAllergenIngredients(ingredients) {
-  return asObjectArray(ingredients).filter(
+  return markShadowedNames(ingredients).filter(
+    ingredient => asStringArray(ingredient.allergens).length
+  );
+}
+
+/** 식자재별 보기: 단종·제외 식자재는 출력 메뉴의 레시피에 남아 있을 때만 보여 준다. */
+export function filterListedIngredients(allergenIngredients, ingredientToMenus, isExcludedMenu) {
+  return asObjectArray(allergenIngredients).filter(
     ingredient =>
-      asStringArray(ingredient.allergens).length && !ingredient.discontinued && !ingredient.excluded
+      !isInactiveIngredient(ingredient) ||
+      isIngredientOnOutputMenu(ingredient, ingredientToMenus, isExcludedMenu)
   );
 }
 

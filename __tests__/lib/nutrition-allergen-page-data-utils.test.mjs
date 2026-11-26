@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import {
   filterAllergenIngredients,
   filterIngredientRows,
+  filterListedIngredients,
   filterMenuMatrix,
   orderAllergens,
 } from '@/app/nutrition/allergen/allergenPageDataUtils';
@@ -28,8 +29,25 @@ describe('allergen page data utils', () => {
     { productCode: 'EXC', ingredientName: '제외계란', allergens: ['AL01'], excluded: true },
   ];
 
-  test('filterAllergenIngredients excludes empty, discontinued, and excluded ingredients', () => {
+  test('filterAllergenIngredients excludes only ingredients without allergens', () => {
     expect(filterAllergenIngredients(ingredients).map(row => row.productCode)).toEqual([
+      'EGG',
+      'MILK',
+      'OLD',
+      'EXC',
+    ]);
+  });
+
+  test('식자재별 보기의 단종·제외 식자재는 출력 메뉴 레시피에 남아 있을 때만 보인다', () => {
+    const menus = new Map([['code:OLD', new Map([['PZ1', { menuName: '치즈피자' }]])]]);
+    const rows = filterAllergenIngredients(ingredients);
+
+    expect(filterListedIngredients(rows, menus, () => false).map(row => row.productCode)).toEqual([
+      'EGG',
+      'MILK',
+      'OLD',
+    ]);
+    expect(filterListedIngredients(rows, menus, () => true).map(row => row.productCode)).toEqual([
       'EGG',
       'MILK',
     ]);
@@ -48,9 +66,9 @@ describe('allergen page data utils', () => {
   test('filterIngredientRows matches ingredient name, product code, and allergen name', () => {
     const rows = filterAllergenIngredients(ingredients);
 
-    expect(filterIngredientRows(rows, '치즈').map(row => row.productCode)).toEqual(['MILK']);
+    expect(filterIngredientRows(rows, '치즈').map(row => row.productCode)).toEqual(['MILK', 'OLD']);
     expect(filterIngredientRows(rows, 'egg').map(row => row.productCode)).toEqual(['EGG']);
-    expect(filterIngredientRows(rows, '우유').map(row => row.productCode)).toEqual(['MILK']);
+    expect(filterIngredientRows(rows, '우유').map(row => row.productCode)).toEqual(['MILK', 'OLD']);
   });
 
   test('orderAllergens uses saved order first and frequency fallback next', () => {

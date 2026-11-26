@@ -16,7 +16,11 @@ import { MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
-import { buildOriginIngredientRows, buildOriginMenuRows } from '@/lib/nutrition/origin/build';
+import {
+  buildOriginIngredientRows,
+  buildOriginMenuRows,
+  filterOriginOutputIngredients,
+} from '@/lib/nutrition/origin/build';
 import { buildOutputAliasMap, foldIngredientToMenus } from '@/lib/menu-master/output-alias';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -120,28 +124,6 @@ export default function Page() {
   }, [load, mountedRef]);
   useVisibilityRefresh(() => load({ skipIfFresh: true }));
 
-  // 원산지 있는 식자재만 (미표시대상은 토글에 따라 포함/제외)
-  const originIngredients = useMemo(
-    () =>
-      asObjectArray(ingredients).filter(
-        i =>
-          asObjectArray(i.origin).length &&
-          !i.discontinued &&
-          !i.excluded &&
-          (showHidden || !i.originHidden)
-      ),
-    [ingredients, showHidden]
-  );
-
-  // 미표시대상(originHidden) 식자재 개수 — 토글 안내용
-  const hiddenCount = useMemo(
-    () =>
-      asObjectArray(ingredients).filter(
-        i => asObjectArray(i.origin).length && !i.discontinued && !i.excluded && i.originHidden
-      ).length,
-    [ingredients]
-  );
-
   // 원산지 출력에서 제외된 메뉴 — menuCode + menuName 양쪽으로 매칭
   // (레시피 코드와 메뉴마스터 코드가 다르거나 L/R 사이즈별 레코드인 경우 대비)
   const { excludedMenuCodes, excludedMenuNames } = useMemo(
@@ -154,6 +136,24 @@ export default function Page() {
       excludedMenuCodes.has(asDisplayText(menuCode)) ||
       excludedMenuNames.has(asDisplayText(menuName).trim()),
     [excludedMenuCodes, excludedMenuNames]
+  );
+
+  // 원산지가 있고 출력 대상인 식자재 (단종·제외는 레시피에 남아 있을 때만)
+  const outputIngredients = useMemo(
+    () => filterOriginOutputIngredients(ingredients, mapData?.ingredientToMenus, isExcludedMenu),
+    [ingredients, mapData, isExcludedMenu]
+  );
+
+  // 미표시대상은 토글에 따라 포함/제외
+  const originIngredients = useMemo(
+    () => outputIngredients.filter(i => showHidden || !i.originHidden),
+    [outputIngredients, showHidden]
+  );
+
+  // 미표시대상(originHidden) 식자재 개수 — 토글 안내용
+  const hiddenCount = useMemo(
+    () => outputIngredients.filter(i => i.originHidden).length,
+    [outputIngredients]
   );
 
   // ── 식자재 기준 뷰 ─────────────────────────────────────────

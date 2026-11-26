@@ -10,13 +10,19 @@ import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 
 test('메뉴마스터 추가토핑 레시피도 알레르기 집계 입력에 포함된다', () => {
-  const detailRecipes = tagDetailRecipes([], [], [], [], [
-    {
-      menuCode: 'T-001',
-      menuName: '페퍼로니 추가',
-      components: [{ productCode: 'PEP', ingredientName: '페퍼로니' }],
-    },
-  ]);
+  const detailRecipes = tagDetailRecipes(
+    [],
+    [],
+    [],
+    [],
+    [
+      {
+        menuCode: 'T-001',
+        menuName: '페퍼로니 추가',
+        components: [{ productCode: 'PEP', ingredientName: '페퍼로니' }],
+      },
+    ]
+  );
   const mapData = buildIngredientMenuMap({ detailRecipes });
   const allergenMap = buildMenuAllergenMap({
     ingredients: [{ productCode: 'PEP', ingredientName: '페퍼로니', allergens: ['AL10'] }],
@@ -36,8 +42,8 @@ describe('buildMenuAllergenMap', () => {
   const ingredients = [
     { productCode: 'DGH', ingredientName: '도우', allergens: ['AL01'], category: '도우' }, // 도우(엣지) 유래
     { productCode: 'CHZ', ingredientName: '치즈', allergens: ['AL02'] }, // 레시피 재료
-    { productCode: 'OLD', ingredientName: '단종재료', allergens: ['AL04'], discontinued: true }, // 제외돼야 함
-    { productCode: 'EXC', ingredientName: '제외재료', allergens: ['AL05'], excluded: true }, // 제외돼야 함
+    { productCode: 'OLD', ingredientName: '단종재료', allergens: ['AL04'], discontinued: true }, // 레시피에 남아 있음
+    { productCode: 'EXC', ingredientName: '제외재료', allergens: ['AL05'], excluded: true }, // 레시피에 남아 있음
   ];
 
   // ingredientToMenus: Map<key, Map<menuCode, meta>> — 도우/치즈/단종 모두 PZ1에 연결
@@ -48,11 +54,12 @@ describe('buildMenuAllergenMap', () => {
     ['code:EXC', new Map([['PZ1', { menuName: '페퍼로니', category: '피자' }]])],
   ]);
 
-  test('피자 메뉴 알레르겐 = 도우(엣지)+레시피 재료 합집합, 단종/제외는 제외', () => {
+  test('피자 메뉴 알레르겐 = 도우(엣지)+레시피 재료 합집합, 레시피에 남은 단종·제외 포함', () => {
     const map = buildMenuAllergenMap({ ingredients, ingredientToMenus });
     const codes = map.get('PZ1');
     expect(codes).toBeInstanceOf(Set);
-    expect([...codes].sort()).toEqual(['AL01', 'AL02']); // 도우(AL01)+치즈(AL02), 단종/제외 빠짐
+    // 2026-11-26 결정: 단종·제외 식자재도 레시피에 남아 있으면 계속 표시한다.
+    expect([...codes].sort()).toEqual(['AL01', 'AL02', 'AL04', 'AL05']);
   });
 
   test('name: 키 폴백으로도 매칭된다', () => {
@@ -492,7 +499,7 @@ describe('buildToppingAllergenMap', () => {
     });
 
     expect([...(map.get('TOP-PEP') || [])]).toEqual(['AL06']);
-    expect(map.has('TOP-OLD')).toBe(false);
+    expect([...map.get('TOP-OLD')]).toEqual(['AL02']);
   });
 
   test('식자재코드가 없으면 식자재명으로 추가토핑 알레르기를 매칭한다', () => {
