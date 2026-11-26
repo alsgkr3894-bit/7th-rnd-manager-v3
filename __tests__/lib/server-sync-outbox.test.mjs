@@ -144,6 +144,32 @@ describe('미전송 작업 보관', () => {
     }
   );
 
+  test('보관함에 옮겨 적는 중에 닫으려 하면 브라우저가 묻고, 끝나면 묻지 않는다', async () => {
+    let finish;
+    const memory = createMemoryOutbox();
+    outbox = {
+      ...memory,
+      add: entries => new Promise(r => (finish = () => r(memory.add(entries)))),
+    };
+    const sync = await openApp();
+    serverDown();
+    sync.queueStoreRowUpsert('menu_master', 1, { id: 1 });
+    sync.queueStoreRowUpsert('menu_master', 2, { id: 2 });
+    await settle();
+
+    const leaving = { preventDefault: jest.fn() };
+    listeners.beforeunload(leaving);
+    expect(leaving.preventDefault).toHaveBeenCalled();
+    expect(beacons).toHaveLength(0);
+
+    finish();
+    await settle();
+    const later = { preventDefault: jest.fn() };
+    listeners.beforeunload(later);
+    expect(later.preventDefault).not.toHaveBeenCalled();
+    expect(await memory.list()).toHaveLength(2);
+  });
+
   test('다시 만들 수 있는 작업(persist:false)은 보관하지 않고 작업 ID도 없다', async () => {
     const sync = await openApp();
     serverDown();
