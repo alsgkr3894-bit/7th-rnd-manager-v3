@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 let rows = [];
+let priceRows = [];
 
 function upsertRow(record) {
   const idx = rows.findIndex(r => r.id === record.id);
@@ -16,11 +17,19 @@ jest.unstable_mockModule('@/lib/db', () => ({
   hasStore: jest.fn(() => true),
   getAll: jest.fn(storeName => {
     if (storeName === 'menu_master') return Promise.resolve([...rows]);
+    if (storeName === 'cost_selling_prices') return Promise.resolve([...priceRows]);
     return Promise.resolve([]);
   }),
   runTransaction: jest.fn((_storeNames, _mode, work) => {
     const tx = {
       objectStore(storeName) {
+        if (storeName === 'cost_selling_prices') {
+          return {
+            put: record => priceRows.push(record),
+            add: record => priceRows.push(record),
+            delete: () => {},
+          };
+        }
         if (storeName !== 'menu_master') throw new Error(`unexpected store: ${storeName}`);
         return {
           put(record) {
@@ -41,10 +50,25 @@ jest.unstable_mockModule('@/lib/auth/guard', () => ({
 const { assertActiveAdmin } = await import('@/lib/auth/guard');
 const { setMenuMasterStatus, setMenuMasterStatusMany } =
   await import('../../lib/menu-master/store.js');
+const { reactivateMenus } = await import('../../lib/menu-master/index.js');
 
 beforeEach(() => {
   rows = [];
+  priceRows = [];
   jest.clearAllMocks();
+});
+
+describe('reactivateMenus', () => {
+  test('단종을 해제한 메뉴의 판매가만 메뉴마스터에서 다시 만든다', async () => {
+    rows = [
+      { id: 1, menuCode: 'A', menuName: 'A', price: 1000, status: 'discontinued' },
+      { id: 2, menuCode: 'B', menuName: 'B', price: 2000, status: 'active' },
+    ];
+
+    await expect(reactivateMenus([1])).resolves.toMatchObject({ updated: 1 });
+
+    expect(priceRows.map(row => [row.menuCode, row.price])).toEqual([['A', 1000]]);
+  });
 });
 
 describe('setMenuMasterStatus', () => {
@@ -79,7 +103,7 @@ describe('setMenuMasterStatusMany', () => {
       { id: 3, menuCode: 'C', menuName: 'C', price: 3000, status: 'discontinued' },
     ];
     const result = await setMenuMasterStatusMany([1, 3], 'active');
-    expect(result).toEqual({ updated: 2 });
+    expect(result).toEqual({ updated: 2, menuCodes: ['A', 'C'] });
     expect(rows.find(r => r.id === 1)).toMatchObject({ status: 'active', price: 1000 });
     expect(rows.find(r => r.id === 2)).toMatchObject({ status: 'discontinued', price: 2000 });
     expect(rows.find(r => r.id === 3)).toMatchObject({ status: 'active', price: 3000 });
@@ -87,11 +111,11 @@ describe('setMenuMasterStatusMany', () => {
 
   test('빈 배열이면 updated:0 반환', async () => {
     rows = [{ id: 1, menuCode: 'A', menuName: 'A' }];
-    expect(await setMenuMasterStatusMany([], 'active')).toEqual({ updated: 0 });
+    expect(await setMenuMasterStatusMany([], 'active')).toEqual({ updated: 0, menuCodes: [] });
   });
 
   test('존재하지 않는 id는 건너뛴다', async () => {
     rows = [{ id: 1, menuCode: 'A', menuName: 'A' }];
-    expect(await setMenuMasterStatusMany([999], 'active')).toEqual({ updated: 0 });
+    expect(await setMenuMasterStatusMany([999], 'active')).toEqual({ updated: 0, menuCodes: [] });
   });
 });

@@ -48,6 +48,19 @@ describe('menu data quality report', () => {
     expect(report.categories.find(c => c.kind === QUALITY_KINDS.MISSING_RECIPE).count).toBe(0);
   });
 
+  test('단종·숨김 메뉴는 누락 항목을 알리지 않는다', () => {
+    const report = buildMenuDataQualityReport(
+      [
+        { menuCode: 'S-1', menuName: '단종', category: '사이드', status: 'discontinued' },
+        { menuCode: 'S-2', menuName: '숨김', category: '사이드', hidden: true },
+      ],
+      new Map([['S-1', { hasRecipe: false, missingPriceCount: 2 }]]),
+      new Map()
+    );
+
+    expect(report.total).toBe(0);
+  });
+
   test('엣지(석쇠·씬바사삭)는 판매가 0원이 정상이라 판매가 누락으로 잡히지 않는다', () => {
     const menus = [
       { menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지', price: 0 },

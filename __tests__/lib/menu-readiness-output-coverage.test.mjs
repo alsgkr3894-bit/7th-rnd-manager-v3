@@ -175,6 +175,40 @@ describe('menu readiness output coverage', () => {
     expect(row.overall).toBe('missing');
   });
 
+  test.each([
+    ['없음 표시', { originNone: true, allergenNone: true }],
+    ['공산품', { temperature: '공산품' }],
+  ])('구성품이 모두 %s면 표에 행이 없어도 누락이 아니다', async (_label, flags) => {
+    const menus = [{ menuCode: 'S-001', menuName: '치즈볼', category: '사이드' }];
+    state.ingredients = [{ productCode: 'CHZ', ingredientName: '체다치즈', ...flags }];
+    state.recipeArrays.side = [
+      {
+        menuCode: 'S-001',
+        menuName: '치즈볼',
+        category: '사이드',
+        components: [{ productCode: 'CHZ', ingredientName: '체다치즈' }],
+      },
+    ];
+
+    const row = (await buildMenuReadinessMap(menus, new Map())).get('S-001');
+
+    expect(row.dims.origin).toEqual({ status: 'ok' });
+    expect(row.dims.allergen).toEqual({ status: 'ok' });
+  });
+
+  test('출력 제외 메뉴는 원산지·알레르기를 누락으로 세지 않고, 단종 메뉴는 대상에서 뺀다', async () => {
+    const menus = [
+      { menuCode: 'S-001', menuName: '치즈볼', category: '사이드', excludeFromOrigin: true },
+      { menuCode: 'S-002', menuName: '옛 메뉴', category: '사이드', status: 'discontinued' },
+    ];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+
+    expect(map.get('S-001').dims.origin.status).toBe('unknown');
+    expect(map.get('S-001').dims.allergen.status).toBe('unknown');
+    expect(map.has('S-002')).toBe(false);
+  });
+
   test('메뉴마스터 엣지(카테고리 "엣지") 행은 원산지·알레르기가 "확인 불가"(unknown)로 잡히고, 미작성 처리되지 않는다', async () => {
     // OPT-EDGE 코드로는 원산지/알레르기 출력 row가 절대 생기지 않아, 엣지 행은 그
     // 차원에서 항상 '누락' 오탐이 나던 문제(계획 4단계) — unknown으로 빼야 한다.

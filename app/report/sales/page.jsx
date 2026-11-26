@@ -35,7 +35,7 @@ import {
   addRefRegisteredOverride,
   deleteRefRegisteredOverrideByName,
 } from '@/lib/sales';
-import { getAllMenuMaster, setMenuMasterStatusMany } from '@/lib/menu-master';
+import { getAllMenuMaster, reactivateMenus } from '@/lib/menu-master';
 import { findDiscontinuedMenuMasterIds } from '@/lib/menu-master/discontinued-lookup';
 import { normalizeViewMode } from './salesReportPageUtils';
 
@@ -253,7 +253,7 @@ export default function Page() {
         showToast(`"${menuName}"에 해당하는 메뉴마스터 항목을 찾지 못했습니다`, 'warn');
         return;
       }
-      await setMenuMasterStatusMany(ids, 'active');
+      await reactivateMenus(ids);
       showToast(`"${menuName}" 단종 상태를 해제했습니다`, 'ok');
       reloadMenuMasterSets();
     } catch (err) {
@@ -284,7 +284,7 @@ export default function Page() {
         showToast('해당하는 메뉴마스터 항목을 찾지 못했습니다', 'warn');
         return;
       }
-      const { updated } = await setMenuMasterStatusMany([...idSet], 'active');
+      const { updated } = await reactivateMenus([...idSet]);
       showToast(`${updated}개 항목의 단종 상태를 해제했습니다`, 'ok');
       reloadMenuMasterSets();
     } catch (err) {

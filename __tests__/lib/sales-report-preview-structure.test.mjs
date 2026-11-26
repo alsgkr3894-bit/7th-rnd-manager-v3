@@ -160,7 +160,7 @@ describe('sales report preview structure', () => {
     expect(pageSource).toContain('deleteRefDiscontinuedByName(menuName)');
     expect(pageSource).toContain('async function handleUndiscontinue(menuName)');
     expect(pageSource).toContain('findDiscontinuedMenuMasterIds(latestMenuMaster, menuName)');
-    expect(pageSource).toContain("setMenuMasterStatusMany(ids, 'active')");
+    expect(pageSource).toContain('reactivateMenus(ids)');
     expect(pageSource).toContain('canEdit={canEdit}');
     expect(pageSource).toContain('onMarkIrregular={handleMarkIrregular}');
     expect(pageSource).toContain('onUnmarkIrregular={handleUnmarkIrregular}');
@@ -276,7 +276,7 @@ describe('sales report preview structure', () => {
 
     expect(pageSource).toContain('async function handleUndiscontinueAll()');
     expect(pageSource).toContain('item.discontinued && !item.irregular');
-    expect(pageSource).toContain("setMenuMasterStatusMany([...idSet], 'active')");
+    expect(pageSource).toContain('reactivateMenus([...idSet])');
     expect(pageSource).toContain('onUndiscontinueAll={handleUndiscontinueAll}');
 
     expect(previewSource).toContain("from './SalesDiscontinuedBulkFix'");

@@ -19,6 +19,14 @@ const ingredients = [
 ];
 const flagged = buildFlaggedIngredientMap(ingredients);
 
+test('식자재 관리에서 검토를 마친 단종 식자재는 다시 알리지 않는다', () => {
+  const map = buildFlaggedIngredientMap([
+    { productCode: 'A001', discontinued: true, discontinuedReviewResolved: true },
+    { productCode: 'A002', excluded: true },
+  ]);
+  expect([...map.keys()]).toEqual(['A002']);
+});
+
 const PIZZA = {
   menuCode: 'P-OR-001-L',
   menuName: '포크 피자 L',

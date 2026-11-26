@@ -189,9 +189,10 @@ export default function Page() {
   const testRows = visibleRows.filter(r => r.status === 'test');
   // buildRecipeIssues와 같은 기준(UNSUPPORTED·EDGE 제외)으로 "레시피 작성" 진행률을 센다 —
   // 따로 구현하면 엣지처럼 상태가 늘어날 때 한쪽만 갱신되는 버그가 생기기 쉽다.
-  const recipeSummaries = [...recipeSummaryMap.values()].filter(
-    summary => !isRecipeSummaryExcludedFromTracking(summary)
-  );
+  const recipeSummaries = active
+    .concat(testRows)
+    .map(row => recipeSummaryMap.get(row.menuCode))
+    .filter(summary => summary && !isRecipeSummaryExcludedFromTracking(summary));
   const recipeWritten = recipeSummaries.filter(summary => summary.hasRecipe).length;
   const recipeNeedsCheck = recipeSummaries.filter(
     summary => summary.hasRecipe && summary.status !== MENU_RECIPE_SUMMARY_STATUS.READY
