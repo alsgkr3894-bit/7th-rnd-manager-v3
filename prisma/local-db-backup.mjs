@@ -1,6 +1,15 @@
 import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -13,6 +22,61 @@ const DEFAULT_AUTO_INTERVAL_HOURS = 20;
 // 0바이트 백업 4개 발생) — 곧장 포기하지 않고 잠깐씩 기다렸다 재시도한다.
 export const DEFAULT_AUTO_RETRY_ATTEMPTS = 20;
 export const DEFAULT_AUTO_RETRY_DELAY_MS = 30_000;
+
+const LOCK_FILE = '.backup.lock';
+const PARTIAL_SUFFIX = '.dump.partial';
+// 이보다 오래된 잠금은 중간에 꺼진 백업이 남긴 것으로 본다
+export const LOCK_STALE_MS = 30 * 60 * 1000;
+// 서버 API가 이 표시로 "이미 진행 중"을 구분한다
+export const BACKUP_BUSY_MARK = 'BACKUP_IN_PROGRESS';
+
+function processAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === 'EPERM';
+  }
+}
+
+function isStaleLock(path) {
+  try {
+    const age = Date.now() - statSync(path).mtimeMs;
+    if (age > LOCK_STALE_MS) return true;
+    const { pid } = JSON.parse(readFileSync(path, 'utf8'));
+    return !processAlive(pid);
+  } catch {
+    // 방금 만들어져 아직 내용이 없을 수 있다 — 오래되지 않았으면 진행 중으로 본다
+    return false;
+  }
+}
+
+/** 백업은 한 번에 하나만 — 자동 백업과 화면의 [지금 백업]이 겹치면 같은 파일을 두 번 쓴다. */
+export function acquireBackupLock(dir) {
+  const path = join(dir, LOCK_FILE);
+  const write = () =>
+    writeFileSync(path, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), {
+      flag: 'wx',
+    });
+  try {
+    write();
+  } catch (error) {
+    if (error?.code !== 'EEXIST') throw error;
+    if (!isStaleLock(path)) {
+      throw new Error(`다른 백업이 진행 중입니다. (${BACKUP_BUSY_MARK})`);
+    }
+    rmSync(path, { force: true });
+    write();
+  }
+  return () => rmSync(path, { force: true });
+}
+
+/** 중간에 꺼진 백업이 남긴 미완성 파일(우리가 붙인 .partial 이름만) */
+function removePartialDumps(dir) {
+  for (const name of readdirSync(dir)) {
+    if (name.endsWith(PARTIAL_SUFFIX)) rmSync(join(dir, name), { force: true });
+  }
+}
 
 function usage() {
   return [
@@ -112,9 +176,20 @@ export function createBackup(overrideDir) {
   const dir = getBackupDir(overrideDir);
   const db = parseDatabaseUrl();
   mkdirSync(dir, { recursive: true });
+  const release = acquireBackupLock(dir);
+  try {
+    removePartialDumps(dir);
+    return dumpDatabase(dir, db);
+  } finally {
+    release();
+  }
+}
 
+function dumpDatabase(dir, db) {
   const safeDatabase = db.database.replace(/[^a-zA-Z0-9_-]+/g, '_') || 'database';
   const file = join(dir, `${safeDatabase}-${timestamp()}.dump`);
+  // 다 쓴 뒤에 이름을 바꿔, 미완성 파일이 백업으로 보이지 않게 한다
+  const partial = `${file}.partial`;
   const pgDump = postgresBin('pg_dump');
   const args = [
     '-h',
@@ -129,7 +204,7 @@ export function createBackup(overrideDir) {
     '--no-owner',
     '--no-privileges',
     '-f',
-    file,
+    partial,
   ];
 
   const result = spawnSync(pgDump, args, {
@@ -143,10 +218,9 @@ export function createBackup(overrideDir) {
   });
 
   if (result.error || result.status !== 0) {
-    // pg_dump가 실패해도 -f로 지정한 파일이 만들어졌을 수 있다(보통 0바이트) — 다음
-    // backupFiles() 스캔이 이를 최신 백업으로 오인하지 않도록 즉시 지운다.
+    // pg_dump가 실패해도 -f로 지정한 파일이 만들어졌을 수 있다(보통 0바이트) — 바로 지운다.
     try {
-      rmSync(file, { force: true });
+      rmSync(partial, { force: true });
     } catch {
       // 애초에 안 만들어졌으면 무시.
     }
@@ -156,6 +230,7 @@ export function createBackup(overrideDir) {
     );
   }
 
+  renameSync(partial, file);
   const stat = statSync(file);
   const meta = {
     createdAt: new Date().toISOString(),

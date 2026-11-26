@@ -7,8 +7,12 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from '@jest/globals';
+import { BackupBusyError, createLocalDbBackup } from '../../lib/server/local-db-backups.js';
 import {
+  acquireBackupLock,
   autoBackup,
+  BACKUP_BUSY_MARK,
+  LOCK_STALE_MS,
   backupFiles,
   createBackup,
   DEFAULT_AUTO_RETRY_DELAY_MS,
@@ -63,6 +67,63 @@ describe('createBackup — pg_dump 실패 시 잔해를 남기지 않는다', ()
   }, 20_000);
 });
 
+describe('백업 잠금과 미완성 파일', () => {
+  const withUrl = async work => {
+    const originalUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = 'postgresql://user:pass@127.0.0.1:1/rnd_test_unreachable';
+    try {
+      return await work();
+    } finally {
+      process.env.DATABASE_URL = originalUrl;
+    }
+  };
+
+  test('진행 중이면 두 번째 백업은 거절하고, 첫 번째의 파일을 건드리지 않는다', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rnd-backup-lock-'));
+    const release = acquireBackupLock(tempDir);
+    const running = join(tempDir, 'db-20261126-000000.dump.partial');
+    writeFileSync(running, 'writing');
+
+    await withUrl(() => expect(() => createBackup(tempDir)).toThrow(BACKUP_BUSY_MARK));
+
+    expect(existsSync(running)).toBe(true);
+    release();
+    expect(readdirSync(tempDir)).toEqual(['db-20261126-000000.dump.partial']);
+  });
+
+  test('끝난 프로세스나 오래된 잠금은 넘겨받는다', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rnd-backup-stale-'));
+    const lock = join(tempDir, '.backup.lock');
+    writeFileSync(lock, JSON.stringify({ pid: 2147483000 }));
+    acquireBackupLock(tempDir)();
+
+    writeFileSync(lock, JSON.stringify({ pid: process.pid }));
+    const old = new Date(Date.now() - LOCK_STALE_MS - 1000);
+    utimesSync(lock, old, old);
+    acquireBackupLock(tempDir)();
+
+    expect(existsSync(lock)).toBe(false);
+  });
+
+  test('다음 백업이 미완성 파일만 지우고 사이드카 없는 예전 .dump는 남긴다', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rnd-backup-partial-'));
+    writeFileSync(join(tempDir, 'db-1.dump.partial'), 'half');
+    writeFileSync(join(tempDir, 'db-2.dump'), 'old without sidecar');
+
+    await withUrl(() => expect(() => createBackup(tempDir)).toThrow());
+
+    expect(readdirSync(tempDir)).toEqual(['db-2.dump']);
+  }, 20_000);
+
+  test('서버는 진행 중 오류를 따로 알린다', async () => {
+    const execFile = async () => {
+      throw Object.assign(new Error('failed'), { stderr: `... (${BACKUP_BUSY_MARK})` });
+    };
+
+    await expect(createLocalDbBackup({ execFile })).rejects.toBeInstanceOf(BackupBusyError);
+  });
+});
+
 describe('pruneBackups — 보관 개수 상한', () => {
   test('최신 14개만 남기고 오래된 dump와 sidecar를 함께 삭제한다', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'rnd-prune-backup-'));
@@ -81,11 +142,7 @@ describe('pruneBackups — 보관 개수 상한', () => {
     const result = pruneBackups(tempDir);
 
     expect(result).toMatchObject({ keep: 14, remaining: 14 });
-    expect(result.removed).toEqual([
-      'rnd_local-02.dump',
-      'rnd_local-01.dump',
-      'rnd_local-00.dump',
-    ]);
+    expect(result.removed).toEqual(['rnd_local-02.dump', 'rnd_local-01.dump', 'rnd_local-00.dump']);
     expect(existsSync(join(tempDir, 'rnd_local-00.dump'))).toBe(false);
     expect(existsSync(join(tempDir, 'rnd_local-00.dump.json'))).toBe(false);
     expect(existsSync(unrelated)).toBe(true);

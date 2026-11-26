@@ -1,4 +1,8 @@
-import { createLocalDbBackup, listLocalDbBackups } from '@/lib/server/local-db-backups';
+import {
+  BackupBusyError,
+  createLocalDbBackup,
+  listLocalDbBackups,
+} from '@/lib/server/local-db-backups';
 import { assertLocalRequest, RequestNotLocalError } from '@/lib/server/request-guard';
 import { assertAuthenticatedRequest, SessionAuthenticationError } from '@/lib/server/session-auth';
 
@@ -42,6 +46,9 @@ export async function POST(request) {
   } catch (error) {
     if (error instanceof RequestNotLocalError) return forbidden();
     if (error instanceof SessionAuthenticationError) return unauthorized();
+    if (error instanceof BackupBusyError) {
+      return Response.json({ ok: false, error: error.message }, { status: 409 });
+    }
     console.error('[api/db/backups] 백업 생성 실패');
     return Response.json(
       {
