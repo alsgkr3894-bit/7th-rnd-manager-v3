@@ -69,6 +69,8 @@ npm run db:restore:verify
 
 ## 3. 10번에서 발견한 문제
 
+> 아래 P1 첫 항목, 복원 중단 지연, 복구 범위(2-3)는 같은 날 해결했다: [SITE_AUDIT_BACKUP_FIXES_2026-11-26.md](SITE_AUDIT_BACKUP_FIXES_2026-11-26.md). 아래는 발견 시점의 기록이다.
+
 우선순위는 제안이다.
 
 | 제안 | 내용 | 근거 |
