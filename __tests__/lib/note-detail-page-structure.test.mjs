@@ -65,7 +65,7 @@ describe('note detail page structure', () => {
     expect(pageSource).toContain('export default function Page');
     expect(pageSource).toContain('normalizeNoteRouteId(id)');
     expect(pageSource).toContain('findRelatedSamplesForNote(note, allSamples)');
-    expect(pageSource).toContain('hasStoredNoteDraft(draft, note)');
+    expect(pageSource).toContain('hasStoredNoteDraft(draft, merged)');
     expect(pageSource).toContain('isNoteFormChanged(form, originalRef.current)');
     expect(pageSource).toContain('mergeDraftWithCurrentPhotos(draft, prev)');
     expect(pageSource).toContain('<NoteDetailActions');

@@ -26,6 +26,7 @@ export default function Page() {
     handleCancel,
     restoreDraft,
     dismissDraftBanner,
+    retryDraftSave,
   } = useNoteWriteController();
 
   return (
@@ -44,6 +45,14 @@ export default function Page() {
                 style={{ fontSize: 12, color: 'var(--positive)', animation: 'fade 200ms ease' }}
               >
                 ✓ 임시저장됨
+              </span>
+            )}
+            {draftStatus === 'error' && (
+              <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 700 }}>
+                임시저장 실패 — 저장 공간을 확인해 주세요{' '}
+                <button type="button" className="btn xs" onClick={retryDraftSave}>
+                  다시 시도
+                </button>
               </span>
             )}
           </span>

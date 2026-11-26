@@ -104,7 +104,7 @@ export default function Page() {
         setChain(ch);
         setRelatedSamples(findRelatedSamplesForNote(note, allSamples));
         const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
-        if (hasStoredNoteDraft(draft, note)) setShowDraftBanner(true);
+        if (hasStoredNoteDraft(draft, merged)) setShowDraftBanner(true);
       })
       .catch(err => {
         if (alive) console.error('[NoteDetail] load failed', err);
@@ -161,6 +161,8 @@ export default function Page() {
       await updateNote(noteId, payload);
       await updateNoteChainStatus(noteId, payload.status);
       await updateNoteChainType(noteId, payload.noteType);
+      // 예약된 임시저장이 삭제 뒤에 다시 써지면 다음에 열 때 지난 초안 안내가 뜬다
+      clearTimeout(timerRef.current);
       clearDraft(KEYS.NOTE_DRAFT(noteId));
       setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');

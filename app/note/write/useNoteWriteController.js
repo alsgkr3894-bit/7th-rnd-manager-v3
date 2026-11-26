@@ -57,7 +57,7 @@ export function useNoteWriteController() {
   const [saving, setSaving] = useState(false);
   const [fromTitle, setFromTitle] = useState('');
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved
+  const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved | error
   const [isDirty, setIsDirty] = useState(false);
   const isDirtyRef = useRef(false);
   const timerRef = useRef(null);
@@ -164,7 +164,7 @@ export function useNoteWriteController() {
     setShowDraftBanner,
   });
 
-  useNoteWriteDraftAutosave({
+  const { retryDraftSave } = useNoteWriteDraftAutosave({
     canEdit,
     form,
     writeType,
@@ -287,5 +287,6 @@ export function useNoteWriteController() {
     handleCancel,
     restoreDraft,
     dismissDraftBanner,
+    retryDraftSave,
   };
 }

@@ -5,12 +5,14 @@ export function normalizeNoteRouteId(id) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+// 사진은 임시저장에 넣지 않고, id·시각은 사용자가 고치는 값이 아니다
+const DRAFT_IGNORED_KEYS = new Set(['photos', 'id', 'createdAt', 'updatedAt']);
+
+/** 임시저장(폼 전체, 사진 제외)과 같은 범위로 비교한다 — 상태만 바꾼 초안도 복구 안내가 떠야 한다 */
 export function hasStoredNoteDraft(draft, note) {
-  return (
-    draft &&
-    (draft.title !== note.title ||
-      draft.testContent !== note.testContent ||
-      draft.managerEval !== note.managerEval)
+  if (!draft || !note) return false;
+  return Object.keys(draft).some(
+    key => !DRAFT_IGNORED_KEYS.has(key) && JSON.stringify(draft[key]) !== JSON.stringify(note[key])
   );
 }
 

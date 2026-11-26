@@ -18,24 +18,33 @@ export function useNoteWriteDraftAutosave({
   draftTimer,
   setDraftStatus,
 }) {
+  // 실제 저장 결과에 따라 상태를 바꾼다 — 실패는 다시 저장에 성공할 때까지 계속 보여 준다
+  function writeDraft() {
+    setDraftStatus('saving');
+    const stored = saveDraft(KEYS.NOTE_DRAFT_WRITE, { ...form, photos: [] });
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      if (!stored) {
+        setDraftStatus('error');
+        return;
+      }
+      setDraftStatus('saved');
+      draftTimer.current = setTimeout(() => setDraftStatus('idle'), 2000);
+    }, 400);
+  }
+
   useEffect(() => {
     if (!canEdit) return;
     if (!isMenuWriteType(writeType)) return;
     if (!isDirtyRef.current) return;
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDraftStatus('saving');
-      saveDraft(KEYS.NOTE_DRAFT_WRITE, { ...form, photos: [] });
-      clearTimeout(draftTimer.current);
-      draftTimer.current = setTimeout(() => {
-        setDraftStatus('saved');
-        draftTimer.current = setTimeout(() => setDraftStatus('idle'), 2000);
-      }, 400);
-    }, 800);
+    timerRef.current = setTimeout(writeDraft, 800);
     return () => {
       clearTimeout(timerRef.current);
       clearTimeout(draftTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canEdit, form, writeType]);
+
+  return { retryDraftSave: writeDraft };
 }
