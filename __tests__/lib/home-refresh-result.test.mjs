@@ -39,5 +39,7 @@ describe('홈 연결', () => {
 
   test('늦게 끝난 이전 기간의 결과는 반영하지 않는다', () => {
     expect(hook).toContain('anchorRef.current !== a');
+    // 최신 월 조회가 끝나기 전에 기간을 고른 경우
+    expect(hook).toContain('if (anchorRef.current) return results;');
   });
 });

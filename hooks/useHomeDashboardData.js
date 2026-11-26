@@ -138,6 +138,8 @@ export function useHomeDashboardData({ chartTab }) {
             getMonthlyBriefing(),
           ]);
           results.push(...sales);
+          // 조회하는 동안 기간을 골랐으면 최신 월 결과로 선택한 기간을 덮지 않는다
+          if (anchorRef.current) return results;
           const [s, td, dn, tp, bt, br] = sales.map(r =>
             r.status === 'fulfilled' ? r.value : null
           );

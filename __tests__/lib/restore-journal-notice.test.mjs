@@ -92,6 +92,12 @@ describe('화면 연결', () => {
     expect(backup).toContain('fileName: options.fileName || data._fileName');
   });
 
+  test('상단 배너는 인쇄물에 찍히지 않는다', () => {
+    expect(read('components/settings/restore/RestoreJournalNotice.jsx')).toContain(
+      'className="no-print"'
+    );
+  });
+
   test('업무 화면 배너와 복원 화면 카드가 있고 로그인 shell에는 없다', () => {
     const shell = read('components/AppShell.jsx');
     expect(shell.slice(shell.indexOf('function WorkShell'))).toContain('<RestoreJournalNotice />');

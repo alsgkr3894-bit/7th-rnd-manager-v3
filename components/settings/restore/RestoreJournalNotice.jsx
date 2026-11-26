@@ -27,6 +27,7 @@ export function RestoreJournalNotice({ variant = 'banner', canAcknowledge = fals
   if (variant === 'banner') {
     return (
       <div
+        className="no-print"
         role="alert"
         style={{
           ...WRAP,
