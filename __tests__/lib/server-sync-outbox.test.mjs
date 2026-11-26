@@ -126,6 +126,24 @@ describe('미전송 작업 보관', () => {
     ]);
   });
 
+  test.each([401, 403, 429])(
+    '로그인 만료 등(%i)은 거절로 버리지 않고 보관했다가 다시 보낸다',
+    async status => {
+      const sync = await openApp();
+      fetchAppJson.mockRejectedValue(Object.assign(new Error(`HTTP ${status}`), { status }));
+      sync.queueStoreRowUpsert('menu_master', 1, { id: 1 });
+      await sync.flushServerStoreSyncQueue();
+      await settle();
+      expect(sync.getServerStoreSyncDeadLetters()).toEqual([]);
+      expect(await outbox.list()).toHaveLength(1);
+
+      serverUp();
+      sync.retryServerStoreSyncNow();
+      await sync.drainServerStoreSyncQueue();
+      expect(await outbox.list()).toEqual([]);
+    }
+  );
+
   test('다시 만들 수 있는 작업(persist:false)은 보관하지 않고 작업 ID도 없다', async () => {
     const sync = await openApp();
     serverDown();

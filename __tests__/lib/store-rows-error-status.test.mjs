@@ -62,6 +62,6 @@ describe('POST /api/db/store-rows 상태 코드', () => {
   test('클라이언트는 5xx를 영구 거절로 보지 않는다(4xx만 격리)', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(new URL('../../lib/db/server-sync.js', import.meta.url), 'utf8');
-    expect(src).toContain('status >= 400 && status < 500');
+    expect(src).toContain('status < 400 || status >= 500');
   });
 });

@@ -20,6 +20,7 @@ import {
   getPendingServerStoreSyncCount,
   getServerStoreSyncDeadLetters,
   resumeServerStoreSync,
+  retryServerStoreSyncNow,
 } from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
@@ -154,6 +155,7 @@ export default function ServerSyncPage() {
   /** 못 보낸 변경을 먼저 보내 보고, 그래도 남은 건수를 돌려준다. */
   async function sendPendingChanges() {
     try {
+      retryServerStoreSyncNow();
       await drainServerStoreSyncQueue();
     } catch (error) {
       console.warn('[settings/sync] 못 보낸 변경이 남음', error?.message);
