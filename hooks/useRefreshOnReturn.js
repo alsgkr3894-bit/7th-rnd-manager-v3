@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { isVisibleState } from '@/hooks/useVisibilityRefresh';
+import {
+  isRefreshDue,
+  isVisibleState,
+  MIN_REFRESH_INTERVAL_MS,
+} from '@/hooks/useVisibilityRefresh';
 
-const DEFAULT_MIN_INTERVAL_MS = 1500;
-
-/** 마지막 새로고침 뒤 충분히 지났는가 — 탭 전환 때 이벤트가 연달아 와도 한 번만 읽게 한다. */
-export function isRefreshDue(lastAt, now, minIntervalMs = DEFAULT_MIN_INTERVAL_MS) {
-  return !(Number.isFinite(lastAt) && now - lastAt < minIntervalMs);
-}
+export { isRefreshDue };
 
 /**
  * 사용자가 이 화면으로 "돌아올 때" 데이터를 다시 읽게 한다.
@@ -16,7 +15,7 @@ export function isRefreshDue(lastAt, now, minIntervalMs = DEFAULT_MIN_INTERVAL_M
  * 계산 화면에서 값을 입력하고 열어 둔 출력 화면으로 돌아오면 예전 값이 그대로 보이던 문제용.
  * 화면 상태(탭·모달·정렬 등)는 건드리지 않고 onReturn이 데이터만 다시 읽게 한다.
  */
-export function useRefreshOnReturn(onReturn, minIntervalMs = DEFAULT_MIN_INTERVAL_MS) {
+export function useRefreshOnReturn(onReturn, minIntervalMs = MIN_REFRESH_INTERVAL_MS) {
   const callbackRef = useRef(onReturn);
   const lastAtRef = useRef(0);
   useEffect(() => {

@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 
 // 2026-11-26 점검 목록 5번: 식자재 이슈 조회가 실패해도 0건(해결)으로 보이지 않는다.
-// 훅이 쓰는 useState/useEffect만 대신해, 같은 상태를 유지한 채 다시 조회하는 상황을 만든다.
+// 훅이 쓰는 useState/useEffect/useRef만 대신해, 같은 상태를 유지한 채 다시 조회하는 상황을 만든다.
 const state = [];
 let cursor = 0;
+const refs = [];
+let refCursor = 0;
 jest.unstable_mockModule('react', () => ({
   useState: initial => {
     const index = cursor++;
@@ -17,6 +19,11 @@ jest.unstable_mockModule('react', () => ({
     ];
   },
   useEffect: effect => effect(),
+  useRef: initial => {
+    const index = refCursor++;
+    if (!(index in refs)) refs[index] = { current: initial };
+    return refs[index];
+  },
 }));
 
 let ingredientResult = async () => 1;
@@ -36,10 +43,11 @@ jest.unstable_mockModule('@/lib/ingredient/issue-count', () => ({
 
 globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
 
-const { usePageStats: pageStats } = await import('../../hooks/usePageStats.js');
+const { usePageStats: pageStats, BADGE_STORES } = await import('../../hooks/usePageStats.js');
 
 async function load() {
   cursor = 0;
+  refCursor = 0;
   pageStats('/');
   for (let i = 0; i < 20; i += 1) await new Promise(resolve => setImmediate(resolve));
   return readState();
@@ -49,6 +57,7 @@ const readState = () => ({ count: state[2], failed: state[3] });
 
 beforeEach(() => {
   state.length = 0;
+  refs.length = 0;
   ingredientResult = async () => 1;
   dbInit = async () => {};
   jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -81,6 +90,16 @@ describe('식자재 이슈 배지', () => {
       throw new Error('DB blocked');
     };
     expect(await load()).toEqual({ count: null, failed: true });
+  });
+
+  test('배지는 화면 이동이 아니라 관련 저장소가 바뀔 때 다시 센다', () => {
+    const hook = readFileSync(new URL('../../hooks/usePageStats.js', import.meta.url), 'utf8');
+    expect(hook).toContain('}, [tick]);');
+    expect(hook).toContain('if (failedRef.current) setTick(t => t + 1);');
+    expect(hook).toContain('onStoresChanged(');
+    for (const store of ['cost_ingredients', 'menu_master', 'price_rows', 'menu_sales_issues']) {
+      expect(BADGE_STORES.has(store)).toBe(true);
+    }
   });
 
   test('상단 알림은 실패하면 건수가 없어도 확인 필요를 보여 준다', () => {

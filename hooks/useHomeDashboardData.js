@@ -69,6 +69,9 @@ export function useHomeDashboardData({ chartTab }) {
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   const dbReadyRef = useRef(false);
+  // 가장 최근에 시작한 조회만 화면에 반영한다(새로고침·탭 복귀·기간 변경이 겹칠 때)
+  const loadSeqRef = useRef(0);
+  const salesSeqRef = useRef(0);
   const chartTabRef = useRef(chartTab);
 
   useEffect(() => {
@@ -83,12 +86,27 @@ export function useHomeDashboardData({ chartTab }) {
 
   const loadData = useCallback(
     async () => {
+      loadSeqRef.current += 1;
+      const seq = loadSeqRef.current;
+      const stale = () => !mountedRef.current || loadSeqRef.current !== seq;
       try {
         await initDB();
         if (!mountedRef.current) return;
 
         dbReadyRef.current = true;
         setProfile(getProfile());
+
+        // 최신 월을 보는 중이면 판매 통계를 라이브 위젯과 동시에 읽기 시작한다
+        const salesRequest = anchor
+          ? null
+          : Promise.allSettled([
+              getSalesKpi(),
+              getSalesTrend(chartTabRef.current),
+              getCategoryShare(),
+              getTopMenusWithTrend(5, homeRankCategory(), true, 'desc'),
+              getTopMenusWithTrend(5, homeRankCategory(), true, 'asc'),
+              getMonthlyBriefing(),
+            ]);
 
         const live = await Promise.allSettled([
           getAllNotesCached(),
@@ -108,7 +126,8 @@ export function useHomeDashboardData({ chartTab }) {
         const [an, sm, ca, tdo, pl, ws, iss, ac, c, n, uf, ih, mcc] = live.map(r =>
           r.status === 'fulfilled' ? r.value : null
         );
-        if (!mountedRef.current) return;
+        // 그 사이 새 조회가 시작됐으면 이 결과는 쓰지 않는다
+        if (stale()) return live;
 
         if (an) {
           setAllNotes(an);
@@ -128,22 +147,14 @@ export function useHomeDashboardData({ chartTab }) {
         setBackupReminder(getBackupReminder());
 
         const results = [...live];
-        if (!anchor) {
-          const sales = await Promise.allSettled([
-            getSalesKpi(),
-            getSalesTrend(chartTabRef.current),
-            getCategoryShare(),
-            getTopMenusWithTrend(5, homeRankCategory(), true, 'desc'),
-            getTopMenusWithTrend(5, homeRankCategory(), true, 'asc'),
-            getMonthlyBriefing(),
-          ]);
+        if (salesRequest) {
+          const sales = await salesRequest;
           results.push(...sales);
           // 조회하는 동안 기간을 골랐으면 최신 월 결과로 선택한 기간을 덮지 않는다
-          if (anchorRef.current) return results;
+          if (anchorRef.current || stale()) return results;
           const [s, td, dn, tp, bt, br] = sales.map(r =>
             r.status === 'fulfilled' ? r.value : null
           );
-          if (!mountedRef.current) return;
 
           if (s) {
             setSalesKpi(s);
@@ -175,6 +186,8 @@ export function useHomeDashboardData({ chartTab }) {
 
   // anchor 기준 판매·브리핑 통계를 읽어 반영하고 조회 결과를 돌려준다.
   const fetchSalesForAnchor = useCallback(async (a, isActive) => {
+    salesSeqRef.current += 1;
+    const seq = salesSeqRef.current;
     const results = await Promise.allSettled([
       getSalesKpi(a),
       getSalesTrend(chartTabRef.current, a),
@@ -184,6 +197,7 @@ export function useHomeDashboardData({ chartTab }) {
       getMonthlyBriefing(a),
     ]);
     if (!isActive() || !mountedRef.current || anchorRef.current !== a) return results;
+    if (salesSeqRef.current !== seq) return results;
     const [s, td, dn, tp, bt, br] = results.map(r => (r.status === 'fulfilled' ? r.value : null));
     if (s) setSalesKpi(s);
     if (td) {

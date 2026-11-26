@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react';
 
+export const MIN_REFRESH_INTERVAL_MS = 1500;
+
 export function isVisibleState(visibilityState) {
   return visibilityState === 'visible';
+}
+
+/** 마지막 새로고침 뒤 충분히 지났는가 — 탭 전환 때 이벤트가 연달아 와도 한 번만 읽게 한다. */
+export function isRefreshDue(lastAt, now, minIntervalMs = MIN_REFRESH_INTERVAL_MS) {
+  return !(Number.isFinite(lastAt) && now - lastAt < minIntervalMs);
 }
 
 function warnVisibilityRefreshError(error) {
@@ -32,11 +39,14 @@ export function useVisibilityRefresh(onVisible) {
   useEffect(() => {
     ref.current = onVisible;
   });
+  const lastAtRef = useRef(null);
   useEffect(() => {
     const handler = () => {
-      if (isVisibleState(document.visibilityState)) {
-        invokeVisibilityRefresh(ref.current);
-      }
+      if (!isVisibleState(document.visibilityState)) return;
+      const now = Date.now();
+      if (!isRefreshDue(lastAtRef.current, now)) return;
+      lastAtRef.current = now;
+      invokeVisibilityRefresh(ref.current);
     };
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);

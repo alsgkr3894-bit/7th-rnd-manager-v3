@@ -29,6 +29,13 @@ export function getTiltTransform(clientX, clientY, rect) {
   return `perspective(${TILT_PERSPECTIVE_PX}px) rotateY(${cx * TILT_ROTATE_Y_DEG}deg) rotateX(${-cy * TILT_ROTATE_X_DEG}deg) translateY(-3px)`;
 }
 
+export function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  );
+}
+
 /**
  * 버튼 ripple 효과와 카드 tilt 효과를 document.body에 위임하여 적용.
  * AppShell에서 마운트 1회 호출.
@@ -68,9 +75,12 @@ export function useVisualEffects() {
     };
   }, []);
 
-  // Tilt: .card-lift 마우스 이동 시 원근감 기울기
+  // Tilt: .card-lift 마우스 이동 시 원근감 기울기 (화면 갱신당 한 번)
   useEffect(() => {
+    if (prefersReducedMotion()) return undefined;
     let active = null;
+    let frame = null;
+    let latest = null;
 
     function reset() {
       if (active) {
@@ -79,7 +89,10 @@ export function useVisualEffects() {
       }
     }
 
-    function onMove(e) {
+    function apply() {
+      frame = null;
+      const e = latest;
+      if (!e) return;
       const card = closestElement(e.target, SELECTORS.CARD_LIFT);
       if (card !== active) reset();
       if (!card) return;
@@ -89,11 +102,24 @@ export function useVisualEffects() {
       if (transform) card.style.transform = transform;
     }
 
+    // 마우스 이동은 화면 갱신보다 훨씬 자주 온다 — 위치만 기억하고 다음 프레임에 한 번 계산한다
+    function onMove(e) {
+      latest = { target: e.target, clientX: e.clientX, clientY: e.clientY };
+      if (frame == null) frame = requestAnimationFrame(apply);
+    }
+
+    function onLeave() {
+      latest = null;
+      reset();
+    }
+
     document.body.addEventListener('mousemove', onMove);
-    document.body.addEventListener('mouseleave', reset);
+    document.body.addEventListener('mouseleave', onLeave);
     return () => {
       document.body.removeEventListener('mousemove', onMove);
-      document.body.removeEventListener('mouseleave', reset);
+      document.body.removeEventListener('mouseleave', onLeave);
+      if (frame != null) cancelAnimationFrame(frame);
+      reset();
     };
   }, []);
 }
