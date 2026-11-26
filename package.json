@@ -26,6 +26,7 @@
     "qa:prod": "node scripts/qa-prod.mjs",
     "audit:docs": "node scripts/site-status-audit.mjs",
     "audit:recipe-cost": "node scripts/audit-recipe-cost.mjs",
+    "audit:cross-module": "node scripts/pull-store-rows.mjs --test",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
