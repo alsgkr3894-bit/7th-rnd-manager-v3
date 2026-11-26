@@ -71,14 +71,14 @@ describe('evaluateSyncGuard — 차단 조건', () => {
     expect(readServerManifest).not.toHaveBeenCalled();
   });
 
-  test('settings·migration_flags는 로컬 행 합계에서 제외한다', async () => {
+  test('settings·migration_flags는 데이터 유무 판단에서 제외한다', async () => {
     readServerManifest.mockResolvedValue({ totalRows: 10 });
     collectStoreStats.mockResolvedValue({ settings: 3, migration_flags: 1, menu_master: 0 });
 
     const state = await guard.evaluateSyncGuard('main');
 
     expect(state.blocked).toBe(true);
-    expect(state.localRows).toBe(0);
+    expect(state.localHasData).toBe(false);
   });
 
   test('평가 자체가 실패하면(서버 다운 등) 차단하지 않는다', async () => {

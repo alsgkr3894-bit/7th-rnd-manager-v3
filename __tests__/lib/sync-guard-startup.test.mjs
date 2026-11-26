@@ -29,7 +29,7 @@ function makeLocalStorage() {
   };
 }
 
-// 열린 DB 모형: 정해 둔 행 수를 count()로 돌려준다
+// 열린 DB 모형: 행이 있는 저장소만 첫 키 커서를 돌려준다
 function fakeDb(counts) {
   return {
     objectStoreNames: Object.keys(counts),
@@ -37,10 +37,10 @@ function fakeDb(counts) {
       objectStore: name => {
         if (!names.includes(name)) throw new Error('범위 밖 store');
         return {
-          count: () => {
+          openKeyCursor: () => {
             const request = {};
             queueMicrotask(() => {
-              request.result = counts[name];
+              request.result = counts[name] > 0 ? { key: 1 } : null;
               request.onsuccess?.();
             });
             return request;
@@ -83,23 +83,52 @@ afterEach(() => {
 });
 
 describe('시작 시점 스냅샷', () => {
-  test('DB가 열린 직후의 행 수를 settings·migration_flags 제외하고 센다', async () => {
+  test('settings·migration_flags만 있으면 데이터가 없는 것으로 본다', async () => {
     snapshot.recordStartupRows(
       'db-main',
-      fakeDb({ menu_master: 3, settings: 9, migration_flags: 4 })
+      fakeDb({ menu_master: 0, settings: 9, migration_flags: 4 })
     );
-    await expect(snapshot.getStartupLocalRows(['db-main'])).resolves.toBe(3);
+    await expect(snapshot.getStartupHasData(['db-main'])).resolves.toBe(false);
+  });
+
+  test('어느 DB에든 데이터 행이 하나라도 있으면 true', async () => {
+    snapshot.recordStartupRows('db-main', fakeDb({ menu_master: 0 }));
+    snapshot.recordStartupRows('db-brand', fakeDb({ menu_master: 3 }));
+    await expect(snapshot.getStartupHasData(['db-main', 'db-brand'])).resolves.toBe(true);
+  });
+
+  test('행 수를 세지 않는다 — 큰 저장소가 있어도 첫 키만 확인한다', async () => {
+    const db = fakeDb({ shipment_rows: 296413 });
+    const transaction = db.transaction;
+    const asked = [];
+    db.transaction = names => {
+      const tx = transaction(names);
+      return {
+        objectStore: name => {
+          const store = tx.objectStore(name);
+          return new Proxy(store, {
+            get: (target, prop) => {
+              asked.push(prop);
+              return target[prop];
+            },
+          });
+        },
+      };
+    };
+    snapshot.recordStartupRows('db-big', db);
+    await expect(snapshot.getStartupHasData(['db-big'])).resolves.toBe(true);
+    expect(asked).toEqual(['openKeyCursor']);
   });
 
   test('기록이 없는 DB가 하나라도 있으면 모름(null)', async () => {
     snapshot.recordStartupRows('db-main', fakeDb({ menu_master: 0 }));
-    await expect(snapshot.getStartupLocalRows(['db-main', 'db-other'])).resolves.toBeNull();
+    await expect(snapshot.getStartupHasData(['db-main', 'db-other'])).resolves.toBeNull();
   });
 
   test('같은 DB를 다시 열어도 처음 기록을 유지한다(이후 시드가 행을 넣어도 안 바뀜)', async () => {
     snapshot.recordStartupRows('db-main', fakeDb({ menu_master: 0 }));
     snapshot.recordStartupRows('db-main', fakeDb({ menu_master: 128 }));
-    await expect(snapshot.getStartupLocalRows(['db-main'])).resolves.toBe(0);
+    await expect(snapshot.getStartupHasData(['db-main'])).resolves.toBe(false);
   });
 
   test('읽기에 실패하면 null — 호출 쪽이 지금 상태를 직접 센다', async () => {
@@ -109,7 +138,7 @@ describe('시작 시점 스냅샷', () => {
         throw new Error('boom');
       },
     });
-    await expect(snapshot.getStartupLocalRows(['db-bad'])).resolves.toBeNull();
+    await expect(snapshot.getStartupHasData(['db-bad'])).resolves.toBeNull();
   });
 });
 
@@ -123,7 +152,7 @@ describe('가드 — 시드가 이미 로컬에 행을 넣은 뒤에 평가돼�
     const state = await guard.evaluateSyncGuard('main');
 
     expect(state.blocked).toBe(true);
-    expect(state.localRows).toBe(0);
+    expect(state.localHasData).toBe(false);
     expect(collectStoreStats).not.toHaveBeenCalled();
   });
 
