@@ -41,6 +41,10 @@ yarn-error.log*
 !.env.example
 !.env*.example
 
+# local measurement/cost baselines (business data)
+/.baseline/
+/.next-perf/
+
 # local PostgreSQL runtime/data
 /.postgresql/
 /.pgdata/
