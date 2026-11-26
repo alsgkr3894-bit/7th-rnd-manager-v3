@@ -536,6 +536,8 @@ describe('buildSetHalfSheet', () => {
     expect(rows.find(row => row.kind === 'half' && row.side === 'L')).toMatchObject({
       weight: 299,
     });
+    // 구성에 따라 달라지는 알레르기는 빈칸 대신 안내 문구를 넣는다.
+    expect(rows.map(row => row.allergen)).toEqual(rows.map(() => '개별 메뉴 표시 참조'));
   });
 
   test('setOrder(카테고리 전용 순서)로 여러 세트박스의 출력 순서를 바꿀 수 있다', () => {
