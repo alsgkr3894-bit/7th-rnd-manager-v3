@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -44,6 +45,27 @@ const SETTING_KEYS = [
   'unmatchedAlert',
   'costRateAlert',
 ];
+
+/** 삭제 확인 때 보여 주는 '무엇이 지워지는지' — 행이 많은 저장소 다섯 개 */
+function describeLargestStores(stats) {
+  return Object.entries(stats || {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => `${name} ${count.toLocaleString('ko-KR')}`)
+    .join(' · ');
+}
+
+// 내려받기는 요청만 확인할 수 있다 — 파일이 저장된 것을 사람이 본 뒤에 지운다
+function confirmRecoverySaved(recovery) {
+  if (!recovery) return true;
+  return window.confirm(
+    `복구 파일을 내려받았습니다.
+${recovery.fileName} (${recovery.rows.toLocaleString('ko-KR')}건)
+
+` + '파일이 저장된 것을 확인한 뒤 [확인]을 누르면 삭제합니다.'
+  );
+}
 
 export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
@@ -112,6 +134,13 @@ export default function Page() {
     }
     setBusy(true);
     try {
+      // 지워질 DB에 담긴 저장소를 먼저 내려받는다(공용 데이터는 7번가 DB에만 있다)
+      const { stores: owned } = planBrandReset(ALL_STORES, getActiveBrandId());
+      const recovery = await downloadRecoveryPoint(owned, 'DB재생성');
+      if (!confirmRecoverySaved(recovery)) {
+        setBusy(false);
+        return;
+      }
       await deleteDatabase(dbNameFor(getActiveBrandId()));
       // 비운 DB에서 '이미 불러온 적 있다'는 기록이 남아 있으면 동기화 가드가 풀려 id가 1부터 다시
       // 시작하는 쓰기가 서버 행을 덮어쓸 수 있다 — 기록을 지워 다시 불러오기 전까지 막는다.
@@ -138,6 +167,8 @@ export default function Page() {
       // 공유 store(노트·샘플·법인카드 등)는 7번가에서만 초기화한다 — 다른 브랜드에서 비우면
       // 서버의 7번가 공유 데이터가 삭제된다(lib/db/reset-plan.js).
       const { stores, skippedShared } = planBrandReset(ALL_STORES, getActiveBrandId());
+      const recovery = await downloadRecoveryPoint(stores, '전체초기화');
+      if (!confirmRecoverySaved(recovery)) return;
       for (const name of stores) {
         if (!hasStore(name)) continue;
         try {
@@ -148,14 +179,15 @@ export default function Page() {
       }
       reloadStats();
       showToast(
-        skippedShared.length
+        (skippedShared.length
           ? `이 브랜드의 데이터가 초기화되었습니다. 공유 데이터 ${skippedShared.length}개(노트·샘플·법인카드 등)는 7번가 데이터 보호를 위해 유지했습니다.`
-          : '모든 데이터가 초기화되었습니다.',
-        'ok'
+          : '모든 데이터가 초기화되었습니다.') + recoveryNote(recovery),
+        'ok',
+        9000
       );
     } catch (err) {
       console.error('[Reset] 실패:', err);
-      showToast('초기화 중 오류가 발생했습니다.', 'error');
+      showToast(`초기화 중 오류가 발생했습니다: ${err.message}`, 'error');
     } finally {
       setBusy(false);
     }
@@ -414,6 +446,7 @@ export default function Page() {
         roleReady={roleReady}
         isAdmin={isAdmin}
         totalRows={totalRows}
+        largestStores={describeLargestStores(stats)}
         onReset={handleReset}
         isSharedDataProtected={isSharedDataProtected}
         onRecreate={handleRecreate}

@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -47,8 +48,9 @@ export function IngredientPriceView({ embedded = false }) {
     if (isViewer) return;
     setResetting(true);
     try {
+      const recovery = await downloadRecoveryPoint(['cost_ingredients'], '식자재');
       const { deleted } = await resetAllIngredients();
-      showToast(`마스터 초기화 완료 — ${deleted}개 삭제`, 'ok');
+      showToast(`마스터 초기화 완료 — ${deleted}개 삭제${recoveryNote(recovery)}`, 'ok', 7000);
       await load();
     } catch (e) {
       showToast('초기화 실패: ' + e.message, 'error');

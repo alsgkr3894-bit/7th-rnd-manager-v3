@@ -9,6 +9,7 @@ export function SystemDangerZoneCard({
   roleReady,
   isAdmin,
   totalRows,
+  largestStores = '',
   onReset,
   onRecreate,
   isSharedDataProtected = false,
@@ -34,8 +35,15 @@ export function SystemDangerZoneCard({
               <br />
             </>
           )}
-          백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
+          삭제 전에 지워질 데이터를 담은 <b>복구 파일</b>을 내려받으며, 만들지 못하면 삭제하지
+          않습니다. 되돌릴 때는 <b>설정 / 백업 → 복원</b>에서 그 파일을 고르세요.
           <br />
+          {largestStores && (
+            <>
+              지워지는 데이터(많은 순): <span className="num">{largestStores}</span>
+              <br />
+            </>
+          )}
           초기화 후 기본 메뉴 코드를 다시 등록하려면 <b>메뉴 마스터 → 기본 코드 등록</b>을
           실행하세요.
         </p>
@@ -43,6 +51,7 @@ export function SystemDangerZoneCard({
           label="모든 데이터 초기화"
           confirmMsg={`정말 모든 데이터를 삭제할까요? (${formatNumber(totalRows)}건)`}
           confirmLabel={busy ? '삭제 중…' : '정말 삭제'}
+          requireText="삭제"
           isOpen={confirmingReset}
           onOpen={() => setConfirmingReset(true)}
           onClose={() => setConfirmingReset(false)}
@@ -62,12 +71,14 @@ export function SystemDangerZoneCard({
           <br />
           schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
           <br />
-          실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
+          실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다. 삭제 전에 복구 파일을
+          내려받습니다.
         </p>
         <DangerConfirm
           label="DB 완전 재생성"
           confirmMsg="DB를 삭제하고 새로 만들까요? (모든 데이터 사라짐)"
           confirmLabel={busy ? '재생성 중…' : '정말 재생성'}
+          requireText="삭제"
           isOpen={confirmingRecreate}
           onOpen={() => setConfirmingRecreate(true)}
           onClose={() => setConfirmingRecreate(false)}

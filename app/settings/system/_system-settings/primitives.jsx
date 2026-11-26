@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 
 export function SettingsGroup({ title, children, style }) {
   return (
@@ -123,7 +124,12 @@ export function DangerConfirm({
   onConfirm,
   disabled,
   busy,
+  requireText = '',
 }) {
+  const [typed, setTyped] = useState('');
+  useEffect(() => {
+    if (!isOpen) setTyped('');
+  }, [isOpen]);
   if (!isOpen) {
     return (
       <button
@@ -139,12 +145,23 @@ export function DangerConfirm({
   return (
     <div role="alert" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ color: 'var(--negative)', fontWeight: 600, fontSize: 13 }}>{confirmMsg}</span>
+      {requireText && (
+        <input
+          className="form-input"
+          value={typed}
+          onChange={event => setTyped(event.target.value)}
+          placeholder={`'${requireText}' 입력`}
+          aria-label={`확인을 위해 '${requireText}' 입력`}
+          style={{ width: 130 }}
+          autoFocus
+        />
+      )}
       <button className="btn" disabled={busy} onClick={onClose}>
         취소
       </button>
       <button
         className="btn primary"
-        disabled={busy}
+        disabled={busy || (requireText && typed.trim() !== requireText)}
         onClick={onConfirm}
         style={{ background: 'var(--negative)' }}
       >

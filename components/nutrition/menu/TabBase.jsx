@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
@@ -108,14 +109,23 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
               onClick={async () => {
                 if (!canEdit) return;
                 const ok = await showConfirm({
-                  message: '베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?',
+                  message:
+                    '베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 삭제 전에 복구 파일을 내려받습니다. 계속할까요?',
                   danger: true,
                 });
                 if (!ok) return;
-                await clearAllBaseData();
-                setSelMenu(null);
-                showToast('전체 삭제 완료', 'ok');
-                refresh();
+                try {
+                  const recovery = await downloadRecoveryPoint(
+                    ['nutrition_raw_values', 'nutrition_menu_ref'],
+                    '베이스영양성분'
+                  );
+                  await clearAllBaseData();
+                  setSelMenu(null);
+                  showToast(`전체 삭제 완료${recoveryNote(recovery)}`, 'ok', 7000);
+                  refresh();
+                } catch (error) {
+                  showToast(`삭제 실패: ${error.message}`, 'error');
+                }
               }}
               disabled={!canEdit}
             >

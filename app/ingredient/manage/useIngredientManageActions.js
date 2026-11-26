@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { useCallback } from 'react';
 import { showToast } from '@/components/Toast';
 import { logIngredientDelete, logIngredientBulkDelete } from '@/lib/change-log';
@@ -63,8 +64,9 @@ export function useIngredientManageActions({
     if (resetting) return;
     setResetting(true);
     try {
+      const recovery = await downloadRecoveryPoint(['cost_ingredients'], '식자재');
       const result = await resetAllIngredients();
-      showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
+      showToast(`초기화 완료 — ${result.deleted}개 삭제${recoveryNote(recovery)}`, 'ok', 7000);
       setResetConfirm(false);
       await load();
     } catch (err) {

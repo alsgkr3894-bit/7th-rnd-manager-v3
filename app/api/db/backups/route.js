@@ -47,7 +47,10 @@ export async function POST(request) {
     if (error instanceof RequestNotLocalError) return forbidden();
     if (error instanceof SessionAuthenticationError) return unauthorized();
     if (error instanceof BackupBusyError) {
-      return Response.json({ ok: false, error: error.message }, { status: 409 });
+      return Response.json(
+        { ok: false, error: '다른 백업이 진행 중입니다. 잠시 뒤 다시 시도해 주세요.' },
+        { status: 409 }
+      );
     }
     console.error('[api/db/backups] 백업 생성 실패');
     return Response.json(

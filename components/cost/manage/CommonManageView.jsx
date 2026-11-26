@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -200,8 +201,9 @@ export function CommonManageView({ tab = 'groups' }) {
     if (!ensureCanEdit()) return;
     setResetting(true);
     try {
+      const recovery = await downloadRecoveryPoint(['cost_edge_dough'], '엣지도우');
       const result = await resetAllEdges();
-      showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
+      showToast(`초기화 완료 — ${result.deleted}개 삭제${recoveryNote(recovery)}`, 'ok', 7000);
       setResetConfirm(false);
       load();
     } catch (err) {

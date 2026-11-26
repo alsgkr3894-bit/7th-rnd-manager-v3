@@ -1,4 +1,5 @@
 'use client';
+import { downloadRecoveryPoint, recoveryNote } from '@/lib/backup/recovery-point';
 import { showToast } from '@/components/Toast';
 import { logWork } from '@/lib/work-log';
 import { logMenuMasterSave, logMenuMasterDelete } from '@/lib/change-log';
@@ -87,10 +88,14 @@ export function useMenuMasterActions({
     if (!requireEdit()) return;
     setResetting(true);
     try {
+      const recovery = await downloadRecoveryPoint(
+        ['menu_master', 'cost_selling_prices'],
+        '메뉴마스터'
+      );
       await resetAllMenuMaster();
       await resetAllMenuPrices();
       reload();
-      showToast('초기화 완료', 'ok');
+      showToast(`초기화 완료${recoveryNote(recovery)}`, 'ok', 7000);
     } catch (err) {
       showToast('실패: ' + err.message, 'error');
     } finally {
