@@ -28,6 +28,10 @@ export function useIngredientManagePageState() {
     else url.searchParams.set('view', normalized);
     window.history.replaceState(null, '', url);
   }, []);
+  // 주소의 view를 따라가기만 한다. 주소는 이미 목적지이므로 다시 쓰지 않는다.
+  const syncViewFromUrl = useCallback(value => {
+    setViewState(normalizeManageView(value));
+  }, []);
   const [highlightId, setHighlightId] = useState(null);
   const [highlightProductCode, setHighlightProductCode] = useState(null);
 
@@ -106,6 +110,7 @@ export function useIngredientManagePageState() {
     setTagFilter,
     view,
     setView,
+    syncViewFromUrl,
     highlightId,
     highlightProductCode,
     clearHighlight,
