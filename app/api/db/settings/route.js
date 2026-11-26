@@ -11,7 +11,8 @@ import { assertAuthenticatedRequest, SessionAuthenticationError } from '@/lib/se
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const SETTINGS_BODY_LIMIT = 4 * 1024 * 1024;
+// 값 하나의 최대 길이(약 1백만 자)가 여러 바이트로 늘어나도 받을 수 있는 크기
+const SETTINGS_BODY_LIMIT = 8 * 1024 * 1024;
 const fail = (error, status) => Response.json({ ok: false, error }, { status });
 
 function failureOf(error, action) {

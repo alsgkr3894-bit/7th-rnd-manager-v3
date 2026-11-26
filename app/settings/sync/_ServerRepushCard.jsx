@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { planServerRepush, runServerRepush } from '@/lib/db/server-repush';
+import { pushSettingsToServer } from '@/lib/settings-sync/client';
 import { formatNumber } from '@/lib/format';
 
 function describePlan(plan) {
@@ -45,6 +46,11 @@ export function ServerRepushCard({ disabled, onDone }) {
       const plan = await planServerRepush();
       if (!window.confirm(describePlan(plan))) return;
       const done = await runServerRepush(plan, { onProgress: setProgress });
+      // 화면 설정도 이 PC의 값으로 맞춘다
+      await pushSettingsToServer({ all: true }).catch(error => {
+        console.warn('[settings/sync] 화면 설정 재전송 실패', error?.message);
+        showToast('화면 설정은 다시 보내지 못했습니다', 'warn');
+      });
       setResult(done);
       if (done.rejectedRows > 0) {
         showToast(

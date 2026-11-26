@@ -15,12 +15,14 @@ globalThis.localStorage = {
 };
 
 let server = {};
+let failPost = false;
 let authoritative = true;
 let blocked = false;
 const posts = [];
 jest.unstable_mockModule('@/lib/session', () => ({
   fetchAppJson: async (_path, options) => {
     if (options?.method !== 'POST') return { ok: true, values: { ...server } };
+    if (failPost) throw new Error('저장 실패');
     const { values } = JSON.parse(options.body);
     posts.push(values);
     Object.assign(server, values);
@@ -36,8 +38,14 @@ jest.unstable_mockModule('@/lib/db/sync-guard', () => ({
   isSyncGuardBlocked: () => blocked,
 }));
 
-const { pushSettingsToServer, pullSettingsFromServer, collectServerSettings } =
-  await import('../../lib/settings-sync/client.js');
+const {
+  BATCH_MAX_BYTES,
+  BATCH_MAX_KEYS,
+  batchSettings,
+  pushSettingsToServer,
+  pullSettingsFromServer,
+  collectServerSettings,
+} = await import('../../lib/settings-sync/client.js');
 const { isServerSettingKey, SERVER_SETTING_KEYS } = await import('../../lib/settings-sync/keys.js');
 const { normalizeSettingsPayload, readBrowserSettings, writeBrowserSettings } =
   await import('../../lib/server/browser-settings.js');
@@ -45,6 +53,7 @@ const { normalizeSettingsPayload, readBrowserSettings, writeBrowserSettings } =
 beforeEach(() => {
   stored.clear();
   server = {};
+  failPost = false;
   authoritative = true;
   blocked = false;
   posts.length = 0;
@@ -101,6 +110,75 @@ describe('올리기', () => {
     arrange();
     expect(await pushSettingsToServer()).toEqual({ skipped });
     expect(posts).toEqual([]);
+  });
+});
+
+describe('서버가 설정을 잃었거나 값이 큰 경우', () => {
+  test('앱을 새로 열면 서버에 빠진 설정을 다시 올리고, 서버의 다른 값은 두고 본다', async () => {
+    stored.set('v3:note-sort', 'a');
+    stored.set('v3:note-view', 'card');
+    await pushSettingsToServer();
+    // 서버 DB를 예전 상태로 되돌린 뒤 앱을 새로 연다
+    server = { 'v3:note-sort': 'restored-old' };
+    posts.length = 0;
+    jest.resetModules();
+    const reopened = await import('../../lib/settings-sync/client.js');
+    await reopened.pushSettingsToServer();
+    expect(posts).toEqual([{ 'v3:note-view': 'card' }]);
+  });
+
+  test('다시 올리기가 실패하면 다음 시도에서 서버를 다시 확인한다', async () => {
+    stored.set('v3:note-sort', 'a');
+    await pushSettingsToServer();
+    server = {};
+    posts.length = 0;
+    jest.resetModules();
+    const reopened = await import('../../lib/settings-sync/client.js');
+    failPost = true;
+    await expect(reopened.pushSettingsToServer()).rejects.toThrow('저장 실패');
+    failPost = false;
+    await reopened.pushSettingsToServer();
+    expect(posts).toEqual([{ 'v3:note-sort': 'a' }]);
+  });
+
+  test('전체 재전송은 모든 설정을 이 PC 값으로 올린다', async () => {
+    stored.set('v3:note-sort', 'local');
+    await pushSettingsToServer();
+    server['v3:note-sort'] = 'old';
+    posts.length = 0;
+    await Promise.all([pushSettingsToServer(), pushSettingsToServer({ all: true })]);
+    expect(server['v3:note-sort']).toBe('local');
+  });
+
+  test('너무 큰 설정 하나는 빼고 나머지를 올린다', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    stored.set('v3:nutrition-import-aliases', 'x'.repeat(1024 * 1024 + 1));
+    stored.set('v3:note-sort', 'a');
+    expect(await pushSettingsToServer()).toEqual({ saved: 1 });
+    expect(posts).toEqual([{ 'v3:note-sort': 'a' }]);
+  });
+
+  test('많거나 큰 설정은 나눠 보낸다', () => {
+    const many = Array.from({ length: BATCH_MAX_KEYS * 2 + 1 }, (_, i) => [`k${i}`, 'v']);
+    expect(batchSettings(many).map(batch => batch.length)).toEqual([
+      BATCH_MAX_KEYS,
+      BATCH_MAX_KEYS,
+      1,
+    ]);
+    const big = 'x'.repeat(Math.floor(BATCH_MAX_BYTES * 0.6));
+    expect(
+      batchSettings([
+        ['a', big],
+        ['b', big],
+      ])
+    ).toHaveLength(2);
+    expect(batchSettings([])).toEqual([]);
+  });
+
+  test('재전송 화면이 설정도 보낸다', () => {
+    expect(read('app/settings/sync/_ServerRepushCard.jsx')).toContain(
+      'pushSettingsToServer({ all: true })'
+    );
   });
 });
 
