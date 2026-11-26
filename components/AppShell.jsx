@@ -36,6 +36,7 @@ import { useSettingValue } from '@/hooks/useSettingValue';
 import { useAppBrands } from '@/hooks/useAppBrands';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { useSettingsSync } from '@/hooks/useSettingsSync';
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
@@ -143,6 +144,7 @@ function WorkShell({ children }) {
   }
 
   useVisualEffects();
+  useSettingsSync();
 
   const isTabActive = href => {
     if (href === '/') return pathname === '/';

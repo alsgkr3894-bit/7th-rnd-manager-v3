@@ -239,9 +239,18 @@ async function verify() {
         missing.length === 0,
         missing.length ? `빠짐: ${missing.join(', ')}` : `${applied.length}건`
       );
-      return readSnapshot(client);
+      const syncedSettings = (
+        await client.query(
+          "select count(*)::int as n from local_storage_entries where metadata->>'source' = 'settings-sync'"
+        )
+      ).rows[0].n;
+      return { ...(await readSnapshot(client)), syncedSettings };
     });
 
+    report.syncedSettings = restored.syncedSettings;
+    console.log(
+      `참고  화면 설정 ${restored.syncedSettings}건 포함 · 외부 로그인정보·법인카드·로그인 인증 파일은 DB 백업에 없음`
+    );
     report.storeRows = restored.rows.length;
     report.tables = restored.tables;
     check('저장 행 복원', restored.rows.length > 0, `${restored.rows.length}행`);

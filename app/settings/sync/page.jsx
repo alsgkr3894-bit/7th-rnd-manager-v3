@@ -16,6 +16,7 @@ import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
+import { pullSettingsFromServer } from '@/lib/settings-sync/client';
 import { formatNumber } from '@/lib/format';
 import { ServerRepushCard } from './_ServerRepushCard';
 
@@ -161,6 +162,12 @@ export default function ServerSyncPage() {
     try {
       const result = await hydrateFromServer(brandId, { onProgress: setProgress });
       setJournal(result);
+      // 화면 설정도 서버 값으로 맞춘다. 실패해도 데이터는 불러온 상태다
+      const settings = await pullSettingsFromServer().catch(error => {
+        console.warn('[settings/sync] 화면 설정 불러오기 실패', error?.message);
+        return null;
+      });
+      if (!settings) showToast('화면 설정은 불러오지 못했습니다. 다시 시도해 주세요.', 'warn');
       // 서버에서 실제로 불러왔으니 "로컬이 비어 있는 authoritative" 가드는 해제한다 —
       // 안 그러면 방금 받아온 데이터도 계속 서버로 안 밀린다(lib/db/sync-guard.js).
       clearSyncGuard();

@@ -53,6 +53,11 @@ export function ServerBackupStatusCard({
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
             PostgreSQL 읽기 API와 로컬 .db-backups 폴더를 함께 확인합니다.
           </p>
+          <p style={{ fontSize: 12, color: 'var(--warn)', marginTop: 4, fontWeight: 700 }}>
+            DB 백업에는 외부 로그인정보·법인카드와 로그인 인증 파일이 없습니다.
+            로그인정보·법인카드는 [백업 파일 다운로드]로 받아 [저장한 파일 확인]까지 해 주세요. 화면
+            설정은 DB에 함께 보관합니다.
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button className="btn sm" onClick={onRefresh} disabled={loading || creating}>

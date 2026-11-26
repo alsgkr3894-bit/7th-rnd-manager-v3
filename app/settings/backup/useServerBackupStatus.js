@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { fetchAppJson } from '@/lib/session';
+import { pushSettingsToServer } from '@/lib/settings-sync/client';
 
 const NOT_CHECKED = { error: '', at: null };
 const messageOf = (err, fallback) => (err instanceof Error ? err.message : fallback);
@@ -48,6 +49,10 @@ export function useServerBackupStatus() {
     setCreating(true);
     setCreateError('');
     try {
+      // 방금 바꾼 화면 설정까지 백업에 담기게 먼저 올린다
+      await pushSettingsToServer().catch(error => {
+        console.warn('[Backup] 화면 설정 보관 실패:', error?.message);
+      });
       const result = await fetchAppJson('/api/db/backups', {
         method: 'POST',
       });
