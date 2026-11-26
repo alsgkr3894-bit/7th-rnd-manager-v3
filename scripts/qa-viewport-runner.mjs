@@ -88,6 +88,10 @@ export async function runViewportQa({ viewport, title, errorLabel }) {
         waitUntil: 'domcontentloaded',
         timeout: NAV_TIMEOUT_MS,
       });
+      // 로그인 화면으로 밀리면 그 화면의 검사는 의미가 없다
+      if (new URL(page.url()).pathname.startsWith('/login')) {
+        throw new Error('로그인 화면으로 이동했습니다 — QA_PASSWORD를 지정해 주세요');
+      }
       await Promise.race([
         page.waitForSelector('h1, main', { timeout: 15000 }).catch(() => {}),
         page.waitForTimeout(3000),

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import pw from '../node_modules/playwright/index.js';
 
 export const { chromium } = pw;
@@ -116,8 +117,26 @@ export function authCookie(base = getQaBase()) {
   };
 }
 
+const sha256 = text => createHash('sha256').update(text).digest('hex');
+
+/**
+ * 서버 세션 로그인 — 2026-11 서버 인증 도입 뒤에는 이 쿠키가 없으면 업무 화면이 열리지 않는다.
+ * 검증용 서버(별도 RND_AUTH_STATE_PATH)에서만 쓴다. 인증이 비어 있으면 이 비밀번호로 설정한다.
+ */
+export async function loginQaContext(ctx, base, password) {
+  const url = new URL('/api/auth/session', base).toString();
+  const status = await (await ctx.request.get(url)).json();
+  const verifier = sha256(password);
+  const data = status.configured
+    ? { challengeId: status.id, response: sha256(`${verifier}:${status.nonce}`) }
+    : { verifier };
+  const response = await ctx.request.post(url, { data });
+  if (!response.ok()) throw new Error(`QA 로그인 실패 (HTTP ${response.status()})`);
+}
+
 export async function newAuthedContext(browser, options = {}, base = getQaBase()) {
   const ctx = await browser.newContext(options);
   await ctx.addCookies([authCookie(base)]);
+  if (process.env.QA_PASSWORD) await loginQaContext(ctx, base, process.env.QA_PASSWORD);
   return ctx;
 }
