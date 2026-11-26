@@ -123,9 +123,11 @@ export default function Page() {
       <ServerBackupStatusCard
         dbStatus={serverBackupStatus.dbStatus}
         backupStatus={serverBackupStatus.backupStatus}
+        dbCheck={serverBackupStatus.dbCheck}
+        backupCheck={serverBackupStatus.backupCheck}
         loading={serverBackupStatus.loading}
         creating={serverBackupStatus.creating}
-        error={serverBackupStatus.error}
+        createError={serverBackupStatus.createError}
         onRefresh={serverBackupStatus.refresh}
         onCreateBackup={serverBackupStatus.createManualBackup}
       />

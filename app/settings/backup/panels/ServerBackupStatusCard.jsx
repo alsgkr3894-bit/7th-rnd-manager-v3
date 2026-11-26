@@ -6,23 +6,33 @@ import {
   S_ALERT_ICON,
   S_ALERT_WRAP,
   S_HISTORY_EMPTY,
-  formatBackupStatus,
   formatBytes,
   importStatusLabel,
 } from './backupPanelShared';
+import {
+  backupCountTile,
+  backupListMessage,
+  dbTile,
+  importJobsMessage,
+  latestBackupTile,
+  serverStatusErrors,
+} from './serverBackupView';
 
 export function ServerBackupStatusCard({
   dbStatus,
   backupStatus,
+  dbCheck,
+  backupCheck,
   loading,
   creating,
-  error,
+  createError,
   onRefresh,
   onCreateBackup,
 }) {
-  const latest = backupStatus?.latest;
-  const dbOk = Boolean(dbStatus?.ok);
+  const view = { dbStatus, backupStatus, dbCheck, backupCheck, loading };
   const recentImportJobs = dbStatus?.recentImportJobs || [];
+  const listMessage = backupListMessage(view);
+  const jobsMessage = importJobsMessage(view);
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
@@ -64,14 +74,14 @@ export function ServerBackupStatusCard({
         </div>
       </div>
 
-      {error && (
-        <div style={{ ...S_ALERT_WRAP, marginBottom: 12 }}>
+      {serverStatusErrors({ dbCheck, backupCheck, createError }).map(item => (
+        <div key={item.label} style={{ ...S_ALERT_WRAP, marginBottom: 12 }}>
           <Icon.alert style={S_ALERT_ICON} />
           <span style={{ fontSize: 13 }}>
-            <b>상태 확인 실패:</b> {error}
+            <b>{item.label}:</b> {item.message}
           </span>
         </div>
-      )}
+      ))}
 
       <div
         style={{
@@ -80,29 +90,9 @@ export function ServerBackupStatusCard({
           gap: 12,
         }}
       >
-        <SettingTile
-          label="PostgreSQL"
-          value={loading && !dbStatus ? '확인 중' : dbOk ? '연결됨' : '오류'}
-          sub={
-            dbOk
-              ? `동기화 데이터 ${formatNumber(dbStatus.counts?.storeRows || 0)}행`
-              : '서버 DB 읽기 API 대기'
-          }
-        />
-        <SettingTile
-          label="서버 백업"
-          value={loading && !backupStatus ? '확인 중' : formatBackupStatus(backupStatus)}
-          sub={
-            latest
-              ? `${formatRelative(latest.modifiedAt)} · ${formatBytes(latest.size)}`
-              : '아직 서버 백업 파일이 없습니다'
-          }
-        />
-        <SettingTile
-          label="백업 파일"
-          value={`${formatNumber(backupStatus?.count || 0)}개`}
-          sub={`${formatBytes(backupStatus?.totalSize || 0)} · 서버 내부 안전 보관`}
-        />
+        <SettingTile label="PostgreSQL" {...dbTile(view)} />
+        <SettingTile label="서버 백업" {...latestBackupTile(view)} />
+        <SettingTile label="백업 파일" {...backupCountTile(view)} />
       </div>
 
       <div
@@ -117,10 +107,8 @@ export function ServerBackupStatusCard({
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginBottom: 8 }}>
             자동/수동 백업 목록
           </div>
-          {loading && !backupStatus ? (
-            <div style={S_HISTORY_EMPTY}>서버 백업 목록 확인 중...</div>
-          ) : !backupStatus?.backups?.length ? (
-            <div style={S_HISTORY_EMPTY}>서버 백업 목록이 비어 있습니다.</div>
+          {listMessage ? (
+            <div style={S_HISTORY_EMPTY}>{listMessage}</div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -155,10 +143,8 @@ export function ServerBackupStatusCard({
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginBottom: 8 }}>
             최근 PostgreSQL 가져오기
           </div>
-          {loading && !dbStatus ? (
-            <div style={S_HISTORY_EMPTY}>PostgreSQL 작업 이력 확인 중...</div>
-          ) : recentImportJobs.length === 0 ? (
-            <div style={S_HISTORY_EMPTY}>최근 import 작업이 없습니다.</div>
+          {jobsMessage ? (
+            <div style={S_HISTORY_EMPTY}>{jobsMessage}</div>
           ) : (
             <div style={{ display: 'grid', gap: 8 }}>
               {recentImportJobs.map(job => (
