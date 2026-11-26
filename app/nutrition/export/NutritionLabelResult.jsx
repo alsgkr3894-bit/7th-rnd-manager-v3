@@ -5,7 +5,7 @@ import { initDB } from '@/lib/db';
 import { getAllSetCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { buildNutritionLabelContext } from '@/lib/nutrition/label/context';
-import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
+import { dropDiscontinuedToppings, extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import {
   buildDiscontinuedBaseCodeSet,
   isNutritionMenuDiscontinued,
@@ -208,7 +208,7 @@ export default function NutritionLabelResult() {
         menuAllergenMap,
         edgeAllergenMap,
         toppingAllergenMap,
-        toppings: asObjectArray(toppingList),
+        toppings: dropDiscontinuedToppings(toppingList, masters),
         toppingOrder,
         setComps,
         setOrder: setBoxOrder,
@@ -235,7 +235,7 @@ export default function NutritionLabelResult() {
       const beverageEditMenus = byGroup('음료')
         .map((m, i) => toEditItem(m.menuCode, m.originalMenuName ?? m.menuName, i))
         .filter(m => m.menuCode);
-      const toppingEditMenus = asObjectArray(toppingList)
+      const toppingEditMenus = ctx.toppings
         .map((t, i) => toEditItem(t.toppingCode, t.toppingName, i))
         .filter(m => m.menuCode);
       const setNames = [
