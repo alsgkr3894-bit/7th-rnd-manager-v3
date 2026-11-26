@@ -508,12 +508,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 498개 파일(lib 463, hooks 21, scripts 12), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 504개 파일(lib 469, hooks 21, scripts 12), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `__tests__/lib/`
 
-__tests__/lib/ 하위 463개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 469개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `__tests__/hooks/`
