@@ -37,6 +37,23 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function AppShell({ children }) {
+  const pathname = usePathname();
+  // 로그인 전에는 업무 데이터(IndexedDB·동기화 가드·이슈 배지)를 건드리지 않는다 — 업무 shell은 로그인 뒤에만 마운트한다
+  if (pathname === '/login' || pathname?.startsWith('/login/')) {
+    return <AuthShell>{children}</AuthShell>;
+  }
+  return <WorkShell>{children}</WorkShell>;
+}
+
+/** 로그인 화면용 — 테마 등 브라우저 설정만 적용한다 */
+function AuthShell({ children }) {
+  useEffect(() => {
+    applyAllSettings();
+  }, []);
+  return children;
+}
+
+function WorkShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -164,9 +181,7 @@ export default function AppShell({ children }) {
           canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>
-          <div id="main-content">
-            {children}
-          </div>
+          <div id="main-content">{children}</div>
         </ErrorBoundary>
       </div>
 
