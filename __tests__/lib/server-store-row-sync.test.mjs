@@ -185,3 +185,78 @@ describe('민감 store 쓰기 차단', () => {
     expect(operation.storeName).toBe('cost_ingredients');
   });
 });
+
+describe('같은 작업을 다시 받아도 한 번만 적용한다', () => {
+  function fakePrisma() {
+    const ledger = new Set();
+    const applied = [];
+    let prunes = 0;
+    const tx = {
+      brand: { upsert: async () => {} },
+      storeRow: {
+        findUnique: async () => null,
+        deleteMany: async args => applied.push(['delete', args.where.recordKey ?? '*']),
+        upsert: async args => applied.push(['upsert', args.create.recordKey]),
+      },
+      serverSetting: {
+        createManyAndReturn: async ({ data, skipDuplicates }) => {
+          expect(skipDuplicates).toBe(true);
+          return data.filter(row => !ledger.has(row.key) && ledger.add(row.key));
+        },
+        deleteMany: async ({ where }) => {
+          expect(where.category).toBe('sync-op');
+          prunes += 1;
+        },
+      },
+    };
+    return {
+      prisma: { $transaction: async work => work(tx) },
+      applied,
+      prunes: () => prunes,
+    };
+  }
+
+  const upsert = (opId, recordKey) => ({
+    type: 'upsert',
+    opId,
+    storeName: 'cost_ingredients',
+    recordKey,
+    data: { id: Number(recordKey) },
+  });
+
+  test('응답을 못 받아 다시 보낸 묶음은 적용하지 않는다', async () => {
+    const server = fakePrisma();
+    const payload = {
+      operations: [{ type: 'clear', opId: 'a', storeName: 'cost_ingredients' }, upsert('b', '1')],
+    };
+
+    const first = await applyStoreRowOperations(server.prisma, payload);
+    const again = await applyStoreRowOperations(server.prisma, payload);
+
+    expect(first).toMatchObject({ applied: 2, duplicates: 0, cleared: 1, upserted: 1 });
+    expect(again).toMatchObject({ applied: 0, duplicates: 2, cleared: 0, upserted: 0 });
+    expect(server.applied).toEqual([
+      ['delete', '*'],
+      ['upsert', '1'],
+    ]);
+    expect(server.prunes()).toBeLessThanOrEqual(1);
+  });
+
+  test('일부만 새 작업이면 새 작업만, ID가 없는 작업은 항상 적용한다', async () => {
+    const server = fakePrisma();
+    await applyStoreRowOperations(server.prisma, { operations: [upsert('a', '1')] });
+
+    const result = await applyStoreRowOperations(server.prisma, {
+      operations: [upsert('a', '1'), upsert('b', '2'), upsert('b', '2'), upsert(undefined, '3')],
+    });
+
+    expect(result).toMatchObject({ applied: 2, duplicates: 2 });
+    expect(server.applied.map(entry => entry[1])).toEqual(['1', '2', '3']);
+  });
+
+  test('너무 긴 작업 ID는 거절한다', () => {
+    expect(() =>
+      normalizeStoreRowOperations({ operations: [upsert('x'.repeat(81), '1')] })
+    ).toThrow('Invalid opId.');
+  });
+});

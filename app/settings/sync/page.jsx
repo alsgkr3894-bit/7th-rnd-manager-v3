@@ -13,7 +13,14 @@ import {
 } from '@/lib/db/sync-mode';
 import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib/db/server-hydrate';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
+import {
+  clearServerStoreSyncDeadLetters,
+  discardPendingServerStoreSync,
+  drainServerStoreSyncQueue,
+  getPendingServerStoreSyncCount,
+  getServerStoreSyncDeadLetters,
+  resumeServerStoreSync,
+} from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { pullSettingsFromServer } from '@/lib/settings-sync/client';
@@ -60,6 +67,7 @@ export default function ServerSyncPage() {
   const [progress, setProgress] = useState(null);
   const [journal, setJournal] = useState(null);
   const [deadLetters, setDeadLetters] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [guardState, setGuardState] = useState(getSyncGuardState());
 
   const isReadonly = mode === SYNC_MODE.READONLY;
@@ -70,7 +78,10 @@ export default function ServerSyncPage() {
     setLoadError('');
     const activeBrand = getActiveBrandId();
     setBrandId(activeBrand);
-    setDeadLetters(getServerStoreSyncDeadLetters());
+    resumeServerStoreSync().then(() => {
+      setDeadLetters(getServerStoreSyncDeadLetters());
+      setPendingCount(getPendingServerStoreSyncCount());
+    });
     evaluateSyncGuard(activeBrand).then(setGuardState);
     try {
       const [serverManifest, stats] = await Promise.all([
@@ -140,16 +151,31 @@ export default function ServerSyncPage() {
     showToast('자동 판정으로 되돌렸습니다', 'ok');
   }
 
+  /** 못 보낸 변경을 먼저 보내 보고, 그래도 남은 건수를 돌려준다. */
+  async function sendPendingChanges() {
+    try {
+      await drainServerStoreSyncQueue();
+    } catch (error) {
+      console.warn('[settings/sync] 못 보낸 변경이 남음', error?.message);
+    }
+    return getPendingServerStoreSyncCount();
+  }
+
   async function handleHydrate() {
     if (running) return;
     // 운영 PC에서 실행하면 서버의 낡은 상태로 로컬 원본을 덮어쓸 수 있다.
     if (!isReadonly) {
+      const unsent = await sendPendingChanges();
       const ok = window.confirm(
         '이 PC는 운영 PC(쓰기 동기화 켜짐)로 판정됐습니다.\n' +
           '서버에서 불러오면 이 PC의 로컬 데이터가 서버 내용으로 덮어써집니다.\n\n' +
+          (unsent > 0
+            ? `서버에 아직 보내지 못한 변경이 ${formatNumber(unsent)}건 있습니다. 불러오면 이 변경은 사라집니다.\n\n`
+            : '') +
           '정말 진행할까요?'
       );
       if (!ok) return;
+      if (unsent > 0) await discardPendingServerStoreSync();
     } else {
       const ok = window.confirm(
         '서버 데이터로 이 PC의 로컬 데이터를 덮어씁니다.\n이 PC에서 따로 입력한 내용은 사라집니다.\n\n진행할까요?'
@@ -425,6 +451,22 @@ export default function ServerSyncPage() {
         />
       )}
 
+      {pendingCount > 0 && (
+        <section
+          className="card"
+          style={{ marginTop: 16, borderColor: 'var(--warn)' }}
+          role="status"
+        >
+          <div className="card-title" style={{ color: 'var(--warn)' }}>
+            서버에 아직 보내지 못한 변경 {formatNumber(pendingCount)}건
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            이 브라우저에 보관돼 있어 창을 닫거나 PC를 다시 켜도 남습니다. 서버가 응답하면 자동으로
+            보냅니다.
+          </div>
+        </section>
+      )}
+
       {deadLetters.length > 0 && (
         <section
           className="card"
@@ -432,7 +474,7 @@ export default function ServerSyncPage() {
           data-testid="sync-dead-letters"
         >
           <div className="card-title" style={{ color: 'var(--negative)' }}>
-            서버가 거절해 건너뛴 저장 {deadLetters.length}건 (이 브라우저 세션)
+            서버가 거절해 건너뛴 저장 {deadLetters.length}건
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
             아래 항목은 로컬에는 저장됐지만 서버가 받지 않았습니다. 이 브라우저의 다른 저장은 계속
@@ -441,11 +483,22 @@ export default function ServerSyncPage() {
           <ul style={{ margin: '8px 0 0 16px', fontSize: 12, color: 'var(--text-3)' }}>
             {deadLetters.slice(-10).map((item, index) => (
               <li key={`${item.at}-${index}`}>
-                {item.at.slice(11, 19)} · {item.storeName}
+                {item.at.slice(0, 10)} {item.at.slice(11, 19)} (UTC) · {item.storeName}
                 {item.recordKey != null ? `#${item.recordKey}` : ''} · {item.type} — {item.error}
               </li>
             ))}
           </ul>
+          <button
+            className="btn sm"
+            type="button"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              clearServerStoreSyncDeadLetters();
+              setDeadLetters([]);
+            }}
+          >
+            목록 지우기
+          </button>
         </section>
       )}
 
