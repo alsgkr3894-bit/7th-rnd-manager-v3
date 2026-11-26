@@ -42,6 +42,7 @@
     "db:backup:auto": "node prisma/local-db-backup.mjs auto",
     "db:backup:list": "node prisma/local-db-backup.mjs list",
     "db:backup:prune": "node prisma/local-db-backup.mjs prune",
+    "db:restore:verify": "node prisma/verify-db-restore.mjs",
     "db:backup:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-db-backup-autostart.ps1",
     "db:pg:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-postgres.ps1 -ShowStatus",
     "db:pg:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-db-autostart.ps1",

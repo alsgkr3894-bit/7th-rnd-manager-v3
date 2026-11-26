@@ -53,6 +53,25 @@ export function backupCountTile({ backupStatus, backupCheck }) {
   };
 }
 
+/** 임시 DB에 실제로 복원해 확인한 마지막 시각 (npm run db:restore:verify) */
+export function restoreVerifyTile({ backupStatus, backupCheck }) {
+  if (!backupStatus) {
+    return {
+      value: '확인 불가',
+      sub: backupCheck?.error ? '백업 목록 확인 실패' : '백업 목록 대기',
+    };
+  }
+  const last = backupStatus.lastVerified;
+  return last
+    ? { value: formatRelative(last.verifiedAt), sub: `${last.name} 복원 성공` }
+    : { value: '기록 없음', sub: '운영 PC에서 npm run db:restore:verify 실행' };
+}
+
+export function verificationLabel(verification) {
+  if (!verification) return '-';
+  return verification.ok ? '성공' : '실패';
+}
+
 export function backupListMessage({ backupStatus, backupCheck, loading }) {
   if (!backupStatus) {
     if (backupCheck?.error) return '백업 목록 확인 실패';

@@ -15,7 +15,9 @@ import {
   dbTile,
   importJobsMessage,
   latestBackupTile,
+  restoreVerifyTile,
   serverStatusErrors,
+  verificationLabel,
 } from './serverBackupView';
 
 export function ServerBackupStatusCard({
@@ -93,6 +95,7 @@ export function ServerBackupStatusCard({
         <SettingTile label="PostgreSQL" {...dbTile(view)} />
         <SettingTile label="서버 백업" {...latestBackupTile(view)} />
         <SettingTile label="백업 파일" {...backupCountTile(view)} />
+        <SettingTile label="복원 검증" {...restoreVerifyTile(view)} />
       </div>
 
       <div
@@ -117,6 +120,7 @@ export function ServerBackupStatusCard({
                     <th>파일</th>
                     <th style={{ width: 120, textAlign: 'right' }}>크기</th>
                     <th style={{ width: 170 }}>수정 시각</th>
+                    <th style={{ width: 90 }}>복원 검증</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,6 +135,7 @@ export function ServerBackupStatusCard({
                       <td className="num" style={{ fontSize: 12, color: 'var(--text-3)' }}>
                         {new Date(backup.modifiedAt).toLocaleString('ko-KR')}
                       </td>
+                      <td style={{ fontSize: 12 }}>{verificationLabel(backup.verification)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -194,6 +194,7 @@ export function pruneBackups(overrideDir) {
     if (index < keep) return;
     rmSync(file.path, { force: true });
     rmSync(`${file.path}.json`, { force: true });
+    rmSync(`${file.path}.verify.json`, { force: true });
     removed.push(file.name);
   });
 
