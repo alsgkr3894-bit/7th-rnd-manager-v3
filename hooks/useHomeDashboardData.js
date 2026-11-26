@@ -27,6 +27,7 @@ import { getAllSamples } from '@/lib/sample';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { getUploadFreshness } from '@/lib/stats/upload-status';
 import { getBackupReminder } from '@/lib/backup-history';
+import { summarizeRefresh } from '@/lib/home/refresh-summary';
 
 const homeRankCategory = () => (getActiveBrandId() === 'main' ? '피자' : null);
 const devError = (...a) => {
@@ -74,6 +75,12 @@ export function useHomeDashboardData({ chartTab }) {
     chartTabRef.current = chartTab;
   }, [chartTab]);
 
+  // 늦게 끝난 이전 기간의 판매 통계가 지금 선택한 기간을 덮지 않게 한다
+  const anchorRef = useRef(null);
+  useEffect(() => {
+    anchorRef.current = anchor;
+  }, [anchor]);
+
   const loadData = useCallback(
     async () => {
       try {
@@ -120,6 +127,7 @@ export function useHomeDashboardData({ chartTab }) {
         if (uf) setUploadFreshness(uf);
         setBackupReminder(getBackupReminder());
 
+        const results = [...live];
         if (!anchor) {
           const sales = await Promise.allSettled([
             getSalesKpi(),
@@ -129,6 +137,7 @@ export function useHomeDashboardData({ chartTab }) {
             getTopMenusWithTrend(5, homeRankCategory(), true, 'asc'),
             getMonthlyBriefing(),
           ]);
+          results.push(...sales);
           const [s, td, dn, tp, bt, br] = sales.map(r =>
             r.status === 'fulfilled' ? r.value : null
           );
@@ -147,6 +156,7 @@ export function useHomeDashboardData({ chartTab }) {
           if (bt) setBottom(bt);
           if (br) setBriefing(br);
         }
+        return results;
       } catch (err) {
         if (!mountedRef.current) return;
         devError('[Home] 데이터 로드 실패:', err);
@@ -161,49 +171,57 @@ export function useHomeDashboardData({ chartTab }) {
     [anchor, mountedRef]
   );
 
-  // anchor 기준 판매·브리핑 통계 로드 — anchor 변경 effect와 가시성 복귀에서 공유한다.
-  const loadSalesForAnchor = useCallback(a => {
-    if (!dbReadyRef.current || !a) return () => {};
-    let isMounted = true;
-    Promise.allSettled([
+  // anchor 기준 판매·브리핑 통계를 읽어 반영하고 조회 결과를 돌려준다.
+  const fetchSalesForAnchor = useCallback(async (a, isActive) => {
+    const results = await Promise.allSettled([
       getSalesKpi(a),
       getSalesTrend(chartTabRef.current, a),
       getCategoryShare(a),
       getTopMenusWithTrend(5, homeRankCategory(), true, 'desc', a),
       getTopMenusWithTrend(5, homeRankCategory(), true, 'asc', a),
       getMonthlyBriefing(a),
-    ])
-      .then(([s, td, dn, tp, bt, br]) => {
-        if (!isMounted || !mountedRef.current) return;
-        const val = r => (r.status === 'fulfilled' ? r.value : null);
-        if (val(s)) setSalesKpi(val(s));
-        if (val(td)) {
-          setTrend(val(td));
-          setChartKey(k => k + 1);
-        }
-        if (val(dn)) setDonut(val(dn));
-        if (val(tp)) setTop(val(tp));
-        if (val(bt)) setBottom(val(bt));
-        if (val(br)) setBriefing(val(br));
-      })
-      .catch(devError);
-    return () => {
-      isMounted = false;
-    };
+    ]);
+    if (!isActive() || !mountedRef.current || anchorRef.current !== a) return results;
+    const [s, td, dn, tp, bt, br] = results.map(r => (r.status === 'fulfilled' ? r.value : null));
+    if (s) setSalesKpi(s);
+    if (td) {
+      setTrend(td);
+      setChartKey(k => k + 1);
+    }
+    if (dn) setDonut(dn);
+    if (tp) setTop(tp);
+    if (bt) setBottom(bt);
+    if (br) setBriefing(br);
+    return results;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadSalesForAnchor = useCallback(
+    a => {
+      if (!dbReadyRef.current || !a) return () => {};
+      let isMounted = true;
+      fetchSalesForAnchor(a, () => isMounted).catch(devError);
+      return () => {
+        isMounted = false;
+      };
+    },
+    [fetchSalesForAnchor]
+  );
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // 가시성 복귀 시: 라이브 위젯은 loadData로, anchor가 설정된 경우 그 기간의 판매계열도 재조회.
-  // (loadData는 anchor가 있으면 판매 분기를 건너뛰므로 별도 갱신 필요)
-  const handleVisibilityRefresh = useCallback(() => {
-    loadData();
-    if (anchor) loadSalesForAnchor(anchor);
-  }, [loadData, anchor, loadSalesForAnchor]);
-  useVisibilityRefresh(handleVisibilityRefresh);
+  // 새로고침 버튼과 가시성 복귀가 같은 범위를 읽는다 — 라이브 위젯은 loadData로, 기간을 고른 상태면
+  // 그 기간의 판매계열도 함께 (loadData는 anchor가 있으면 판매 분기를 건너뛴다).
+  const refreshDashboard = useCallback(async () => {
+    const live = await loadData();
+    if (!live) return { status: 'error' };
+    if (!anchor) return summarizeRefresh(live);
+    const sales = await fetchSalesForAnchor(anchor, () => true);
+    return summarizeRefresh(live, sales);
+  }, [loadData, anchor, fetchSalesForAnchor]);
+  useVisibilityRefresh(refreshDashboard);
 
   // chartTab 전환 시 트렌드만 다시 로드 (anchor 기준 유지)
   useEffect(() => {
@@ -278,7 +296,7 @@ export function useHomeDashboardData({ chartTab }) {
     shiftAnchor,
     chartKey,
     initialLoaded,
-    loadData,
+    refreshDashboard,
     mountedRef,
   };
 }

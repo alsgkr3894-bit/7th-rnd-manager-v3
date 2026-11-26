@@ -22,6 +22,7 @@ import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { getRecentPaletteItems } from '@/lib/palette-recent';
 import { getNoteKpi, getRecentActivities } from '@/lib/stats';
 import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
+import { refreshToast } from '@/lib/home/refresh-summary';
 import { ActionCenterWidget } from '@/components/home/ActionCenterWidget';
 import { readPendingPriceRise } from '@/lib/cost/price-rise-pending';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -120,7 +121,7 @@ export default function HomePage() {
     shiftAnchor,
     chartKey,
     initialLoaded,
-    loadData,
+    refreshDashboard,
     mountedRef,
   } = useHomeDashboardData({ chartTab });
 
@@ -262,8 +263,8 @@ export default function HomePage() {
         onRefresh={async () => {
           setRefreshing(true);
           try {
-            await loadData();
-            showToast('대시보드를 새로고침했어요', 'ok');
+            const notice = refreshToast(await refreshDashboard());
+            if (notice) showToast(notice.message, notice.type, 5000);
           } finally {
             setRefreshing(false);
           }
