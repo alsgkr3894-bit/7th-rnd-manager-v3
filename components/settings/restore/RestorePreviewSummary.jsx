@@ -51,10 +51,34 @@ export function RestorePreviewSummary({
   localStorageSummary,
 }) {
   const localStorageNotice = localStorageNoticeOf(localStorageSummary);
+  const schemaIssues = parsed?._summary?.schemaIssues || [];
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>2. 백업 파일 미리보기</h2>
+      {schemaIssues.length > 0 && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 16,
+            padding: '10px 12px',
+            borderRadius: 8,
+            background: 'var(--warn-soft)',
+            fontSize: 12,
+            lineHeight: 1.6,
+          }}
+        >
+          <b style={{ color: 'var(--warn)' }}>필수 값이 빠진 행이 있습니다.</b> 복원하면 해당 항목이
+          다른 데이터와 연결되지 않을 수 있습니다.
+          <div className="num">
+            {schemaIssues
+              .slice(0, 8)
+              .map(issue => `${issue.store}.${issue.field} ${formatNumber(issue.rows)}행`)
+              .join(' · ')}
+            {schemaIssues.length > 8 ? ` 외 ${formatNumber(schemaIssues.length - 8)}건` : ''}
+          </div>
+        </div>
+      )}
       <div
         style={{
           display: 'flex',
