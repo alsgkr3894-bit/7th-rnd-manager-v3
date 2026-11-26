@@ -980,9 +980,7 @@ describe('buildToppingSheet', () => {
 
   test('메뉴코드 연결이 없어도 추가토핑 이름으로 레시피 알레르기를 찾는다', () => {
     const rows = buildToppingSheet({
-      menus: [
-        { menuCode: 'T-MENU-002', menuName: '베이컨 추가', category: '추가토핑' },
-      ],
+      menus: [{ menuCode: 'T-MENU-002', menuName: '베이컨 추가', category: '추가토핑' }],
       rawMap: {
         'T-MENU-002__석쇠L': { basis: 'serving', weight: 20 },
       },
