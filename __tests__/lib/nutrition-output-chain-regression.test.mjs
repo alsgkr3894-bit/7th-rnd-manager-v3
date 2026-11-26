@@ -141,6 +141,32 @@ describe('알레르기·원산지 연결 회귀', () => {
     );
   });
 
+  test('L·R을 한 행으로 합친 피자도 각 메뉴코드가 알레르기 준비 완료다', () => {
+    const pizzas = ['L', 'R'].map(size => ({
+      menuCode: `P-OR-001-${size}`,
+      menuName: `치즈 피자 ${size}`,
+      category: '피자/오리지널',
+      size,
+    }));
+    const coverage = buildNutritionOutputCoverage({
+      menus: pizzas,
+      ingredients,
+      groups: [],
+      edges: [],
+      recipeArrays: {
+        pizza: pizzas.map(menu => ({
+          ...menu,
+          components: [{ productCode: 'CHZ', ingredientName: '치즈' }],
+        })),
+      },
+    });
+
+    for (const { menuCode } of pizzas) {
+      expect(coverage.allergenReadyCodes.has(menuCode)).toBe(true);
+      expect(coverage.originReadyCodes.has(menuCode)).toBe(true);
+    }
+  });
+
   test('출시 준비 점검은 출력이 있는 메뉴와 표시 의무가 없는 메뉴를 누락으로 세지 않는다', () => {
     const coverage = buildNutritionOutputCoverage({
       menus,
