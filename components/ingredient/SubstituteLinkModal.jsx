@@ -159,8 +159,9 @@ function SubstituteLinkModalBody({ sourceRow, candidates, onConfirm, onClose }) 
             ) : preview ? (
               <>
                 연결하면 레시피 {preview.menuRecipeCount}개 · 세트/그룹 {preview.recipeGroupCount}개
-                · 엣지/도우 {preview.edgeCount}개가 자동으로 <b>{rowLabel(target)}</b>(으)로
-                재연결되고, <b>{rowLabel(sourceRow)}</b>은(는) 단종 처리됩니다.
+                · 엣지/도우 {preview.edgeCount}개 · 추가토핑 {preview.toppingCount}개가 자동으로{' '}
+                <b>{rowLabel(target)}</b>(으)로 재연결되고, <b>{rowLabel(sourceRow)}</b>은(는) 단종
+                처리됩니다.
               </>
             ) : (
               '영향 범위를 확인하지 못했습니다.'

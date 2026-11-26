@@ -297,7 +297,7 @@ export function useIngredientManageActions({
       try {
         const result = await replaceIngredientProductCode(row?.productCode, replacement);
         showToast(
-          `대체 연결 완료 · 레시피 ${result.menuRecipeUpdated}건 · 식자재 묶음 ${result.recipeGroupUpdated}건 · 엣지 도우 ${result.edgeUpdated}건`,
+          `대체 연결 완료 · 레시피 ${result.menuRecipeUpdated}건 · 식자재 묶음 ${result.recipeGroupUpdated}건 · 엣지 도우 ${result.edgeUpdated}건 · 추가토핑 ${result.toppingUpdated}건`,
           'ok'
         );
         await load();

@@ -40,7 +40,8 @@ jest.unstable_mockModule('@/lib/db', () => ({
 
 jest.unstable_mockModule('@/lib/auth/guard', () => ({ assertActiveAdmin }));
 
-const { replaceIngredientProductCode } = await import('../../lib/ingredient/product-replace.js');
+const { replaceIngredientProductCode, previewIngredientProductReplace } =
+  await import('../../lib/ingredient/product-replace.js');
 
 describe('replaceIngredientProductCode', () => {
   beforeEach(() => {
@@ -52,7 +53,78 @@ describe('replaceIngredientProductCode', () => {
       menu_recipes: [],
       cost_recipe_groups: [],
       cost_edge_dough: [],
+      nutrition_topping_master: [],
     };
+  });
+
+  test('추가토핑 마스터의 연결도 새 제품코드로 옮긴다', async () => {
+    stores.cost_ingredients = [{ id: 1, productCode: 'OLD01', ingredientName: '옛제품' }];
+    stores.nutrition_topping_master = [
+      { id: 1, toppingCode: 'T-1', toppingName: '치즈 추가', productCode: 'old01' },
+      { id: 2, toppingCode: 'T-2', toppingName: '다른 토핑', productCode: 'ETC01' },
+    ];
+
+    await expect(previewIngredientProductReplace('OLD01')).resolves.toMatchObject({
+      toppingCount: 1,
+      totalCount: 1,
+    });
+    const result = await replaceIngredientProductCode('OLD01', {
+      productCode: 'NEW01',
+      ingredientName: '새제품',
+    });
+
+    expect(result.toppingUpdated).toBe(1);
+    expect(stores.nutrition_topping_master[0]).toMatchObject({
+      toppingName: '치즈 추가',
+      productCode: 'NEW01',
+      ingredientName: '새제품',
+    });
+    expect(stores.nutrition_topping_master[1]).toMatchObject({ productCode: 'ETC01' });
+  });
+
+  test('원산지·알레르기의 값과 해당 없음 표시가 어긋나지 않게 이어받는다', async () => {
+    stores.cost_ingredients = [
+      {
+        id: 1,
+        productCode: 'OLD01',
+        ingredientName: '옛제품',
+        originNone: true,
+        allergens: ['AL01'],
+        allergenNone: false,
+      },
+      {
+        id: 2,
+        productCode: 'NEW01',
+        ingredientName: '새제품',
+        origin: [{ country: '국내산' }],
+        originNone: false,
+        allergens: [],
+        allergenNone: true,
+      },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    expect(stores.cost_ingredients.find(r => r.id === 2)).toMatchObject({
+      originNone: false,
+      origin: [{ country: '국내산' }],
+      allergenNone: true,
+      allergens: [],
+    });
+  });
+
+  test('새 항목에 값도 해당 없음도 없으면 기존의 해당 없음을 잇는다', async () => {
+    stores.cost_ingredients = [
+      { id: 1, productCode: 'OLD01', ingredientName: '옛제품', originNone: true },
+      { id: 2, productCode: 'NEW01', ingredientName: '새제품', originNone: false },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    expect(stores.cost_ingredients.find(r => r.id === 2)).toMatchObject({
+      originNone: true,
+      origin: null,
+    });
   });
 
   test('이미 단종된 제품으로는 대체할 수 없다 (resurrection 방지)', async () => {

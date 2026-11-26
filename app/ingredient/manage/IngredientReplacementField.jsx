@@ -84,7 +84,7 @@ export function IngredientReplacementField({
             : previewError
               ? `영향 범위를 확인하지 못했습니다: ${previewError}`
               : preview
-                ? `저장하면 레시피 ${preview.menuRecipeCount}개 · 세트/그룹 ${preview.recipeGroupCount}개 · 엣지/도우 ${preview.edgeCount}개가 자동으로 재연결됩니다.`
+                ? `저장하면 레시피 ${preview.menuRecipeCount}개 · 세트/그룹 ${preview.recipeGroupCount}개 · 엣지/도우 ${preview.edgeCount}개 · 추가토핑 ${preview.toppingCount}개가 자동으로 재연결됩니다.`
                 : null}
         </div>
       )}
