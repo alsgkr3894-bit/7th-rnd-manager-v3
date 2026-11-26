@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
 import { toppingComponentChangesForIngredient } from '@/lib/cost/topping/rows';
 
@@ -113,7 +113,7 @@ function ToppingCostRow({
         {row.component?.unit || '—'}
       </td>
       <td style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'right' }}>
-        {row.unitPrice != null ? `${formatNumber(row.unitPrice)}원` : '—'}
+        {formatUnitPrice(row.unitPrice) ?? '—'}
       </td>
       <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCost(row.cost)}</td>
       <InlineEditCell

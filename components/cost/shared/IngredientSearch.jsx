@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 export function IngredientSearch({
@@ -159,10 +159,7 @@ export function IngredientSearch({
               >
                 <span style={{ fontFamily: 'monospace' }}>{m.productCode || '수동입력'}</span>
                 {info?.unitPrice != null ? (
-                  <span>
-                    {info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}
-                    원/{info.baseUnitType}
-                  </span>
+                  <span>{formatUnitPrice(info.unitPrice, info.baseUnitType)}</span>
                 ) : (
                   <span style={{ color: '#f59e0b' }}>단가미등록</span>
                 )}

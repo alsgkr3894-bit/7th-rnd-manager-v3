@@ -3,7 +3,7 @@ import { countIngredientPhotos, getPrimaryIngredientPhoto, sortHashTags } from '
 import { getIngredientPackagePrice } from '@/lib/ingredient/price-status';
 import { allergenText, originText } from '@/lib/ingredient/origin-allergen-text';
 import { roundUnitPrice } from '@/lib/cost/unit-policy';
-import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asFiniteNumber, asStringArray } from '@/lib/ui/prop-guards';
 
 /**
  * 일괄 삭제 가능한 행인지 — 수동으로 등록했고(isManual) 실제 레코드(id)가 있고 제품코드가
@@ -29,10 +29,9 @@ export function buildManageRowModel(rawRow = {}) {
       : salesUnit;
   const priceWithTax = getIngredientPackagePrice(r);
   const isPieceUnit = baseUnitType === '개';
-  const unitPrice = Number.isFinite(Number(r.unitPrice)) ? Number(r.unitPrice) : null;
-  const pieceWeightGrams = Number.isFinite(Number(r.pieceWeightGrams))
-    ? Number(r.pieceWeightGrams)
-    : null;
+  // Number(null)은 0이라, 값이 없는 칸이 "0원·0g"으로 보이지 않게 null을 지킨다.
+  const unitPrice = asFiniteNumber(r.unitPrice, null);
+  const pieceWeightGrams = asFiniteNumber(r.pieceWeightGrams, null);
   // unitPrice는 baseUnitType이 '개'일 때 이미 "1개당 원가"다(calcUnitPrice가 baseQuantity로 나눔) —
   // 여기에 1개당 g을 더 나누면 g당 환산 원가가 나온다.
   const perGramPrice =

@@ -1,4 +1,4 @@
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatUnitPrice } from '@/lib/format';
 
 export function ManageRowPriceCell({
   priceWithTax,
@@ -26,9 +26,9 @@ export function ManageRowPriceCell({
       )}
       {showPieceInfo && (
         <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)', marginTop: 2 }}>
-          1개당 {formatNumber(unitPrice)}원
+          1개당 {formatUnitPrice(unitPrice)}
           {pieceWeightGrams != null && ` · ${formatNumber(pieceWeightGrams)}g`}
-          {perGramPrice != null && ` (g당 ${formatNumber(perGramPrice)}원)`}
+          {perGramPrice != null && ` (g당 ${formatUnitPrice(perGramPrice)})`}
         </div>
       )}
     </td>

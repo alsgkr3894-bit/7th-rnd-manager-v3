@@ -128,6 +128,6 @@ describe('1개당 g 필드가 저장 경로·폼·표시에 배선돼 있다', (
   test('ManageRowPriceCell이 개당 정보를 보조로 렌더한다', () => {
     const cellSrc = src('components/ingredient/manage-row/ManageRowPriceCell.jsx');
     expect(cellSrc).toContain('showPieceInfo');
-    expect(cellSrc).toContain('1개당 {formatNumber(unitPrice)}원');
+    expect(cellSrc).toContain('1개당 {formatUnitPrice(unitPrice)}');
   });
 });

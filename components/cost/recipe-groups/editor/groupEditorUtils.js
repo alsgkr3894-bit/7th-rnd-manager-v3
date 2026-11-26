@@ -1,4 +1,4 @@
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatUnitPrice as formatUnitPriceText } from '@/lib/format';
 import { MENU_CATEGORIES } from '@/lib/recipe';
 
 export const GROUP_EDITOR_CATEGORIES = [...new Set([...MENU_CATEGORIES, '기타'])];
@@ -44,8 +44,7 @@ export function getLineSubtotal(line, sizeLabel, unitPriceMap) {
 }
 
 export function formatUnitPrice(unitPrice) {
-  if (unitPrice == null) return '—';
-  return `${unitPrice < 1 ? unitPrice.toFixed(2) : formatNumber(unitPrice)}원`;
+  return formatUnitPriceText(unitPrice) ?? '—';
 }
 
 export function formatSubtotal(subtotal) {

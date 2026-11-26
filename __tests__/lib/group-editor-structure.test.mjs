@@ -117,7 +117,7 @@ describe('group editor structure', () => {
     expect(getLineSubtotal(ingredients[1], 'L', unitPriceMap)).toBe(-1.5);
     expect(getLineSubtotal(ingredients[2], 'L', unitPriceMap)).toBeNull();
     expect(formatUnitPrice(0.75)).toBe('0.75원');
-    expect(formatUnitPrice(2.5)).toBe('3원');
+    expect(formatUnitPrice(2.5)).toBe('2.5원');
     expect(formatUnitPrice(null)).toBe('—');
     expect(formatSubtotal(-1.5)).toBe('-2원');
     expect(formatSubtotal(null)).toBe('—');
