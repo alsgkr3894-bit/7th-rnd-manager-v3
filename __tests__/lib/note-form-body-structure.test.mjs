@@ -138,7 +138,7 @@ describe('note form body structure', () => {
     expect(cloneSource).toContain('제목과 차수만');
     expect(photoSource).toContain('export function NotePhotoSection');
     expect(photoSource).toContain('MAX_NOTE_PHOTOS');
-    expect(photoSource).toContain('resizePhoto');
+    expect(photoSource).toContain('usePhotoResize');
     expect(photoSource).toContain('clipboardImageFiles');
     expect(photoSource).toContain('UPLOAD_MAX_MB.photo');
     expect(photoSource).toContain('checkFileSize(file, UPLOAD_MAX_MB.photo)');
@@ -181,11 +181,11 @@ describe('note form body structure', () => {
   });
 
   test('note photo upload keeps unsupported files out before resize', () => {
-    expect(photoSource).toContain('import { isSupportedImageFile, resizePhoto }');
+    expect(photoSource).toContain('import { isSupportedImageFile }');
     expect(photoSource).toContain('accept="image/*"');
     expect(photoSource).toContain('allFiles.filter(isSupportedImageFile)');
     expect(photoSource).toContain("showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn')");
-    expect(photoSource).toContain('Promise.allSettled(targets.map(file => resizePhoto(file)))');
+    expect(photoSource).toContain('await resize(targets)');
     expect(photoSource).toContain("event.target.value = '';");
     expect(clipboardSource).toContain('item.getAsFile()');
     expect(clipboardSource).toContain('new File([file]');

@@ -1,4 +1,5 @@
 import { Icon } from '@/components/icons';
+import { PhotoResizeStatus } from '@/components/note/PhotoResizeStatus';
 
 export function SamplePhotoCard({
   photos,
@@ -11,6 +12,8 @@ export function SamplePhotoCard({
   maxPhotoMb = 20,
   onCaptionChange,
   readOnly = false,
+  progress = null,
+  onCancelResize,
 }) {
   return (
     <div className="card" onPaste={onPaste}>
@@ -66,6 +69,8 @@ export function SamplePhotoCard({
           event.target.value = '';
         }}
       />
+
+      <PhotoResizeStatus progress={progress} onCancel={onCancelResize} />
 
       {photos.length > 0 && (
         <div

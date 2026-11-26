@@ -8,7 +8,8 @@ import {
   sampleIngredientGroupName,
 } from '@/lib/sample';
 import { initDB } from '@/lib/db';
-import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
+import { isSupportedImageFile } from '@/lib/image/resize';
+import { usePhotoResize } from '@/hooks/usePhotoResize';
 import { clipboardImageFiles } from '@/lib/image/clipboard';
 import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -50,6 +51,7 @@ export function SampleFormBody({ form, setForm, readOnly = false, showRecordType
   const fileInputRef = useRef(null);
   const productSearchTimerRef = useRef(null);
   const formPhotosRef = useRef([]);
+  const { progress, resize, cancel, reservedCount } = usePhotoResize();
   const [allTags, setAllTags] = useState([]);
   const [catOptions, setCatOptions] = useState(SAMPLE_CATEGORIES);
   const [ingredientGroupOptions, setIngredientGroupOptions] = useState([]);
@@ -171,7 +173,7 @@ export function SampleFormBody({ form, setForm, readOnly = false, showRecordType
   async function handleFiles(files) {
     if (readOnly) return;
     const current = formPhotosRef.current;
-    const slots = MAX_PHOTOS - current.length;
+    const slots = MAX_PHOTOS - current.length - reservedCount();
     if (slots <= 0) {
       showToast(`사진은 최대 ${MAX_PHOTOS}장까지만 등록할 수 있어요`, 'warn');
       return;
@@ -192,14 +194,23 @@ export function SampleFormBody({ form, setForm, readOnly = false, showRecordType
       }
       toAdd.push(file);
     }
-    const settled = await Promise.allSettled(toAdd.map(resizePhoto));
+    if (toAdd.length === 0) return;
+    const { cancelled, left, settled } = await resize(toAdd);
+    if (left) return;
+    if (cancelled) {
+      showToast('사진 추가를 취소했어요', 'warn');
+      return;
+    }
     const resized = [];
     const failed = [];
     settled.forEach((res, i) => {
       if (res.status === 'fulfilled') resized.push(res.value);
-      else failed.push(toAdd[i].name);
+      else failed.push(`${toAdd[i].name} (${res.reason?.message || '변환 실패'})`);
     });
-    if (resized.length) upd('photos', [...formPhotosRef.current, ...resized]);
+    if (resized.length) {
+      formPhotosRef.current = [...formPhotosRef.current, ...resized];
+      upd('photos', formPhotosRef.current);
+    }
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
@@ -344,6 +355,8 @@ export function SampleFormBody({ form, setForm, readOnly = false, showRecordType
             upd('photos', updated);
           }}
           readOnly={readOnly}
+          progress={progress}
+          onCancelResize={cancel}
         />
       </div>
     </div>

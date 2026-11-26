@@ -2,7 +2,9 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
+import { isSupportedImageFile } from '@/lib/image/resize';
+import { usePhotoResize } from '@/hooks/usePhotoResize';
+import { PhotoResizeStatus } from '@/components/note/PhotoResizeStatus';
 import { clipboardImageFiles } from '@/lib/image/clipboard';
 import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 
@@ -20,6 +22,7 @@ export function NotePhotoSection({ photos = [], onChange, disabled = false }) {
   // 비동기 리사이즈 완료 시점의 최신 photos를 읽기 위한 ref (연속 붙여넣기 스냅샷 경쟁 완화).
   const photosRef = useRef(safePhotos);
   photosRef.current = safePhotos;
+  const { progress, resize, cancel, reservedCount } = usePhotoResize();
 
   async function addFiles(files) {
     const allFiles = files ? Array.from(files) : [];
@@ -27,7 +30,7 @@ export function NotePhotoSection({ photos = [], onChange, disabled = false }) {
     const rejected = allFiles.length - imageFiles.length;
     if (rejected > 0) showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn');
 
-    const remaining = MAX_NOTE_PHOTOS - photosRef.current.length;
+    const remaining = MAX_NOTE_PHOTOS - photosRef.current.length - reservedCount();
     if (remaining <= 0) {
       showToast(`사진은 최대 ${MAX_NOTE_PHOTOS}장까지 추가할 수 있습니다`, 'warn');
       return;
@@ -43,15 +46,23 @@ export function NotePhotoSection({ photos = [], onChange, disabled = false }) {
       targets.push(file);
     }
     if (targets.length === 0) return;
-    const settled = await Promise.allSettled(targets.map(file => resizePhoto(file)));
+    const { cancelled, left, settled } = await resize(targets);
+    if (left) return;
+    if (cancelled) {
+      showToast('사진 추가를 취소했어요', 'warn');
+      return;
+    }
     const resized = [];
     const failed = [];
     const uploadedAt = new Date().toISOString();
     settled.forEach((result, index) => {
       if (result.status === 'fulfilled') resized.push({ ...result.value, caption: '', uploadedAt });
-      else failed.push(targets[index].name);
+      else failed.push(`${targets[index].name} (${result.reason?.message || '변환 실패'})`);
     });
-    if (resized.length) change([...photosRef.current, ...resized]);
+    if (resized.length) {
+      photosRef.current = [...photosRef.current, ...resized];
+      change(photosRef.current);
+    }
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
@@ -148,6 +159,8 @@ export function NotePhotoSection({ photos = [], onChange, disabled = false }) {
           {UPLOAD_MAX_MB.photo}MB 이하
         </div>
       )}
+
+      <PhotoResizeStatus progress={progress} onCancel={cancel} />
 
       {safePhotos.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

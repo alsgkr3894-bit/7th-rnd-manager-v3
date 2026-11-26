@@ -81,7 +81,7 @@ describe('sample form body structure', () => {
     expect(formSource.indexOf('checkFileSize(file, UPLOAD_MAX_MB.photo)')).toBeLessThan(
       formSource.indexOf('toAdd.push(file)')
     );
-    expect(formSource).toContain('Promise.allSettled(toAdd.map(resizePhoto))');
+    expect(formSource).toContain('await resize(toAdd)');
     expect(photoSource).toContain('disabled={readOnly}');
     expect(photoSource).toContain('if (readOnly) return;');
     expect(photoSource).toContain("event.target.value = '';");
