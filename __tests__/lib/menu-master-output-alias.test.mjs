@@ -47,6 +47,41 @@ describe('buildOutputAliasMap', () => {
   });
 });
 
+describe('단종 대표 메뉴 연결', () => {
+  const rows = (repStatus, variantStatus) => [
+    { menuCode: 'A', menuName: '대표', category: '사이드', status: repStatus },
+    {
+      menuCode: 'B',
+      menuName: '변형',
+      category: '사이드',
+      status: variantStatus,
+      outputMenuCode: 'A',
+    },
+  ];
+
+  test('판매 중인 변형은 단종 대표에 접지 않아 자기 행으로 출력된다', () => {
+    const list = rows('discontinued', 'active');
+    const map = buildOutputAliasMap(list);
+    expect(map.size).toBe(0);
+    expect(dropOutputVariants(list, map).map(m => m.menuCode)).toEqual(['A', 'B']);
+  });
+
+  test('대표가 판매 중이거나 둘 다 단종이면 그대로 접는다', () => {
+    expect(buildOutputAliasMap(rows('active', 'active')).get('B').menuCode).toBe('A');
+    expect(buildOutputAliasMap(rows('discontinued', 'discontinued')).get('B').menuCode).toBe('A');
+  });
+
+  test('두 단계 연결의 마지막이 단종이면 판매 중인 중간 대표를 쓴다', () => {
+    const map = buildOutputAliasMap([
+      { menuCode: 'A', menuName: '끝', status: 'discontinued' },
+      { menuCode: 'B', menuName: '중간', outputMenuCode: 'A' },
+      { menuCode: 'C', menuName: '변형', outputMenuCode: 'B' },
+    ]);
+    expect(map.get('C').menuCode).toBe('B');
+    expect(map.has('B')).toBe(false);
+  });
+});
+
 describe('foldIngredientToMenus', () => {
   test('변형 코드의 재료 연결을 대표 메뉴로 접는다(알레르기·원산지 합집합의 근거)', () => {
     const map = buildOutputAliasMap(masters);
@@ -116,10 +151,13 @@ describe('mergeLabelMenuRefs (전 품목 표 출력)', () => {
   });
 
   test('피자 L/R은 베이스 코드 한 행으로 합친다', () => {
-    const rows = mergeLabelMenuRefs([], [
-      { menuCode: 'P-OR-001-L', menuName: '콤보 피자 L', category: '피자', size: 'L' },
-      { menuCode: 'P-OR-001-R', menuName: '콤보 피자 R', category: '피자', size: 'R' },
-    ]);
+    const rows = mergeLabelMenuRefs(
+      [],
+      [
+        { menuCode: 'P-OR-001-L', menuName: '콤보 피자 L', category: '피자', size: 'L' },
+        { menuCode: 'P-OR-001-R', menuName: '콤보 피자 R', category: '피자', size: 'R' },
+      ]
+    );
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ menuCode: 'P-OR-001', menuName: '콤보 피자' });
