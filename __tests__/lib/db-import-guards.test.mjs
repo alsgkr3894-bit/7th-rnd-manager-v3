@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
-import { replaceStoresInDbTransaction, writeStoresInDbTransaction } from '../../lib/db/backup.js';
+import {
+  WRITE_CHUNK_SIZE,
+  replaceStoresInDbTransaction,
+  writeStoresInDbTransaction,
+} from '../../lib/db/backup.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -172,6 +176,52 @@ describe('importAll 구조 방어', () => {
       { id: 10, fileId: 1 },
       { id: 20, fileId: 2 },
     ]);
+  });
+
+  // 2026-11-26: 요청을 한꺼번에 넣으면 복원 중 새로고침 뒤 수 분 동안 DB 읽기가 막혔다.
+  test('많은 행은 앞 묶음이 끝난 뒤에 나눠 넣고, 같은 트랜잭션에서 모두 적용한다', async () => {
+    const rows = Array.from({ length: WRITE_CHUNK_SIZE * 2 + 10 }, (_, i) => ({ id: i }));
+    const queuedPerTurn = [];
+    const queuedStores = [];
+    let written = 0;
+    let transactions = 0;
+    const db = {
+      transaction() {
+        transactions += 1;
+        const tx = { abort() {} };
+        const request = () => {
+          const req = {};
+          // 실제 IDB처럼 요청 완료는 다음 차례에 알린다
+          setImmediate(() => req.onsuccess?.());
+          return req;
+        };
+        tx.objectStore = () => ({
+          clear: request,
+          put: () => {
+            written += 1;
+            return request();
+          },
+        });
+        const watch = () => {
+          queuedPerTurn.push(written);
+          if (written < rows.length) setImmediate(watch);
+          else setImmediate(() => setImmediate(() => tx.oncomplete()));
+        };
+        queueMicrotask(watch);
+        return tx;
+      },
+    };
+
+    const result = await writeStoresInDbTransaction(db, [['sales_rows', rows]], {
+      syncToServer: false,
+      onStoreQueued: name => queuedStores.push(name),
+    });
+
+    expect(result).toEqual({ sales_rows: rows.length });
+    expect(transactions).toBe(1);
+    expect(queuedStores).toEqual(['sales_rows']);
+    // 첫 차례에는 한 묶음(clear 포함)만 들어가 있다
+    expect(queuedPerTurn[0]).toBe(WRITE_CHUNK_SIZE - 1);
   });
 
   test('clear 기본값은 true라 기존 동작과 같다', async () => {
