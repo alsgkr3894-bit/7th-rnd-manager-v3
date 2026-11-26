@@ -35,20 +35,21 @@ describe('getAll 동시 조회 병합', () => {
     db.transaction.mockClear();
   });
 
-  test('동일 저장소의 진행 중인 요청을 공유하고 완료 후에는 새로 조회한다', async () => {
+  test('동일 저장소의 진행 중인 요청을 공유하고, 변경을 추적하지 않는 연결은 다시 조회한다', async () => {
     const first = getAll('cost_ingredients');
     const second = getAll('cost_ingredients');
 
-    expect(first).toBe(second);
     expect(getAllMock).toHaveBeenCalledTimes(1);
 
     requests[0].result = [{ id: 1 }];
     requests[0].onsuccess();
-    await expect(first).resolves.toEqual([{ id: 1 }]);
-    await Promise.resolve();
+    const [a, b] = await Promise.all([first, second]);
+    expect(a).toEqual([{ id: 1 }]);
+    expect(b).toEqual(a);
+    // 한쪽이 받은 값을 고쳐도 다른 쪽에 번지지 않는다
+    expect(b).not.toBe(a);
 
     const third = getAll('cost_ingredients');
-    expect(third).not.toBe(first);
     expect(getAllMock).toHaveBeenCalledTimes(2);
     requests[1].result = [{ id: 2 }];
     requests[1].onsuccess();
