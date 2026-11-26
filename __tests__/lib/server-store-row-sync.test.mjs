@@ -6,6 +6,19 @@ import {
 } from '../../lib/server/store-row-sync.js';
 import { LAN_EXCLUDED_STORE_NAMES } from '../../lib/server/sensitive-stores.js';
 
+// 한 INSERT에 묶인 행을 다시 꺼낸다(행마다 값 9개, 시각은 SQL에 직접 들어간다)
+const insertedRows = sql => {
+  const rows = [];
+  for (let i = 0; i < sql.values.length; i += 9) {
+    const [, brandId, storeName, scope, recordKey, legacyNumericId, json, dataHash, source] =
+      sql.values.slice(i, i + 9);
+    const data = JSON.parse(json);
+    rows.push({ brandId, storeName, scope, recordKey, legacyNumericId, data, dataHash });
+    rows.at(-1).sourceBackupId = source;
+  }
+  return rows;
+};
+
 describe('server store row sync', () => {
   test('normalizes shared stores into the main brand', () => {
     const [operation] = normalizeStoreRowOperations({
@@ -40,8 +53,8 @@ describe('server store row sync', () => {
           return null;
         },
         deleteMany: async args => calls.push(['storeRow.deleteMany', args]),
-        upsert: async args => calls.push(['storeRow.upsert', args]),
       },
+      $executeRaw: async sql => calls.push(['insert', sql]),
     };
     const prisma = {
       $transaction: async work => work(tx),
@@ -65,13 +78,25 @@ describe('server store row sync', () => {
     expect(calls.map(([name]) => name)).toEqual([
       'brand.upsert',
       'storeRow.deleteMany',
-      'storeRow.upsert',
+      'insert',
       'storeRow.deleteMany',
     ]);
-    expect(calls[2][1].where.brandId_storeName_recordKey).toEqual({
+    expect(insertedRows(calls[2][1])).toEqual([
+      expect.objectContaining({
+        brandId: 'china4',
+        storeName: 'cost_ingredients',
+        scope: 'BRAND',
+        recordKey: '7',
+        legacyNumericId: 7,
+        data: { id: 7, ingredientName: 'Cheese' },
+        sourceBackupId: null,
+      }),
+    ]);
+    expect(calls[2][1].text).toContain('ON CONFLICT ("brand_id", "store_name", "record_key")');
+    expect(calls[3][1].where).toEqual({
       brandId: 'china4',
       storeName: 'cost_ingredients',
-      recordKey: '7',
+      recordKey: { in: ['6'] },
     });
   });
 
@@ -102,16 +127,9 @@ describe('server store row sync', () => {
           };
         },
         deleteMany: async () => {},
-        upsert: async args => {
-          const unique = args.where.brandId_storeName_recordKey;
-          state.set(keyOf(unique), {
-            ...args.create,
-            ...args.update,
-            brandId: unique.brandId,
-            storeName: unique.storeName,
-            recordKey: unique.recordKey,
-          });
-        },
+      },
+      $executeRaw: async sql => {
+        for (const row of insertedRows(sql)) state.set(keyOf(row), row);
       },
     };
     const prisma = {
@@ -196,7 +214,9 @@ describe('같은 작업을 다시 받아도 한 번만 적용한다', () => {
       storeRow: {
         findUnique: async () => null,
         deleteMany: async args => applied.push(['delete', args.where.recordKey ?? '*']),
-        upsert: async args => applied.push(['upsert', args.create.recordKey]),
+      },
+      $executeRaw: async sql => {
+        for (const row of insertedRows(sql)) applied.push(['upsert', row.recordKey]);
       },
       serverSetting: {
         createManyAndReturn: async ({ data, skipDuplicates }) => {
@@ -258,5 +278,97 @@ describe('같은 작업을 다시 받아도 한 번만 적용한다', () => {
     expect(() =>
       normalizeStoreRowOperations({ operations: [upsert('x'.repeat(81), '1')] })
     ).toThrow('Invalid opId.');
+  });
+});
+
+describe('묶어서 적용 — 순서와 결과는 하나씩 적용할 때와 같다', () => {
+  function recorder() {
+    const log = [];
+    let options;
+    const tx = {
+      brand: { upsert: async () => {} },
+      storeRow: {
+        findUnique: async () => null,
+        deleteMany: async ({ where }) =>
+          log.push(['delete', where.storeName, where.recordKey?.in ?? '*']),
+      },
+      $executeRaw: async sql => log.push(['insert', insertedRows(sql)]),
+    };
+    const prisma = {
+      $transaction: async (work, given) => {
+        options = given;
+        return work(tx);
+      },
+    };
+    return { prisma, log, options: () => options };
+  }
+  const put = (recordKey, name = 'x', storeName = 'cost_ingredients') => ({
+    type: 'upsert',
+    storeName,
+    recordKey: String(recordKey),
+    data: { id: recordKey, name },
+  });
+  const del = (recordKey, storeName = 'cost_ingredients') => ({
+    type: 'delete',
+    storeName,
+    recordKey: String(recordKey),
+  });
+
+  test('이어지는 저장은 100행씩 한 번에, 중간의 삭제·비우기는 제자리에서 실행한다', async () => {
+    const server = recorder();
+    const operations = [
+      ...Array.from({ length: 150 }, (_, i) => put(i + 1)),
+      del(1),
+      del(2),
+      del(3, 'menu_master'),
+      { type: 'clear', storeName: 'price_rows' },
+      put(9, 'y', 'price_rows'),
+      put(4, 'z', 'menu_master'),
+    ];
+
+    const result = await applyStoreRowOperations(server.prisma, { operations });
+
+    expect(
+      server.log.map(([kind, a, b]) => (kind === 'insert' ? [kind, a.length] : [kind, a, b]))
+    ).toEqual([
+      ['insert', 100],
+      ['insert', 50],
+      ['delete', 'cost_ingredients', ['1', '2']],
+      ['delete', 'menu_master', ['3']],
+      ['delete', 'price_rows', '*'],
+      ['insert', 2],
+    ]);
+    expect(result).toMatchObject({ applied: 156, upserted: 152, deleted: 3, cleared: 1 });
+    expect(server.options()).toEqual({ maxWait: 10_000, timeout: 30_000 });
+  });
+
+  test('같은 행을 여러 번 저장하면 마지막 값만 넣는다', async () => {
+    const server = recorder();
+    await applyStoreRowOperations(server.prisma, {
+      operations: [put(1, '처음'), put(2, '둘'), put(1, '마지막')],
+    });
+
+    expect(server.log).toHaveLength(1);
+    expect(server.log[0][1].map(row => row.data.name)).toEqual(['마지막', '둘']);
+  });
+
+  test('삭제 뒤의 같은 행 저장은 삭제보다 나중에 실행한다', async () => {
+    const server = recorder();
+    await applyStoreRowOperations(server.prisma, {
+      operations: [put(1, '옛'), del(1), put(1, '새')],
+    });
+
+    expect(server.log.map(entry => entry[0])).toEqual(['insert', 'delete', 'insert']);
+    expect(server.log[2][1][0].data.name).toBe('새');
+  });
+
+  test('큰 행은 글자 수 상한에서 나눈다', async () => {
+    const server = recorder();
+    const photo = 'a'.repeat(3 * 1024 * 1024);
+    await applyStoreRowOperations(server.prisma, {
+      operations: [1, 2, 3, 4, 5].map(id => put(id, photo)),
+    });
+
+    expect(server.log.map(entry => entry[1].length)).toEqual([2, 2, 1]);
   });
 });
