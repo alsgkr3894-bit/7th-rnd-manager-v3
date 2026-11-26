@@ -11,6 +11,7 @@ import {
   tempCostRateColor,
   unitPriceFromIngredient,
 } from '../../components/note/temp-cost/tempCostUtils.js';
+import { buildUnitPriceMap } from '../../lib/recipe/index.js';
 
 const mainSource = readFileSync(resolve('components/note/TempCostCalculator.jsx'), 'utf8');
 const searchSource = readFileSync(
@@ -85,11 +86,36 @@ describe('temp cost calculator structure', () => {
     expect(filterTempCostIngredients(ingredients, 'sauce').map(row => row.id)).toEqual([
       'ing-sauce',
     ]);
-    expect(unitPriceFromIngredient(ingredients[0])).toBe('12.5');
+    const priceMap = new Map([['ING-001', { unitPrice: 12.5 }]]);
+    expect(unitPriceFromIngredient(ingredients[0], priceMap)).toBe('12.5');
+    // 포장수량이 없어 단위 단가가 없으면 포장 가격 대신 빈칸
+    expect(
+      unitPriceFromIngredient(
+        { productCode: 'BOX', priceOverride: 12000 },
+        buildUnitPriceMap([{ productCode: 'BOX', priceOverride: 12000 }], new Map())
+      )
+    ).toBe('');
+    // 저장된 식자재에는 제때 단가가 없다 — 최신 가격파일 값을 쓴다
+    expect(
+      unitPriceFromIngredient(
+        { productCode: 'JT', baseQuantity: 1000 },
+        buildUnitPriceMap(
+          [{ productCode: 'JT', baseQuantity: 1000 }],
+          new Map([['JT', { priceWithTax: 8000 }]])
+        )
+      )
+    ).toBe('8');
+    expect(
+      refreshLinkedTempCostRows(
+        [{ id: 'row-0', productCode: 'ING-001', unitPrice: '7' }],
+        ingredients,
+        new Map()
+      )[0].unitPrice
+    ).toBe('7');
 
     jest.spyOn(Date, 'now').mockReturnValue(123456);
-    const firstRow = createTempCostRow(ingredients[0]);
-    const secondRow = createTempCostRow(ingredients[0]);
+    const firstRow = createTempCostRow(ingredients[0], priceMap);
+    const secondRow = createTempCostRow(ingredients[0], priceMap);
     expect(firstRow).toMatchObject({
       ingredientId: 'ing-cheese',
       productCode: 'ING-001',
@@ -103,7 +129,8 @@ describe('temp cost calculator structure', () => {
 
     const refreshed = refreshLinkedTempCostRows(
       [{ id: 'row-1', ingredientId: 'ing-cheese', quantity: '10', unitPrice: '1' }],
-      ingredients
+      ingredients,
+      priceMap
     );
     expect(refreshed[0]).toMatchObject({
       productCode: 'ING-001',

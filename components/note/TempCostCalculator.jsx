@@ -12,6 +12,7 @@ export function TempCostCalculator({ value, onChange }) {
     ingredientSearch,
     showDropdown,
     filteredIngredients,
+    unitPriceMap,
     hasLinkedCostRows,
     summary,
     setIngredientSearch,
@@ -35,6 +36,7 @@ export function TempCostCalculator({ value, onChange }) {
         searchRef={searchRef}
         showDropdown={showDropdown}
         filteredIngredients={filteredIngredients}
+        unitPriceMap={unitPriceMap}
         hasLinkedCostRows={hasLinkedCostRows}
         onSearch={setIngredientSearch}
         onShowDropdown={setShowDropdown}

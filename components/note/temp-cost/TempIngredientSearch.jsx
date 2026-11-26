@@ -2,9 +2,9 @@
 
 import { ingredientName, unitPriceFromIngredient } from './tempCostUtils';
 
-function TempIngredientOption({ ingredient, onAddIngredient }) {
+function TempIngredientOption({ ingredient, unitPriceMap, onAddIngredient }) {
   const name = ingredientName(ingredient);
-  const unitPrice = unitPriceFromIngredient(ingredient);
+  const unitPrice = unitPriceFromIngredient(ingredient, unitPriceMap);
   const numericUnitPrice = unitPrice ? Number(unitPrice) : null;
 
   return (
@@ -58,6 +58,7 @@ export function TempIngredientSearch({
   searchRef,
   showDropdown,
   filteredIngredients,
+  unitPriceMap,
   hasLinkedCostRows,
   onSearch,
   onShowDropdown,
@@ -121,6 +122,7 @@ export function TempIngredientSearch({
               <TempIngredientOption
                 key={ingredient.id}
                 ingredient={ingredient}
+                unitPriceMap={unitPriceMap}
                 onAddIngredient={onAddIngredient}
               />
             ))}

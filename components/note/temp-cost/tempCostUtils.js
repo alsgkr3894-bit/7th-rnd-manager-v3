@@ -1,4 +1,3 @@
-import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { calcCostRate } from '@/lib/cost/rate-color';
 
 const EMPTY_TEMP_COST = { rows: [], sellingPrice: '' };
@@ -44,14 +43,17 @@ export function filterTempCostIngredients(ingredients, search) {
     .slice(0, 8);
 }
 
-export function unitPriceFromIngredient(ingredient) {
-  const baseQty = ingredient?.baseQuantity;
-  const price = ingredient?.priceOverride ?? ingredient?.priceWithTax ?? ingredient?.price ?? null;
-  const unitPrice = calcUnitPrice(price, baseQty);
-  return unitPrice != null ? String(unitPrice) : price ? String(Math.round(price)) : '';
+/**
+ * 원가 화면과 같은 단가 맵(buildUnitPriceMap)의 값을 쓴다. 단가나 포장수량이 없으면 빈칸이다.
+ * 포장 가격을 단위 단가 칸에 넣지 않는다.
+ */
+export function unitPriceFromIngredient(ingredient, unitPriceMap) {
+  const key = ingredient?.productCode || String(ingredient?.id ?? '');
+  const unitPrice = unitPriceMap?.get(key)?.unitPrice;
+  return unitPrice != null ? String(unitPrice) : '';
 }
 
-export function createTempCostRow(ingredient) {
+export function createTempCostRow(ingredient, unitPriceMap) {
   tempCostRowSeq = (tempCostRowSeq + 1) % 100000;
   return {
     id: `${Date.now()}-${tempCostRowSeq}`,
@@ -60,7 +62,7 @@ export function createTempCostRow(ingredient) {
     name: ingredientName(ingredient),
     unit: ingredient?.baseUnitType || 'g',
     quantity: '',
-    unitPrice: unitPriceFromIngredient(ingredient),
+    unitPrice: unitPriceFromIngredient(ingredient, unitPriceMap),
   };
 }
 
@@ -79,7 +81,7 @@ export function hasLinkedTempCostRows(rows) {
   return (Array.isArray(rows) ? rows : []).some(row => row.productCode || row.ingredientId);
 }
 
-export function refreshLinkedTempCostRows(rows, ingredients) {
+export function refreshLinkedTempCostRows(rows, ingredients, unitPriceMap) {
   return (Array.isArray(rows) ? rows : []).map(row => {
     const ingredient = findLinkedIngredient(row, ingredients);
     if (!ingredient) return row;
@@ -90,7 +92,8 @@ export function refreshLinkedTempCostRows(rows, ingredients) {
       productCode: ingredient.productCode || row.productCode || '',
       name: ingredientName(ingredient) || row.name || '',
       unit: ingredient.baseUnitType || row.unit || 'g',
-      unitPrice: unitPriceFromIngredient(ingredient),
+      // 연동 단가를 구할 수 없으면 직접 적어 둔 값을 지우지 않는다.
+      unitPrice: unitPriceFromIngredient(ingredient, unitPriceMap) || row.unitPrice || '',
     };
   });
 }
