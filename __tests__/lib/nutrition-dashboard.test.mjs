@@ -21,7 +21,11 @@ jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
   getAllRawValues: async () => [{ menuCode: 'P-001' }],
 }));
 jest.unstable_mockModule('../../lib/nutrition/values/store.js', () => ({
-  getAllMenuRefs: async () => [{ menuCode: 'P-001' }, { menuCode: 'P-002' }],
+  getAllMenuRefs: async () => [
+    { menuCode: 'P-001' },
+    { menuCode: 'P-002' },
+    { menuCode: 'P-003' }, // 단종
+  ],
   getAllRawValues: async () => [{ menuCode: 'P-001' }],
 }));
 jest.unstable_mockModule('@/lib/ingredient', () => ({
@@ -29,6 +33,14 @@ jest.unstable_mockModule('@/lib/ingredient', () => ({
 }));
 jest.unstable_mockModule('../../lib/ingredient/index.js', () => ({
   getAllIngredients: async () => ingredients,
+}));
+
+jest.unstable_mockModule('../../lib/menu-master/store.js', () => ({
+  getAllMenuMaster: async () => [
+    { menuCode: 'P-001', status: 'active' },
+    { menuCode: 'P-002', status: 'active' },
+    { menuCode: 'P-003-L', status: 'discontinued' },
+  ],
 }));
 
 const { getNutritionDashboard } = await import('../../lib/nutrition/dashboard.js');
@@ -40,7 +52,7 @@ describe('getNutritionDashboard', () => {
     expect(d.originMissing).toBe(1);
   });
 
-  test('영양 입력률은 rawValues에 코드가 있는 메뉴 기준', async () => {
+  test('영양 입력률은 단종을 뺀 메뉴 중 rawValues에 코드가 있는 메뉴 기준', async () => {
     const d = await getNutritionDashboard();
     expect(d.menuCount).toBe(2);
     expect(d.nutritionDone).toBe(1);
