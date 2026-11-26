@@ -178,8 +178,8 @@ describe('runServerRepush', () => {
       ['menu_master', '1201', { brandId: 'main', persist: false }],
       ['menu_master', '1202', { brandId: 'main', persist: false }],
     ]);
-    // 청크(500)마다 + 삭제 뒤 한 번 → 3 + 1
-    expect(drainServerStoreSyncQueue).toHaveBeenCalledTimes(4);
+    // 청크(100)마다 + 삭제 뒤 한 번 → 12 + 1
+    expect(drainServerStoreSyncQueue).toHaveBeenCalledTimes(13);
     expect(result).toMatchObject({ sentRows: 1200, deletedRows: 2, rejectedRows: 0 });
     expect(progress.at(-1).phase).toBe('done');
   });
