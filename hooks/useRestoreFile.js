@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
-import { readFileAsText } from '@/lib/download';
+import { parseBackupBlob } from '@/lib/backup/file-format';
 import { validateBackupPayload } from '@/lib/backup/validation';
 import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
 
@@ -11,7 +11,7 @@ export function useRestoreFile({ onReset } = {}) {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const extErr = checkFileExt(file, UPLOAD_EXT.json);
+    const extErr = checkFileExt(file, UPLOAD_EXT.backup);
     if (extErr) {
       showToast(extErr, 'error');
       return;
@@ -24,8 +24,7 @@ export function useRestoreFile({ onReset } = {}) {
     setParsed(null);
     onReset?.();
     try {
-      const text = await readFileAsText(file, UPLOAD_EXT.json);
-      const data = JSON.parse(text);
+      const data = await parseBackupBlob(file);
       const { backup, summary } = validateBackupPayload(data);
       if (summary.versionMismatch) {
         showToast(

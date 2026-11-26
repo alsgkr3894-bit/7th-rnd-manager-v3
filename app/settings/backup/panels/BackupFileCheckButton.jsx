@@ -10,7 +10,7 @@ export function BackupFileCheckButton({ checking, onCheckFile }) {
       {checking ? '확인 중…' : '저장한 파일 확인'}
       <input
         type="file"
-        accept=".json,application/json"
+        accept=".gz,.json,application/gzip,application/json"
         onChange={onCheckFile}
         disabled={checking}
         style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}

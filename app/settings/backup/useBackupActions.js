@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { showToast } from '@/components/Toast';
 import { logBackupCreate } from '@/lib/change-log';
 import { exportSelected } from '@/lib/db';
-import { downloadJson, makeFileName } from '@/lib/download';
+import { downloadBackup, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
 
@@ -46,13 +46,13 @@ export function useBackupActions({
           },
         }
       );
-      const fileName = makeFileName('7번가시스템백업', 'json');
+      const fileName = makeFileName('7번가시스템백업', 'gz');
       setBackupProgress({
         label: '파일 다운로드 준비 중',
         current: Math.max(selectedStores.length, 1),
         total: Math.max(selectedStores.length, 1),
       });
-      downloadJson(data, fileName);
+      await downloadBackup(data, fileName);
       const recorded = addEntry({
         scopes: selectedKeys,
         totalRows: selectedRows,

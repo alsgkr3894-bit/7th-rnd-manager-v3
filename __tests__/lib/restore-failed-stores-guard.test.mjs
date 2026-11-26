@@ -26,11 +26,11 @@ describe('restore failedStores guard', () => {
     // failedStores 파싱·toast 노출은 useRestoreFile 훅에서 처리
     expect(restoreFileHook).toContain('summary.failedStores');
     expect(restoreFileHook).toContain('UPLOAD_EXT');
-    expect(restoreFileHook).toContain('checkFileExt(file, UPLOAD_EXT.json)');
-    expect(restoreFileHook.indexOf('checkFileExt(file, UPLOAD_EXT.json)')).toBeLessThan(
+    expect(restoreFileHook).toContain('checkFileExt(file, UPLOAD_EXT.backup)');
+    expect(restoreFileHook.indexOf('checkFileExt(file, UPLOAD_EXT.backup)')).toBeLessThan(
       restoreFileHook.indexOf('checkFileSize(file, UPLOAD_MAX_MB.backup)')
     );
-    expect(restoreFileHook).toContain('readFileAsText(file, UPLOAD_EXT.json)');
+    expect(restoreFileHook).toContain('parseBackupBlob(file)');
     expect(restorePage).toContain('allowFailedStoreRestore');
     expect(restorePage).toContain('위험 승인 체크가 필요합니다');
     expect(restorePage).toContain('setBackupFailed(false)');

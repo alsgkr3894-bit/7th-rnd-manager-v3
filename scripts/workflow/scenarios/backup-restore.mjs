@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { openAsBlob, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parseBackupBlob } from '../../../lib/backup/file-format.js';
 import { isValidBackupShape } from '../../workflow-qa-utils.mjs';
 import { dbDeleteById, dbInsertOne, goto, MAIN_DB, step } from '../helpers.mjs';
 
@@ -26,12 +27,12 @@ export async function scenarioBackupRestorePreview({ page, base, tmpDir }) {
       page.waitForEvent('download', { timeout: 20_000 }),
       page.getByRole('button', { name: '백업 파일 다운로드' }).click(),
     ]);
-    downloadPath = join(tmpDir, 'workflow-backup.json');
+    downloadPath = join(tmpDir, 'workflow-backup.gz');
     await download.saveAs(downloadPath);
   });
 
   await step(steps, '다운로드 파일이 유효한 v3 백업 형태', async () => {
-    const parsed = JSON.parse(readFileSync(downloadPath, 'utf8'));
+    const parsed = await parseBackupBlob(await openAsBlob(downloadPath));
     if (!isValidBackupShape(parsed)) throw new Error('stores 객체가 없는 백업 파일');
   });
 
@@ -124,9 +125,9 @@ export async function scenarioBackupRestoreExecute({ page, base, tmpDir, runId }
       page.waitForEvent('download', { timeout: 20_000 }),
       page.getByRole('button', { name: '백업 파일 다운로드' }).click(),
     ]);
-    backupPath = join(tmpDir, 'workflow-restore-execute.json');
+    backupPath = join(tmpDir, 'workflow-restore-execute.gz');
     await download.saveAs(backupPath);
-    const parsed = JSON.parse(readFileSync(backupPath, 'utf8'));
+    const parsed = await parseBackupBlob(await openAsBlob(backupPath));
     if (!isValidBackupShape(parsed)) throw new Error('stores 객체가 없는 백업 파일');
     const backedUp = parsed.stores?.menu_master?.some(row => row?.menuCode === menuCode);
     if (!backedUp) throw new Error('백업 파일에 테스트 메뉴가 없음');

@@ -16,7 +16,8 @@ import { validateBackupPayload } from '@/lib/backup/validation';
 import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
-import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
+import { downloadBackup, makeFileName } from '@/lib/download';
+import { parseBackupBlob } from '@/lib/backup/file-format';
 import { formatNumber } from '@/lib/format';
 import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
 import { countRows } from './brandUtils';
@@ -140,8 +141,8 @@ export function useBrandActions({
         },
         { includeLocalStorage: false }
       );
-      const fileName = makeFileName(`${brand.name}_브랜드백업`, 'json');
-      downloadJson(data, fileName);
+      const fileName = makeFileName(`${brand.name}_브랜드백업`, 'gz');
+      await downloadBackup(data, fileName);
       addEntry({
         scopes: MODULE_KEYS,
         totalRows: countRows(data.stores),
@@ -177,7 +178,7 @@ export function useBrandActions({
 
     setBusyBrandId(target.id);
     try {
-      const extErr = checkFileExt(file, UPLOAD_EXT.json);
+      const extErr = checkFileExt(file, UPLOAD_EXT.backup);
       if (extErr) {
         showToast(extErr, 'error');
         return;
@@ -187,15 +188,11 @@ export function useBrandActions({
         showToast(sizeErr, 'error');
         return;
       }
-      const text = await readFileAsText(file, UPLOAD_EXT.json);
       let raw;
       try {
-        raw = JSON.parse(text);
-      } catch {
-        showToast(
-          '잘못된 JSON 형식입니다 — 백업 파일이 손상되었거나 완전히 다운로드되지 않았습니다.',
-          'error'
-        );
+        raw = await parseBackupBlob(file);
+      } catch (err) {
+        showToast(err.message, 'error');
         return;
       }
       const { backup, summary } = validateBackupPayload(raw);
@@ -292,8 +289,8 @@ export function useBrandActions({
         },
         { includeLocalStorage: false }
       );
-      const beforeFileName = makeFileName(`${target.name}_복원전자동백업`, 'json');
-      downloadJson(before, beforeFileName);
+      const beforeFileName = makeFileName(`${target.name}_복원전자동백업`, 'gz');
+      await downloadBackup(before, beforeFileName);
 
       const result = await importAllToBrand(backup, target.id, {
         fileName: file.name,

@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { importAll, MODULE_KEYS, storesForScopes, collectStoreStats, exportAll } from '@/lib/db';
 import { useDBLoad } from '@/hooks/useDBLoad';
-import { downloadJson, makeFileName } from '@/lib/download';
+import { downloadBackup, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
 import { pickRestoreStores } from '@/lib/backup/restore-impact';
@@ -113,8 +113,8 @@ export default function Page() {
             total: Math.max(selectedStores.length, 1),
           });
           const backup = await exportAll();
-          const fileName = makeFileName('복원용임시백업파일', 'json');
-          downloadJson(backup, fileName);
+          const fileName = makeFileName('복원용임시백업파일', 'gz');
+          await downloadBackup(backup, fileName);
           safetyBackupFileName = fileName;
           addEntry({
             scopes: MODULE_KEYS,
@@ -308,14 +308,14 @@ export default function Page() {
           <input
             ref={fileRef}
             type="file"
-            aria-label="복원 백업 JSON 파일 선택"
-            accept=".json,application/json"
+            aria-label="복원 백업 파일 선택"
+            accept=".gz,.json,application/gzip,application/json"
             onChange={handleFile}
             disabled={busy || !canRestore}
             style={{ fontSize: 13 }}
           />
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
-            이전에 다운로드한 v3 백업 JSON 파일을 선택하세요.
+            이전에 다운로드한 백업 파일(.gz 또는 예전 .json)을 선택하세요.
             {!ready && <span style={{ color: 'var(--accent)', marginLeft: 6 }}>DB 초기화 중…</span>}
           </p>
         </div>

@@ -16,12 +16,12 @@ describe('brand restore preview guards', () => {
     expect(source).toContain('브랜드 복원에서는 브라우저 설정값을 적용하지 않습니다');
     expect(source).toContain('불완전 백업 위험 승인');
     expect(source).toContain('누락 감수하고 복원');
-    expect(source).toContain('checkFileExt(file, UPLOAD_EXT.json)');
+    expect(source).toContain('checkFileExt(file, UPLOAD_EXT.backup)');
     expect(source).toContain('checkFileSize(file, UPLOAD_MAX_MB.backup)');
-    expect(source.indexOf('checkFileExt(file, UPLOAD_EXT.json)')).toBeLessThan(
+    expect(source.indexOf('checkFileExt(file, UPLOAD_EXT.backup)')).toBeLessThan(
       source.indexOf('checkFileSize(file, UPLOAD_MAX_MB.backup)')
     );
-    expect(source).toContain('readFileAsText(file, UPLOAD_EXT.json)');
+    expect(source).toContain('parseBackupBlob(file)');
   });
 
   test('브랜드 복원은 공유 store 보호 skip을 실제 오류와 분리한다', () => {

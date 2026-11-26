@@ -89,7 +89,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['설정 / 백업', '데이터 백업']}
         title="데이터 백업"
-        sub="원하는 모듈을 선택하여 JSON 파일로 다운로드 (사용자 PC에 저장)"
+        sub="원하는 모듈을 선택하여 압축 백업 파일(.gz)로 다운로드 (사용자 PC에 저장)"
         actions={
           <button
             className="btn primary"

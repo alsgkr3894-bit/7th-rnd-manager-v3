@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { checkBackupFile } from '@/lib/backup/file-check';
 import { getHistory, markFileChecked } from '@/lib/backup-history';
-import { readFileAsText } from '@/lib/download';
-import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
+import { backupFileError, readBackupFile } from '@/lib/backup/read-file';
 
 /** 저장한 백업 파일을 다시 골라 읽기 확인 — 통과한 경우에만 파일 확인 시각을 남긴다 */
 export function useBackupFileCheck({ onChecked }) {
@@ -14,8 +13,7 @@ export function useBackupFileCheck({ onChecked }) {
     const input = event.target;
     const file = input.files?.[0];
     if (!file) return;
-    const invalid =
-      checkFileExt(file, UPLOAD_EXT.json) || checkFileSize(file, UPLOAD_MAX_MB.backup);
+    const invalid = backupFileError(file);
     if (invalid) {
       showToast(invalid, 'error');
       input.value = '';
@@ -23,8 +21,7 @@ export function useBackupFileCheck({ onChecked }) {
     }
     setChecking(true);
     try {
-      const data = JSON.parse(await readFileAsText(file, UPLOAD_EXT.json));
-      const result = checkBackupFile(data, getHistory());
+      const result = checkBackupFile(await readBackupFile(file), getHistory());
       if (!result.ok) {
         showToast(result.reason, 'warn', 8000);
         return;

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { openAsBlob } from 'node:fs';
 
+import { parseBackupBlob } from '../lib/backup/file-format.js';
 import { disconnectPrismaClient, getPrismaClient } from '../lib/server/prisma.js';
 import { buildImportPlan } from './backup-import-core.mjs';
 import { seedStoreCatalogDefaults } from './seed-store-catalog.mjs';
@@ -13,7 +14,7 @@ const STORE_TX_OPTIONS = { maxWait: 30_000, timeout: 30 * 60_000 };
 function usage() {
   return [
     'Usage:',
-    '  npm run db:import:backup -- <backup.json> [--brand <brandId>] [--dry-run] [--include-shared] [--no-local-storage]',
+    '  npm run db:import:backup -- <백업파일.gz|.json> [--brand <brandId>] [--dry-run] [--include-shared] [--no-local-storage]',
     '',
     'Examples:',
     '  npm run db:import:backup:dry-run -- ./backup.json --brand main',
@@ -68,8 +69,7 @@ function chunks(items, size = CHUNK_SIZE) {
 
 async function readBackup(filePath) {
   if (!filePath) throw new Error(`Backup file path is required.\n\n${usage()}`);
-  const raw = await readFile(filePath, 'utf8');
-  return JSON.parse(raw);
+  return parseBackupBlob(await openAsBlob(filePath));
 }
 
 async function ensureTargetBrand(prisma, plan) {

@@ -122,7 +122,7 @@ export default function BrandMasterPage() {
       <input
         ref={restoreInputRef}
         type="file"
-        accept=".json,application/json"
+        accept=".gz,.json,application/gzip,application/json"
         onChange={handleRestoreFile}
         style={{ display: 'none' }}
       />
