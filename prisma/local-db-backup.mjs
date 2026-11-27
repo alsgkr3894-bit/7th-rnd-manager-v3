@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { syncBackupCopy } from './backup-copy.mjs';
 
 const ROOT = process.cwd();
 const BACKUP_DIR = resolve(ROOT, process.env.DB_BACKUP_DIR || '.db-backups');
@@ -27,6 +28,8 @@ const LOCK_FILE = '.backup.lock';
 const PARTIAL_SUFFIX = '.dump.partial';
 // 이보다 오래된 잠금은 중간에 꺼진 백업이 남긴 것으로 본다
 export const LOCK_STALE_MS = 30 * 60 * 1000;
+// 백업을 만들 때 한 번에 옮기는 사본 수 — 밀린 것은 다음 실행에서 이어서 옮긴다
+const COPY_LIMIT_PER_RUN = 3;
 // 서버 API가 이 표시로 "이미 진행 중"을 구분한다
 export const BACKUP_BUSY_MARK = 'BACKUP_IN_PROGRESS';
 
@@ -85,11 +88,15 @@ function usage() {
     '  npm run db:backup:auto',
     '  npm run db:backup:list',
     '  npm run db:backup:prune',
+    '  npm run db:backup:copy',
     '',
     'Options:',
     '  --dir <path>       Backup directory. Default: .db-backups',
     '  --keep <number>    Maximum number of latest backups to keep. Default: 14',
     '  --hours <number>   Auto backup interval. Default: 20',
+    '',
+    'Environment:',
+    '  DB_BACKUP_COPY_DIR  Second folder (another drive) that receives copies. Must exist.',
   ].join('\n');
 }
 
@@ -282,10 +289,39 @@ export function pruneBackups(overrideDir) {
   };
 }
 
+/**
+ * 설정된 다른 드라이브에 사본을 맞춘다. 기본 백업 폴더만 대상이라, 다른 폴더를 지정한 실행
+ * (시험 등)은 사본을 건드리지 않는다.
+ */
+export function copyBackups(overrideDir, { limit } = {}) {
+  const dir = getBackupDir(overrideDir);
+  if (dir !== BACKUP_DIR) return { configured: false };
+  const targetDir = String(process.env.DB_BACKUP_COPY_DIR || '').trim();
+  if (!targetDir) return { configured: false };
+  mkdirSync(dir, { recursive: true });
+  const release = acquireBackupLock(dir);
+  try {
+    const keep = numberArg('--keep', positiveInteger(process.env.DB_BACKUP_KEEP, DEFAULT_KEEP));
+    return syncBackupCopy({ files: backupFiles(dir), sourceDir: dir, targetDir, keep, limit });
+  } finally {
+    release();
+  }
+}
+
+// 사본 단계의 어떤 문제도 이미 만든 백업을 실패로 만들지 않는다
+function copyAfterBackup(overrideDir) {
+  try {
+    return copyBackups(overrideDir, { limit: COPY_LIMIT_PER_RUN });
+  } catch (error) {
+    console.warn(`[backup] 사본 단계를 건너뜁니다: ${error?.message || error}`);
+    return { configured: true, ok: false, reason: 'failed' };
+  }
+}
+
 export function createBackupWithRetention(overrideDir) {
   const created = createBackup(overrideDir);
   const pruned = pruneBackups(overrideDir);
-  return { ...created, pruned };
+  return { ...created, pruned, copy: copyAfterBackup(overrideDir) };
 }
 
 function delay(ms) {
@@ -311,6 +347,8 @@ export async function autoBackup(options = {}) {
       ok: true,
       skipped: true,
       reason: `Latest backup is newer than ${hours} hours.`,
+      // 지난번에 USB가 없었더라도 이번에 맞춰 둔다
+      copy: copyAfterBackup(dir),
       latest: {
         name: newest.name,
         modifiedAt: newest.mtime,
@@ -346,6 +384,7 @@ async function main() {
   if (command === 'list') return print(listBackups());
   if (command === 'prune') return print(pruneBackups());
   if (command === 'auto') return print(await autoBackup());
+  if (command === 'copy') return print(copyBackups());
 
   throw new Error(`Unknown command: ${command}`);
 }

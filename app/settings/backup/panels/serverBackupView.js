@@ -67,6 +67,31 @@ export function restoreVerifyTile({ backupStatus, backupCheck }) {
     : { value: '기록 없음', sub: '운영 PC에서 npm run db:restore:verify 실행' };
 }
 
+const COPY_PROBLEMS = {
+  unavailable: ['연결 안 됨', '사본 폴더를 찾지 못했습니다. USB 드라이브를 확인해 주세요'],
+  'same-folder': ['설정 오류', '사본 폴더가 원본 백업 폴더와 같습니다'],
+  'no-backup': ['확인 필요', '가장 최근 백업의 사본이 아직 없습니다'],
+  failed: ['복사 실패', '복사하지 못했습니다. 드라이브의 남은 공간과 상태를 확인해 주세요'],
+};
+
+/** 다른 드라이브(USB)에 만든 사본 (DB_BACKUP_COPY_DIR) */
+export function copyTile({ backupStatus, backupCheck }) {
+  if (!backupStatus) {
+    return {
+      value: '확인 불가',
+      sub: backupCheck?.error ? '백업 목록 확인 실패' : '백업 목록 대기',
+    };
+  }
+  const copy = backupStatus.copy;
+  if (!copy) return { value: '기록 없음', sub: '다른 드라이브 사본이 설정되지 않았거나 아직 없음' };
+  if (copy.ok) {
+    return { value: formatRelative(copy.checkedAt), sub: `${copy.latestName} 복사 확인` };
+  }
+  const [value, sub] = COPY_PROBLEMS[copy.reason] || COPY_PROBLEMS.failed;
+  const last = copy.lastSuccessAt ? ` · 마지막 성공 ${formatRelative(copy.lastSuccessAt)}` : '';
+  return { value, sub: `${sub}${last}` };
+}
+
 export function verificationLabel(verification) {
   if (!verification) return '-';
   return verification.ok ? '성공' : '실패';

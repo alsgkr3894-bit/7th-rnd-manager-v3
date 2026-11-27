@@ -12,6 +12,7 @@ import {
 import {
   backupCountTile,
   backupListMessage,
+  copyTile,
   dbTile,
   importJobsMessage,
   latestBackupTile,
@@ -55,8 +56,8 @@ export function ServerBackupStatusCard({
           </p>
           <p style={{ fontSize: 12, color: 'var(--warn)', marginTop: 4, fontWeight: 700 }}>
             DB 백업에는 외부 로그인정보·법인카드와 로그인 인증 파일이 없습니다.
-            로그인정보·법인카드는 [백업 파일 다운로드]로 받아 [저장한 파일 확인]까지 해 주세요. 화면
-            설정은 DB에 함께 보관합니다.
+            로그인정보·법인카드는 백업 범위에서 [RND 업무]를 켜고 내려받아 [저장한 파일 확인]까지 해
+            주세요. 화면 설정은 DB에 함께 보관합니다.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -101,6 +102,7 @@ export function ServerBackupStatusCard({
         <SettingTile label="서버 백업" {...latestBackupTile(view)} />
         <SettingTile label="백업 파일" {...backupCountTile(view)} />
         <SettingTile label="복원 검증" {...restoreVerifyTile(view)} />
+        <SettingTile label="다른 드라이브 사본" {...copyTile(view)} />
       </div>
 
       <div
