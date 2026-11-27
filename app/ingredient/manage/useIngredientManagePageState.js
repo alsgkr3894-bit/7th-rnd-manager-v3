@@ -4,7 +4,11 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { previewIngredientDelete } from '@/lib/ingredient';
 import { KEYS } from '@/lib/note/keys';
-import { normalizeManageView, readInitialManageView } from './ingredientManageUtils';
+import {
+  normalizeManageView,
+  readInitialManageView,
+  removeManageLinkParams,
+} from './ingredientManageUtils';
 
 /**
  * 식자재관리 페이지의 화면 상태(검색/필터/탭/강조/모달류)를 모아 관리하는 훅.
@@ -37,28 +41,25 @@ export function useIngredientManagePageState() {
 
   useEffect(() => {
     setView(readInitialManageView());
-    // URL 파라미터 일괄 처리(한 번만): catFilter, query(검색어), highlight/productCode(행 강조)
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
+  }, [setView]);
+  // 링크가 싣고 온 값만 덮어쓴다. 없는 항목은 사용자가 입력한 검색어·필터를 그대로 둔다.
+  const applyLinkParams = useCallback(
+    params => {
       const catParam = params.get('catFilter');
       const queryParam = params.get('query');
       const highlightParam = params.get('highlight');
       const productCodeParam = params.get('productCode');
       if (catParam) setCatFilter(catParam);
       if (queryParam) setSearch(queryParam);
-      if (highlightParam) setHighlightId(highlightParam);
-      if (productCodeParam) setHighlightProductCode(productCodeParam);
-      if (catParam || queryParam || highlightParam || productCodeParam) {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('catFilter');
-        url.searchParams.delete('query');
-        url.searchParams.delete('highlight');
-        url.searchParams.delete('productCode');
-        window.history.replaceState(null, '', url);
+      // 강조 대상은 한 쌍으로 바꿔야 직전 대상이 함께 남지 않는다.
+      if (highlightParam || productCodeParam) {
+        setHighlightId(highlightParam);
+        setHighlightProductCode(productCodeParam);
       }
-    }
-    // setView(useCallback)·setCatFilter(useState setter) 모두 안정적 참조 → 사실상 mount 1회 실행.
-  }, [setView, setCatFilter]);
+      window.history.replaceState(null, '', removeManageLinkParams(new URL(window.location.href)));
+    },
+    [setCatFilter]
+  );
   // highlightId 자동 해제는 IngredientManagePanel에서 rows 로드 후 처리 (onHighlightClear)
   const clearHighlight = useCallback(() => {
     setHighlightId(null);
@@ -111,6 +112,7 @@ export function useIngredientManagePageState() {
     view,
     setView,
     syncViewFromUrl,
+    applyLinkParams,
     highlightId,
     highlightProductCode,
     clearHighlight,

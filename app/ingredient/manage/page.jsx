@@ -30,7 +30,10 @@ export default function Page() {
   return (
     <main className="main page-enter">
       <Suspense fallback={null}>
-        <IngredientManageViewUrlSync onViewParam={pageState.syncViewFromUrl} />
+        <IngredientManageViewUrlSync
+          onViewParam={pageState.syncViewFromUrl}
+          onLinkParams={p.onLinkParams}
+        />
       </Suspense>
       <PriceRiseModal
         result={priceRiseAlert.priceRise}

@@ -195,7 +195,7 @@ describe('식자재관리 탭 — 주소의 view 동기화', () => {
   test('page는 URL 구독 컴포넌트만 Suspense 경계 안에 렌더한다', () => {
     const source = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
     expect(source).toMatch(
-      /<Suspense fallback=\{null\}>\s*<IngredientManageViewUrlSync onViewParam=\{pageState\.syncViewFromUrl\} \/>\s*<\/Suspense>/
+      /<Suspense fallback=\{null\}>\s*<IngredientManageViewUrlSync\s+onViewParam=\{pageState\.syncViewFromUrl\}\s+onLinkParams=\{p\.onLinkParams\}\s*\/>\s*<\/Suspense>/
     );
   });
 });
