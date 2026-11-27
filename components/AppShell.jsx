@@ -17,6 +17,7 @@ import { KEYS } from '@/lib/note/keys';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { normalizeSidebarCollapsed } from '@/lib/ui/sidebar-state';
 import { ensureSession } from '@/lib/session';
+import { clearLegacyAuthStorage } from '@/lib/auth';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
@@ -101,6 +102,8 @@ function WorkShell({ children }) {
 
   useEffect(() => {
     ensureSession();
+    // 로그인을 유지 중이어도 이전 버전이 남긴 비밀번호 확인값을 지운다
+    clearLegacyAuthStorage();
   }, []);
 
   useEffect(() => {
