@@ -22,6 +22,23 @@ export function readInitialManageView() {
   return normalizeManageView(new URLSearchParams(window.location.search).get('view'));
 }
 
+// 알림·통합 검색·원가 화면의 링크가 한 번 전달하고 마는 파라미터. 적용한 뒤 주소에서 지운다.
+const MANAGE_LINK_PARAM_KEYS = ['catFilter', 'query', 'highlight', 'productCode'];
+
+export function pickManageLinkQuery(searchParams) {
+  const picked = new URLSearchParams();
+  for (const key of MANAGE_LINK_PARAM_KEYS) {
+    const value = searchParams.get(key);
+    if (value) picked.set(key, value);
+  }
+  return picked.toString();
+}
+
+export function removeManageLinkParams(url) {
+  MANAGE_LINK_PARAM_KEYS.forEach(key => url.searchParams.delete(key));
+  return url;
+}
+
 // 제때 이슈/대체 연결 매칭에 쓰는 productCode 정규화(대소문자·공백 무시).
 export function productCodeKey(rowOrCode) {
   const value = rowOrCode && typeof rowOrCode === 'object' ? rowOrCode.productCode : rowOrCode;

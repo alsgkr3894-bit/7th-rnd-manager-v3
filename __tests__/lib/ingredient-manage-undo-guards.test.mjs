@@ -113,9 +113,7 @@ describe('ingredient manage undo guards', () => {
       'const [highlightId, setHighlightId] = useState(null);'
     );
     expect(stateIndex).toBeGreaterThan(-1);
-    expect(stateIndex).toBeLessThan(
-      pageStateSource.indexOf('if (highlightParam) setHighlightId(highlightParam);')
-    );
+    expect(stateIndex).toBeLessThan(pageStateSource.indexOf('setHighlightId(highlightParam);'));
     // rows 로드 후 자동 해제 로직은 IngredientManagePanel로 이동됨
     expect(panelSource).toContain('onHighlightClear');
     expect(panelSource).toContain('clearTimerRef');
@@ -125,7 +123,8 @@ describe('ingredient manage undo guards', () => {
     expect(paletteSource).toContain('&productCode=');
     expect(pageStateSource).toContain('const [highlightProductCode, setHighlightProductCode]');
     expect(pageStateSource).toContain("params.get('productCode')");
-    expect(pageStateSource).toContain("url.searchParams.delete('productCode')");
+    expect(pageStateSource).toContain('removeManageLinkParams');
+    expect(utilsSource).toMatch(/MANAGE_LINK_PARAM_KEYS = \[[^\]]*'productCode'/);
     expect(panelSource).toContain('highlightProductCode');
     expect(panelSource).toContain('const targetPage = Math.floor(index / PAGE_SIZE) + 1;');
     expect(panelSource).toContain('if (targetPage !== page) goTo(targetPage);');

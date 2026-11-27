@@ -59,6 +59,16 @@ export function useIngredientManagePage() {
     canEdit: !isViewer,
     onPriceRise: priceRiseAlert.showPriceRise,
   });
+  // 링크로 분류가 바뀔 때도 분류 칩을 누를 때처럼 일괄 선택을 비운다.
+  const { applyLinkParams } = pageState;
+  const { clearSelection } = batch;
+  const onLinkParams = useCallback(
+    params => {
+      if (params.has('catFilter')) clearSelection();
+      applyLinkParams(params);
+    },
+    [applyLinkParams, clearSelection]
+  );
   const jette = useIngredientJetteIssueVisibility({
     newJetteRows: data.newJetteRows,
     jetteRemovedRows: data.jetteRemovedRows,
@@ -85,6 +95,7 @@ export function useIngredientManagePage() {
     jette,
     onCopy,
     onLinkSubstitute,
+    onLinkParams,
     priceRiseAlert,
   };
 }

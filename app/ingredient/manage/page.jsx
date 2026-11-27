@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PriceRiseModal } from '@/components/cost/PriceRiseModal';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
@@ -8,6 +9,7 @@ import { IngredientManageTabs } from './IngredientManageTabs';
 import { IngredientManageEmptyState } from './IngredientManageEmptyState';
 import { IngredientManageViewContent } from './IngredientManageViewContent';
 import { IngredientManagePageDialogs } from './IngredientManagePageDialogs';
+import { IngredientManageViewUrlSync } from './IngredientManageViewUrlSync';
 
 export default function Page() {
   const p = useIngredientManagePage();
@@ -27,6 +29,12 @@ export default function Page() {
 
   return (
     <main className="main page-enter">
+      <Suspense fallback={null}>
+        <IngredientManageViewUrlSync
+          onViewParam={pageState.syncViewFromUrl}
+          onLinkParams={p.onLinkParams}
+        />
+      </Suspense>
       <PriceRiseModal
         result={priceRiseAlert.priceRise}
         onConfirm={priceRiseAlert.confirmPriceRise}
