@@ -112,7 +112,7 @@ proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
 
 | 동작 | 위치 | 설명 |
 |---|---|---|
-| **자동 미러링** | `lib/db/crud.js`, `lib/db/server-sync.js` | 모든 쓰기(`put`/`delete`/`runTransaction`…)가 완료되면 큐에 넣고 150ms 뒤 200건씩 POST. 4xx는 작업별 격리(dead letter), 5xx/네트워크는 30초 뒤 재시도, 페이지 닫힐 때 `sendBeacon` |
+| **자동 미러링** | `lib/db/crud.js`, `lib/db/server-sync.js` | 모든 쓰기(`put`/`delete`/`runTransaction`…)가 완료되면 큐에 넣고 150ms 뒤 100건·4MB씩 POST(밀려 있으면 바로 이어서, 서버는 묶어서 적용). 4xx는 작업별 격리(dead letter), 5xx/네트워크는 30초 뒤 재시도, 페이지 닫힐 때 `sendBeacon` |
 | **서버에서 불러오기** | `lib/db/server-hydrate.js`, `/settings/sync` | 서버 → 이 브라우저로 store 단위 교체(다시 서버로 보내지 않음). LAN 뷰어 PC가 최신 데이터를 받을 때 |
 | **서버로 전체 재전송** | `lib/db/server-repush.js` | 운영 PC 전용. 로컬 전부 업서트 + 서버에만 있는 키 삭제. 서버 복구 후 사용 |
 | **동기화 가드** | `lib/db/sync-guard.js` | 운영 PC인데 로컬이 비었고 서버엔 데이터가 있으면 푸시를 막아 빈 브라우저가 서버를 덮어쓰는 사고 방지 |
@@ -328,6 +328,7 @@ proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
 - **PDF = 브라우저 인쇄.** 보고서는 `lib/report/print.js` `printReportElements`가 `.report-paper`를 복제해 A4 인쇄 CSS를 입히고 `window.print()`. 쪽 나눔 제어 클래스: `.report-print-page`(쪽 넘김), `.paper-section.print-keep-together`·`.print-keep-block`(카테고리 구획 안 잘리게).
 - 연구일지 PDF는 `lib/note/journal-print.js`가 HTML을 만들어 새 창(`openPrintWindow`)에서 인쇄. 스타일은 `lib/note/journal-print-styles.js`, 긴 본문 칸은 쪽 사이 분할 허용.
 - 파일명 규칙 `{브랜드}_{보고서명}_{YYYYMMDD}`.
+- 올린 파일: Excel/CSV는 `lib/excel.js`의 `readSpreadsheetFile`, 백업은 `lib/backup/read-file.js`로만 읽는다(별도 스레드 + 상한). `XLSX.read`를 직접 부르지 말고 `readWorkbookSafely`를 쓴다. 사진은 `lib/image/resize.js`(동시 2장, 6,400만 화소).
 - 엑셀: `xlsx`/`xlsx-js-style` (`lib/excel.js`). 원가·판매량·단가·출고량·원가마진표·영양성분표·원산지 등. 일부 "엑셀로 내보내기" 버튼은 실제로 **CSV**(`downloadCsv`).
 
 ---
