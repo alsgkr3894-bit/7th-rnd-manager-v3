@@ -15,4 +15,26 @@ describe('기본 웹 보안 헤더', () => {
     expect(headers['Permissions-Policy']).toContain('camera=()');
     expect(headers['Permissions-Policy']).toContain('microphone=()');
   });
+
+  test('바깥 출처의 스크립트·연결·폼 전송을 막고, 개발용 완화는 넣지 않는다', async () => {
+    const rules = await nextConfig.headers();
+    const csp = rules
+      .find(rule => rule.source === '/:path*')
+      .headers.find(header => header.key === 'Content-Security-Policy').value;
+    const directive = name => csp.split('; ').find(part => part.startsWith(`${name} `));
+
+    expect(directive('default-src')).toBe("default-src 'self'");
+    expect(directive('script-src')).toBe("script-src 'self' 'unsafe-inline'");
+    expect(directive('connect-src')).toBe("connect-src 'self' data: blob: https://api.ipify.org");
+    expect(directive('form-action')).toBe("form-action 'self'");
+    expect(csp).not.toContain('unsafe-eval');
+  });
+
+  test('API 응답은 저장하지 않고 서버 종류를 알리지 않는다', async () => {
+    const rules = await nextConfig.headers();
+    expect(rules.find(rule => rule.source === '/api/:path*').headers).toEqual([
+      { key: 'Cache-Control', value: 'no-store' },
+    ]);
+    expect(nextConfig.poweredByHeader).toBe(false);
+  });
 });
