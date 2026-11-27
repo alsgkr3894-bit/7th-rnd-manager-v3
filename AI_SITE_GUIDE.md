@@ -80,7 +80,7 @@ prisma/           schema.prisma, 마이그레이션, store 카탈로그, 백업/
 scripts/          개발 서버·샌드박스·QA·제때 다운로드·자동시작 스크립트
 __tests__/        Jest 테스트 (lib 414개, hooks, scripts, audit)
 docs/             기획·감사·작업 기록 문서 (대부분 시점 기록)
-proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
+proxy.ts          로그인 세션(서명·만료) 검사 및 API 요청 크기 제한
 ```
 
 설계 원칙: 페이지 파일은 화면 조립만, 반복 로직은 `hooks/`·`lib/`로. `lib/ui`는 React 없는 순수 함수. 도메인 정책이 강한 로직(원가·영양·식자재)은 도메인 폴더에 둔다.
@@ -95,7 +95,7 @@ proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
 - 브랜드마다 DB가 따로 있다: `main` → `rnd_manager_v3`, 그 외 → `rnd_manager_v3__<brandId>` (`lib/db/constants.js` `dbNameFor`). 각 DB에 48개 store가 다 있다.
 - **공유 store**(항상 main DB에, 서버에서도 `brandId='main'`): 노트 계열 `menu_dev_notes`, `sample_records`, `market_research`, `note_schedules`, `work_log` + RND `rnd_corporate_card_entries`, `rnd_login_credentials` (`lib/db/module-stores.js` `SHARED_STORE_NAMES`). 접근은 `lib/db/shared.js`.
 - **조회 보관** (`lib/db/read-cache.js`): 변경이 없는 store는 `getAll`을 다시 실행하지 않고 사본을 준다. 근거는 `lib/db/init.js`가 연 연결의 쓰기 추적(`lib/db/revision.js`)이므로, 앱 DB를 따로 `indexedDB.open`해서 쓰는 코드를 만들면 안 된다. 변경에 반응할 때는 `onStoresChanged`를 구독한다.
-- 설정값 대부분은 IndexedDB가 아니라 **localStorage** (`lib/settings.js`; `v3:active-brand`, `v3:server-sync-mode`, `v3:auth-hash` 등).
+- 설정값 대부분은 IndexedDB가 아니라 **localStorage** (`lib/settings.js`; `v3:active-brand`, `v3:server-sync-mode` 등).
 
 ### 4-2. 서버(Postgres)
 
@@ -126,7 +126,7 @@ proxy.ts          로그인 쿠키 검사 및 API 요청 크기 제한
 
 ## 5. 인증·권한·브랜드
 
-- **로그인**: `proxy.ts`가 서명된 HttpOnly 쿠키 `v3:session`이 없으면 `/login`으로 보낸다. API는 서버에서 세션 서명과 만료를 검증하며, 로그인 API에는 실패 횟수 제한이 적용된다.
+- **로그인**: `proxy.ts`가 서명 쿠키 `v3:session`의 서명·만료·세션 버전을 확인하고, 아니면 `/login`으로 보낸다. API도 같은 검증을 한다. 실패 제한(5회·15분), 최초 설정 토큰, 상태 파일 복구는 `docs/SECURITY_POLICY.md` §1. 검증 서버는 `RND_AUTH_STATE_PATH`로 별도 상태 파일을 쓴다(`scripts/qa-browser-utils.mjs`의 `loginQaContext`).
 - **역할**: `admin`(관리자) / `viewer`(조회자). 계정은 store `ref_accounts`, 현재 계정은 브랜드별 localStorage. `hooks/useCurrentRole.js` → 화면은 `canEdit = ready && isAdmin`으로 쓰기 버튼을 막는다.
   - 계정이 0개면 admin, 판정 실패면 viewer, readonly 동기화 모드면 항상 viewer.
   - 쓰기 함수 대부분은 저장 직전 `assertActiveAdmin(label)`(`lib/auth/guard.js`)로 한 번 더 막는다.

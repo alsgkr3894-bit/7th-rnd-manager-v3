@@ -211,12 +211,12 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 70개 커스텀 훅 파일(5,576줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 70개 커스텀 훅 파일(5,577줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `hooks/`
 
-총 70개 파일(69 .js + 1 .jsx), 5,576줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 70개 파일(69 .js + 1 .jsx), 5,577줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `hooks/useDBLoad.js`
@@ -508,12 +508,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 515개 파일(lib 478, hooks 23, scripts 12), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 518개 파일(lib 480, hooks 23, scripts 13), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `__tests__/lib/`
 
-__tests__/lib/ 하위 478개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 480개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `__tests__/hooks/`
@@ -523,7 +523,7 @@ __tests__/hooks/ 하위 23개 .test.mjs 파일. use-db-load, use-pagination, use
 ### Jest 단위 테스트 — scripts
 `__tests__/scripts/`
 
-__tests__/scripts/ 하위 12개 파일(clean-build-script, cost-baseline, perf-app-baseline, db-restore-verify, dev-sandbox-distdir, full-rt-script, local-db-backup, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 유틸, 전체 QA 오케스트레이션, DB 백업·복원 검증
+__tests__/scripts/ 하위 13개 파일(backup-copy, clean-build-script, cost-baseline, perf-app-baseline, db-restore-verify, dev-sandbox-distdir, full-rt-script, local-db-backup, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 유틸, 전체 QA 오케스트레이션, DB 백업·복원 검증
 
 ### 실데이터 감사 테스트
 `__tests__/audit/`
