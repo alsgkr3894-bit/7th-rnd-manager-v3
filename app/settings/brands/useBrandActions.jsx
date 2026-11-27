@@ -16,6 +16,7 @@ import { validateBackupPayload } from '@/lib/backup/validation';
 import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
+import { hasSensitiveStores } from '@/lib/sensitive-stores';
 import { downloadBackup, makeFileName } from '@/lib/download';
 import { readBackupFile } from '@/lib/backup/read-file';
 import { formatNumber } from '@/lib/format';
@@ -144,13 +145,17 @@ export function useBrandActions({
       const fileName = makeFileName(`${brand.name}_브랜드백업`, 'gz');
       await downloadBackup(data, fileName);
       addEntry({
-        scopes: MODULE_KEYS,
+        scopes: MODULE_KEYS.filter(key => key !== 'rnd'),
         totalRows: countRows(data.stores),
         fileName,
         ...backupFileStamp(data),
       });
       logBackupCreate(fileName);
-      showToast(`${brand.name} 백업 파일을 다운로드했습니다.`, 'ok');
+      showToast(
+        `${brand.name} 백업 파일을 다운로드했습니다. 로그인 정보·법인카드는 넣지 않았습니다.`,
+        'ok',
+        7000
+      );
     } catch (err) {
       console.error('[BrandMaster] 브랜드 백업 실패:', err);
       showToast('브랜드 백업에 실패했습니다.', 'error');
@@ -287,7 +292,8 @@ export function useBrandActions({
           brandName: target.name,
           backupScope: 'brand-before-restore',
         },
-        { includeLocalStorage: false }
+        // 이번 복원이 덮어쓰는 민감 store가 있으면 되돌릴 수 있게 함께 담는다
+        { includeLocalStorage: false, includeSensitive: hasSensitiveStores(backup.stores) }
       );
       const beforeFileName = makeFileName(`${target.name}_복원전자동백업`, 'gz');
       await downloadBackup(before, beforeFileName);

@@ -41,6 +41,8 @@ export function useBackupActions({
         selectedStores,
         { scopes: selectedKeys },
         {
+          // 민감 store는 사용자가 RND 업무를 직접 켠 경우에만 목록에 들어온다
+          includeSensitive: selectedKeys.includes('rnd'),
           onProgress: ({ store, index, total }) => {
             setBackupProgress({ label: `${store} 내보내는 중`, current: index, total });
           },

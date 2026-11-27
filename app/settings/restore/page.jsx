@@ -9,6 +9,7 @@ import { downloadBackup, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { backupFileStamp } from '@/lib/backup/file-check';
 import { pickRestoreStores } from '@/lib/backup/restore-impact';
+import { hasSensitiveStores } from '@/lib/sensitive-stores';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useRestoreImpact } from '@/hooks/useRestoreImpact';
@@ -112,13 +113,16 @@ export default function Page() {
             current: 0,
             total: Math.max(selectedStores.length, 1),
           });
-          const backup = await exportAll();
+          // 이번에 덮어쓰는 파일에 로그인 정보·법인카드가 있을 때만 임시 백업에도 담는다
+          const backup = await exportAll({
+            includeSensitive: hasSensitiveStores(pickRestoreStores(parsed.stores, selectedStores)),
+          });
           const fileName = makeFileName('복원용임시백업파일', 'gz');
           await downloadBackup(backup, fileName);
           safetyBackupFileName = fileName;
           addEntry({
-            scopes: MODULE_KEYS,
-            totalRows: Object.values(currentStats || {}).reduce((s, n) => s + n, 0),
+            scopes: backup.excludedStores ? MODULE_KEYS.filter(k => k !== 'rnd') : MODULE_KEYS,
+            totalRows: Object.values(backup.stores).reduce((s, rows) => s + rows.length, 0),
             fileName,
             ...backupFileStamp(backup),
           });

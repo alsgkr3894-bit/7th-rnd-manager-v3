@@ -34,7 +34,8 @@ export default function Page() {
   const canExport = roleReady && isAdmin;
   const [activeBrand, setActiveBrand] = useState(null);
   const [busy, setBusy] = useState(false);
-  const { scopes, toggleScope, setAllScopes } = useModuleScopes();
+  // 평문 비밀번호·법인카드는 직접 켠 백업에만 담는다
+  const { scopes, toggleScope, setAllScopes } = useModuleScopes(true, { optIn: ['rnd'] });
   const [backupProgress, setBackupProgress] = useState(null);
 
   const { data: stats } = useDBLoad(() => collectStoreStats(), {

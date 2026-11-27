@@ -28,7 +28,11 @@ describe('삭제 전 복구 파일', () => {
 
     expect(result).toEqual({ fileName: '삭제전복구_메뉴.gz', rows: 1 });
     expect(Object.keys(downloadBackup.mock.calls[0][0].stores)).toEqual(['menu_master']);
-    expect(exportSelected.mock.calls[0][2]).toEqual({ includeLocalStorage: false });
+    // 지우는 저장소가 민감 store여도 되돌릴 수 있어야 한다
+    expect(exportSelected.mock.calls[0][2]).toEqual({
+      includeLocalStorage: false,
+      includeSensitive: true,
+    });
     expect(recoveryNote(result)).toContain('삭제전복구_메뉴.gz');
   });
 
