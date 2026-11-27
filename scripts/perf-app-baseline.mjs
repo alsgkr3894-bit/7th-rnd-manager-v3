@@ -103,7 +103,7 @@ async function measure(page, cdp, route, navigate) {
   return { ms, getAll, heapMb: Math.round(heap / 1e5) / 10 };
 }
 
-async function measureAll(browser, password) {
+async function measureAll(browser, password, authStatePath) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addInitScript(() => {
     window.__getAll = {};
@@ -124,7 +124,7 @@ async function measureAll(browser, password) {
       ? route.continue()
       : route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' })
   );
-  await loginQaContext(context, BASE, password);
+  await loginQaContext(context, BASE, password, { authStatePath });
   const page = await context.newPage();
   page.on('dialog', dialog => dialog.accept());
   let slowReads = 0;
@@ -248,7 +248,7 @@ async function main() {
       }
     }
     browser = await chromium.launch();
-    const result = await measureAll(browser, password);
+    const result = await measureAll(browser, password, env.RND_AUTH_STATE_PATH);
     const report = {
       measuredAt: new Date().toISOString(),
       machine: {
@@ -269,7 +269,12 @@ async function main() {
     if (process.argv.includes('--smoke')) {
       const smoke = spawnSync(process.execPath, [join(ROOT, 'scripts', 'smoke-qa.mjs')], {
         cwd: ROOT,
-        env: { ...process.env, BASE, QA_PASSWORD: password },
+        env: {
+          ...process.env,
+          BASE,
+          QA_PASSWORD: password,
+          RND_AUTH_STATE_PATH: env.RND_AUTH_STATE_PATH,
+        },
         stdio: 'inherit',
       });
       log(`스모크 QA 종료코드 ${smoke.status}`);

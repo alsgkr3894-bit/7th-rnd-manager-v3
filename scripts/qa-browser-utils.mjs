@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import pw from '../node_modules/playwright/index.js';
 
 export const { chromium } = pw;
@@ -122,14 +123,26 @@ const sha256 = text => createHash('sha256').update(text).digest('hex');
 /**
  * 서버 세션 로그인 — 2026-11 서버 인증 도입 뒤에는 이 쿠키가 없으면 업무 화면이 열리지 않는다.
  * 검증용 서버(별도 RND_AUTH_STATE_PATH)에서만 쓴다. 인증이 비어 있으면 이 비밀번호로 설정한다.
+ * 설정에는 설치 토큰이 필요해, 그 서버와 같은 인증 상태 파일 경로를 알아야 한다.
  */
-export async function loginQaContext(ctx, base, password) {
+export async function loginQaContext(
+  ctx,
+  base,
+  password,
+  { authStatePath = process.env.RND_AUTH_STATE_PATH } = {}
+) {
   const url = new URL('/api/auth/session', base).toString();
   const status = await (await ctx.request.get(url)).json();
-  const verifier = sha256(password);
-  const data = status.configured
-    ? { challengeId: status.id, response: sha256(`${verifier}:${status.nonce}`) }
-    : { verifier };
+  let data;
+  if (status.configured) {
+    data = { challengeId: status.id, response: sha256(`${sha256(password)}:${status.nonce}`) };
+  } else {
+    if (!authStatePath) {
+      throw new Error('QA 서버가 아직 설정 전입니다 — RND_AUTH_STATE_PATH를 지정해 주세요');
+    }
+    const setupToken = readFileSync(`${authStatePath}.setup-token`, 'utf8').trim();
+    data = { password, setupToken };
+  }
   const response = await ctx.request.post(url, { data });
   if (!response.ok()) throw new Error(`QA 로그인 실패 (HTTP ${response.status()})`);
 }

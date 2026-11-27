@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { changeServerPassword, verifyPassword, savePassword } from '@/lib/auth';
+import { changeServerPassword, clearLegacyAuthStorage } from '@/lib/auth';
+import { passwordProblem } from '@/lib/auth/password-policy';
 import { showToast } from '@/components/Toast';
 
 export function PasswordChangeCard() {
@@ -19,8 +20,9 @@ export function PasswordChangeCard() {
       setErr('현재 비밀번호를 입력하세요.');
       return;
     }
-    if (next.length < 4) {
-      setErr('새 비밀번호는 4자 이상이어야 합니다.');
+    const problem = passwordProblem(next);
+    if (problem) {
+      setErr(`새 ${problem}`);
       return;
     }
     if (next !== conf) {
@@ -29,18 +31,15 @@ export function PasswordChangeCard() {
     }
     setBusy(true);
     try {
-      const valid = await verifyPassword(cur);
-      if (!valid) {
-        setErr('현재 비밀번호가 올바르지 않습니다.');
-        return;
-      }
-      await changeServerPassword(next);
-      await savePassword(next);
+      await changeServerPassword({ currentPassword: cur, newPassword: next });
+      clearLegacyAuthStorage();
       setCur('');
       setNext('');
       setConf('');
       setOk(true);
-      showToast('비밀번호가 변경됐습니다.', 'ok');
+      showToast('비밀번호가 변경됐습니다. 다른 곳의 로그인은 해제됩니다.', 'ok');
+    } catch (error) {
+      setErr(error?.message || '비밀번호를 변경하지 못했습니다.');
     } finally {
       setBusy(false);
     }
@@ -50,7 +49,7 @@ export function PasswordChangeCard() {
     <div className="card" style={{ marginTop: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>비밀번호 변경</h2>
       <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
-        변경 후 다음 로그인부터 새 비밀번호를 사용합니다.
+        변경하면 다른 브라우저와 PC의 로그인은 바로 해제됩니다. 지금 쓰는 브라우저는 유지됩니다.
       </p>
       <form
         onSubmit={handleSubmit}

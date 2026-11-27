@@ -2,15 +2,8 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
-import {
-  clearLoginFailures,
-  establishServerSession,
-  getServerAuthStatus,
-  getLoginThrottle,
-  isAuthSetup,
-  recordLoginFailure,
-  savePassword,
-} from '@/lib/auth';
+import { clearLegacyAuthStorage, establishServerSession, getServerAuthStatus } from '@/lib/auth';
+import { PASSWORD_MIN_LENGTH, passwordProblem } from '@/lib/auth/password-policy';
 import { PasswordField } from './PasswordField';
 import { PARENT_COMPANY } from '@/lib/companies';
 
@@ -29,6 +22,7 @@ function LoginForm() {
   const [profile, setProfileState] = useState({ name: '', team: '' });
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [setupToken, setSetupToken] = useState('');
   const [remember, setRemember] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showCf, setShowCf] = useState(false);
@@ -40,13 +34,15 @@ function LoginForm() {
   useEffect(() => {
     const p = getProfile();
     setProfileState(p);
+    clearLegacyAuthStorage();
     let alive = true;
     getServerAuthStatus()
       .then(status => {
-        if (alive) setMode(status.configured || isAuthSetup() ? 'login' : 'setup');
+        if (alive) setMode(status.configured ? 'login' : 'setup');
       })
-      .catch(() => {
-        if (alive) setMode(isAuthSetup() ? 'login' : 'setup');
+      .catch(err => {
+        // 설정 파일이 손상된 경우 서버가 복구 방법을 알려 준다
+        if (alive) setError(err?.message || '서버 상태를 확인하지 못했습니다.');
       });
     pwRef.current?.focus();
     return () => {
@@ -60,45 +56,20 @@ function LoginForm() {
     setLoading(true);
     try {
       if (mode === 'setup') {
-        if (!password) {
-          setError('비밀번호를 입력하세요.');
+        const problem =
+          passwordProblem(password) ||
+          (password !== confirm ? '비밀번호가 일치하지 않습니다.' : '') ||
+          (setupToken.trim() ? '' : '설치 토큰을 입력하세요.');
+        if (problem) {
+          setError(problem);
           return;
         }
-        if (password.length < 4) {
-          setError('비밀번호는 4자 이상이어야 합니다.');
-          return;
-        }
-        if (password !== confirm) {
-          setError('비밀번호가 일치하지 않습니다.');
-          return;
-        }
-        await establishServerSession(password, remember);
-        await savePassword(password);
-        clearLoginFailures();
-        router.replace('/');
-      } else {
-        const throttle = getLoginThrottle();
-        if (throttle.locked) {
-          const minutes = Math.max(1, Math.ceil(throttle.remainingMs / 60000));
-          setError(`로그인 시도가 너무 많습니다. 약 ${minutes}분 후 다시 시도해 주세요.`);
-          return;
-        }
-        await establishServerSession(password, remember);
-        await savePassword(password);
-        clearLoginFailures();
-        router.replace('/');
       }
+      // 틀린 횟수와 잠금은 서버가 세고 안내 문장도 서버가 보낸다
+      await establishServerSession(password, { remember, setupToken });
+      router.replace('/');
     } catch (err) {
-      if (mode === 'login' && err?.status === 401) {
-        const next = recordLoginFailure();
-        setError(
-          next.locked
-            ? '비밀번호를 5회 잘못 입력해 15분 동안 로그인이 제한됩니다.'
-            : `비밀번호가 올바르지 않습니다. (${5 - next.failures}회 남음)`
-        );
-      } else {
-        setError(err?.message || '오류가 발생했습니다. 다시 시도해 주세요.');
-      }
+      setError(err?.message || '오류가 발생했습니다. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -221,7 +192,7 @@ function LoginForm() {
             }}
             show={showPw}
             onToggleShow={() => setShowPw(v => !v)}
-            placeholder={mode === 'setup' ? '4자 이상 입력' : '비밀번호 입력'}
+            placeholder={mode === 'setup' ? `${PASSWORD_MIN_LENGTH}자 이상 입력` : '비밀번호 입력'}
             autoComplete={mode === 'setup' ? 'new-password' : 'current-password'}
             error={error}
             inputRef={pwRef}
@@ -242,6 +213,29 @@ function LoginForm() {
               autoComplete="new-password"
               error={error}
             />
+          )}
+
+          {/* 설치 토큰 (설정 모드) — 서버 폴더를 열 수 있는 사람만 처음 설정할 수 있다 */}
+          {mode === 'setup' && (
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>
+                설치 토큰
+              </span>
+              <input
+                type="text"
+                className="form-input"
+                value={setupToken}
+                onChange={e => {
+                  setSetupToken(e.target.value);
+                  setError('');
+                }}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <span style={{ fontSize: 12, color: 'var(--text-4)', lineHeight: 1.5 }}>
+                사이트 폴더의 .runtime-auth.json.setup-token 파일에 적힌 값입니다.
+              </span>
+            </label>
           )}
 
           {/* 에러 */}
@@ -290,33 +284,17 @@ function LoginForm() {
         </form>
 
         {mode === 'setup' && (
-          <div style={{ marginTop: 16, textAlign: 'center' }}>
-            <p style={{ fontSize: 12, color: 'var(--text-4)', lineHeight: 1.5, marginBottom: 8 }}>
-              비밀번호는 이 기기의 브라우저 저장소에만 저장됩니다.
-            </p>
-            {/* 비밀번호가 이미 설정된 상태에서 ?setup=1로 잘못 진입한 경우 복귀 링크 */}
-            {isAuthSetup() && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setPassword('');
-                  setConfirm('');
-                  setError('');
-                }}
-                style={{
-                  fontSize: 12,
-                  color: 'var(--accent-text)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                기존 비밀번호로 로그인
-              </button>
-            )}
-          </div>
+          <p
+            style={{
+              marginTop: 16,
+              textAlign: 'center',
+              fontSize: 12,
+              color: 'var(--text-4)',
+              lineHeight: 1.5,
+            }}
+          >
+            비밀번호 설정은 운영 PC에서만 할 수 있고, 확인값은 서버에만 저장됩니다.
+          </p>
         )}
       </div>
     </div>

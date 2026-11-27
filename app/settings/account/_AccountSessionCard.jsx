@@ -1,5 +1,6 @@
 'use client';
 import { SettingTile } from '@/components/ui/SettingTile';
+import { LogoutAllButton } from './_LogoutAllButton';
 import { formatRelative } from '@/lib/format';
 
 export function AccountSessionCard({ lastLogin, ipEntry, ipLoading, onRefreshIP }) {
@@ -48,6 +49,7 @@ export function AccountSessionCard({ lastLogin, ipEntry, ipLoading, onRefreshIP 
           )}
         </div>
       </div>
+      <LogoutAllButton />
     </div>
   );
 }
