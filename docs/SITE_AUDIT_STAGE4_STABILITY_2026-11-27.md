@@ -4,7 +4,7 @@
 >
 > 이전 단계: [SITE_AUDIT_STAGE3_PERFORMANCE_2026-11-26.md](SITE_AUDIT_STAGE3_PERFORMANCE_2026-11-26.md)
 >
-> 브랜치: `codex/next16-prisma-security-upgrade` (작업은 `codex/stage4-stability`, 기준 커밋 `e1cfca68`)
+> 브랜치: `codex/next16-prisma-security-upgrade` (작업은 `codex/stage4-stability`, 기준 커밋 `e1cfca68`. 작업 중에 들어온 식자재 관리 주소 연결 수정 `35e91187`과 합친 뒤 반영)
 
 ## 1. 상태
 
