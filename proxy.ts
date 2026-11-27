@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { inspectSessionToken } from '@/lib/server/session-auth';
 
-const PUBLIC_PATHS = ['/login', '/_next', '/favicon.ico', '/logo-', '/manifest.json', '/api/'];
+const PUBLIC_PATHS = ['/_next', '/favicon.ico', '/logo-', '/manifest.json', '/api/'];
 const COOKIE_NAME = 'v3:session';
 const MAX_API_BODY_BYTES = 20 * 1024 * 1024;
+
+// 쿠키가 있는지가 아니라 서명·만료·세션 버전까지 확인한다
+function sessionOf(req: NextRequest) {
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+  return token === undefined ? 'missing' : inspectSessionToken(token);
+}
+
+function dropInvalidCookie(res: NextResponse, session: string) {
+  if (session === 'invalid') res.cookies.delete(COOKIE_NAME);
+  return res;
+}
+
+function redirectTo(req: NextRequest, pathname: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+  return NextResponse.redirect(url);
+}
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -17,22 +35,17 @@ export function proxy(req: NextRequest) {
     }
   }
 
+  // API는 각 라우트가 세션을 검증한다
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next();
+
+  const session = sessionOf(req);
+
   if (pathname.startsWith('/login')) {
-    if (req.cookies.has(COOKIE_NAME)) {
-      const url = req.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
-    return NextResponse.next();
+    if (session === 'valid') return redirectTo(req, '/');
+    return dropInvalidCookie(NextResponse.next(), session);
   }
 
-  if (PUBLIC_PATHS.slice(1).some(p => pathname.startsWith(p))) return NextResponse.next();
-
-  if (!req.cookies.has(COOKIE_NAME)) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
+  if (session !== 'valid') return dropInvalidCookie(redirectTo(req, '/login'), session);
 
   return NextResponse.next();
 }
