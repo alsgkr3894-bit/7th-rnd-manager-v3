@@ -75,6 +75,24 @@ describe('서버 전송 나누기', () => {
     expect(bodies().map(keysOf)).toEqual([['1'], ['2']]);
   });
 
+  test('꽉 찬 묶음이 밀려 있으면 쉬지 않고 보내고, 남은 적은 저장만 잠깐 모은다', async () => {
+    jest.useFakeTimers();
+    try {
+      for (let id = 1; id <= 250; id += 1) upsert(id);
+      await jest.advanceTimersByTimeAsync(150);
+      // 첫 묶음 뒤 150건이 남았으니 두 번째는 바로 나간다
+      await jest.advanceTimersByTimeAsync(1);
+      expect(bodies().map(body => keysOf(body).length)).toEqual([100, 100]);
+
+      await jest.advanceTimersByTimeAsync(100);
+      expect(bodies()).toHaveLength(2);
+      await jest.advanceTimersByTimeAsync(60);
+      expect(bodies().map(body => keysOf(body).length)).toEqual([100, 100, 50]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('전송에 실패하면 꺼낸 작업이 순서 그대로 남는다', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     fetchAppJson.mockRejectedValueOnce(Object.assign(new Error('down'), { status: 503 }));
