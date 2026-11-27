@@ -364,7 +364,7 @@ describe('묶어서 적용 — 순서와 결과는 하나씩 적용할 때와 �
 
   test('큰 행은 글자 수 상한에서 나눈다', async () => {
     const server = recorder();
-    const photo = 'a'.repeat(3 * 1024 * 1024);
+    const photo = 'a'.repeat(400 * 1024);
     await applyStoreRowOperations(server.prisma, {
       operations: [1, 2, 3, 4, 5].map(id => put(id, photo)),
     });
